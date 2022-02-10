@@ -1,0 +1,153 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "http://example.com/example.json",
+  "type": "object",
+  "javaType": "com.sakthi.trade.truedata.HistoricResponse",
+  "title": "The root schema",
+  "description": "The root schema comprises the entire JSON document.",
+  "default": {},
+  "examples": [
+    {
+      "status": "success",
+      "symbolid": 900000110,
+      "symbol": "NIFTY-I",
+      "interval": "1min",
+      "data": [
+        [
+          "2020-04-07T09:01:26",
+          12146.15,
+          150,
+          1235235,
+          750,
+          2123535.25,
+          12145.05,
+          1012147.15
+        ]
+      ]
+    }
+  ],
+  "required": [
+    "status",
+    "symbolid",
+    "symbol",
+    "interval",
+    "data"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "status": {
+      "$id": "#/properties/status",
+      "type": "string",
+      "title": "The status schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "success"
+      ]
+    },
+    "symbolid": {
+      "$id": "#/properties/symbolid",
+      "type": "integer",
+      "title": "The symbolid schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": 0,
+      "examples": [
+        900000110
+      ]
+    },
+    "symbol": {
+      "$id": "#/properties/symbol",
+      "type": "string",
+      "title": "The symbol schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "NIFTY-I"
+      ]
+    },
+    "interval": {
+      "$id": "#/properties/interval",
+      "type": "string",
+      "title": "The interval schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "1min"
+      ]
+    },
+    "data": {
+      "$id": "#/properties/data",
+      "type": "array",
+      "title": "The data schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": [],
+      "examples": [
+        [
+          [
+            "2020-04-07T09:01:26",
+            12146.15,
+            150,
+            1235235,
+            750,
+            2123535.25,
+            12145.05,
+            1012147.15
+          ]
+        ]
+      ],
+      "additionalItems": true,
+      "items": {
+            "$id": "#/properties/data/items/anyOf/0",
+            "type": "array",
+            "title": "The first anyOf schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": [],
+            "examples": [
+              [
+                "2020-04-07T09:01:26",
+                12146.15
+              ]
+            ],
+            "additionalItems": true,
+            "items": {
+              "anyOf": [
+                {
+                  "$id": "#/properties/data/items/anyOf/0/items/anyOf/0",
+                  "type": "string",
+                  "title": "The first anyOf schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": "",
+                  "examples": [
+                    "2020-04-07T09:01:26"
+                  ]
+                },
+                {
+                  "$id": "#/properties/data/items/anyOf/0/items/anyOf/1",
+                  "type": "number",
+                  "title": "The second anyOf schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": 0.0,
+                  "examples": [
+                    12146.15,
+                    2123535.25
+                  ]
+                },
+                {
+                  "$id": "#/properties/data/items/anyOf/0/items/anyOf/2",
+                  "type": "integer",
+                  "title": "The third anyOf schema",
+                  "description": "An explanation about the purpose of this instance.",
+                  "default": 0,
+                  "examples": [
+                    150,
+                    1235235
+                  ]
+                }
+              ],
+              "$id": "#/properties/data/items/anyOf/0/items"
+            },
+        "$id": "#/properties/data/items"
+      }
+    }
+  }
+}

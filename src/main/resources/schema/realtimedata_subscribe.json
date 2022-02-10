@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "http://example.com/example.json",
+  "javaType": "com.sakthi.trade.truedata.RealTimeSubscribeRequest",
+  "type": "object",
+  "title": "The root schema",
+  "description": "The root schema comprises the entire JSON document.",
+  "default": {},
+  "examples": [
+    {
+      "method": "addsymbol",
+      "symbols": [
+        "NIFTY 50",
+        "NIFTY BANK",
+        "NIFTY IT",
+        "NIFTY-I",
+        "BANKNIFTY20MAYFUT",
+        "CRUDEOIL-I"
+      ]
+    }
+  ],
+  "required": [
+    "method",
+    "symbols"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "method": {
+      "$id": "#/properties/method",
+      "type": "string",
+      "title": "The method schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "addsymbol"
+      ]
+    },
+    "symbols": {
+      "$id": "#/properties/symbols",
+      "type": "array",
+      "title": "The symbols schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": [],
+      "examples": [
+        [
+          "NIFTY 50",
+          "NIFTY BANK"
+        ]
+      ],
+      "additionalItems": true,
+      "items": {
+            "$id": "#/properties/symbols/items/anyOf/0",
+            "type": "string",
+            "title": "The first anyOf schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+              "NIFTY 50",
+              "NIFTY BANK"
+            ]
+          },
+        "$id": "#/properties/symbols/items"
+
+    }
+  }
+}

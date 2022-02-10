@@ -1,0 +1,67 @@
+<html>
+<head>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawChart);
+
+  function drawChart() {
+  /*
+  var mydata = [
+  ['13-Oct', 1097.95, 1113.45, 1109.95, 1132, 'tooltip'],
+  ['14-Oct', 1095.6, 1101.15, 1113.45, 1117, 'content'],
+  ['15-Oct', 1092.1, 1129.2, 1116, 1132, 'goes'],
+  ['16-Oct', 1130, 1170.3, 1130, 1182.4, 'in'],
+  ['19-Oct', 1144.5, 1162.15, 1174, 1182.2, 'here']
+];
+
+var data = google.visualization.arrayToDataTable(mydata, true);
+data.setColumnProperty(5, 'role', 'tooltip');
+
+    // Set chart options
+            var options = {
+               legend: 'none',
+               bar: { groupWidth: '100%' },   // Remove space between bars.
+               candlestick: {
+                  fallingColor: { strokeWidth: 0, fill: '#a52714' }, // red
+                  risingColor: { strokeWidth: 0, fill: '#0f9d58' }   // green
+               }, focusTarget: 'category'
+            };
+
+
+    var chart = new google.visualization.CandlestickChart(document.getElementById('chart_div'));
+
+    chart.draw(data, options);*/
+    $.get("example.csv", function(csvString) {
+      // transform the CSV string into a 2-dimensional array
+      var arrayData = $.csv.toArrays(csvString, {onParseValue: $.csv.hooks.castToScalar});
+
+      // this new DataTable object holds all the data
+      var data = new google.visualization.arrayToDataTable(arrayData);
+
+      // this view can select a subset of the data at a time
+      var view = new google.visualization.DataView(data);
+      view.setColumns([0,1]);
+
+     // set chart options
+   Set chart options
+            var options = {
+               legend: 'none',
+               bar: { groupWidth: '100%' },   // Remove space between bars.
+               candlestick: {
+                  fallingColor: { strokeWidth: 0, fill: '#a52714' }, // red
+                  risingColor: { strokeWidth: 0, fill: '#0f9d58' }   // green
+               }, focusTarget: 'category'
+            };
+
+
+    var chart = new google.visualization.CandlestickChart(document.getElementById('chart_div'));
+  });
+
+  }
+    </script>
+</head>
+<body>
+<div id="chart_div" style="width: 900px; height: 500px;"></div>
+</body>
+</html>

@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "http://example.com/example.json",
+  "javaType": "com.sakthi.trade.fyer.transactions.OrderResponse",
+  "type": "object",
+  "title": "The root schema",
+  "description": "The root schema comprises the entire JSON document.",
+  "default": {},
+  "examples": [
+    {
+      "s": "ok",
+      "code": 1101,
+      "message": "Order submitted successfully. Your Order Ref. No.819050777001",
+      "id": "819050777001"
+    }
+  ],
+  "required": [
+    "s",
+    "code",
+    "message",
+    "id"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "s": {
+      "$id": "#/properties/s",
+      "type": "string",
+      "title": "The s schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "ok"
+      ]
+    },
+    "code": {
+      "$id": "#/properties/code",
+      "type": "integer",
+      "title": "The code schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": 0,
+      "examples": [
+        1101
+      ]
+    },
+    "message": {
+      "$id": "#/properties/message",
+      "type": "string",
+      "title": "The message schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "Order submitted successfully. Your Order Ref. No.819050777001"
+      ]
+    },
+    "id": {
+      "$id": "#/properties/id",
+      "type": "string",
+      "title": "The id schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "819050777001"
+      ]
+    }
+  }
+}

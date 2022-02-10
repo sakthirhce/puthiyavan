@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "http://example.com/example.json",
+  "javaType": "com.sakthi.trade.fyer.AuthRequest",
+  "type": "object",
+  "title": "The root schema",
+  "description": "The root schema comprises the entire JSON document.",
+  "default": {},
+  "examples": [
+    {
+      "app_id": "your_appid",
+      "secret_key": "your_app_secret"
+    }
+  ],
+  "required": [
+    "app_id",
+    "secret_key"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "app_id": {
+      "$id": "#/properties/app_id",
+      "type": "string",
+      "title": "The app_id schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",  "type": "object",
+      "examples": [
+        "your_appid"
+      ]
+    },
+    "secret_key": {
+      "$id": "#/properties/secret_key",
+      "type": "string",
+      "title": "The secret_key schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "your_app_secret"
+      ]
+    }
+  }
+}

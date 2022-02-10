@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "javaType": "com.sakthi.trade.fyer.AuthTokenRequest",
+  "properties": {
+    "grant_type": {
+      "type": "string"
+    },
+    "appIdHash": {
+      "type": "string"
+    },
+    "code": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "grant_type",
+    "appIdHash",
+    "code"
+  ]
+}

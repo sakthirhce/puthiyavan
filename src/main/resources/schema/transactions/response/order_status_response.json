@@ -1,0 +1,384 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "http://example.com/example.json",
+  "javaType": "com.sakthi.trade.fyer.transactions.OrderStatusResponse",
+  "type": "object",
+  "title": "The root schema",
+  "description": "The root schema comprises the entire JSON document.",
+  "default": {},
+  "examples": [
+    {
+      "s": "ok",
+      "message": "",
+      "orderDetails": {
+        "status": 2,
+        "symbol": "NSE:IGL-EQ",
+        "qty": 49,
+        "orderNumStatus": "120082021161:2",
+        "dqQtyRem": 0,
+        "orderDateTime": "20-Aug-2020 09:33:30",
+        "orderValidity": "DAY",
+        "fyToken": "101000000011262",
+        "slNo": 13,
+        "message": "TRADE CONFIRMED",
+        "segment": "E",
+        "id": "120082021161",
+        "stopPrice": 0.0,
+        "instrument": "EQUITY",
+        "exchOrdId": "1100000001815348",
+        "remainingQuantity": 0,
+        "filledQty": 49,
+        "limitPrice": 0.0,
+        "offlineOrder": false,
+        "source": "ITS",
+        "productType": "INTRADAY",
+        "type": 2,
+        "side": 1,
+        "tradedPrice": 404.95,
+        "discloseQty": 0
+      }
+    }
+  ],
+  "required": [
+    "s",
+    "message",
+    "orderDetails"
+  ],
+  "properties": {
+    "s": {
+      "$id": "#/properties/s",
+      "type": "string",
+      "title": "The s schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "ok"
+      ]
+    },
+    "message": {
+      "$id": "#/properties/message",
+      "type": "string",
+      "title": "The message schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        ""
+      ]
+    },
+    "orderDetails": {
+      "$id": "#/properties/orderDetails",
+      "type": "object",
+      "title": "The orderDetails schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": {},
+      "examples": [
+        {
+          "status": 2,
+          "symbol": "NSE:IGL-EQ",
+          "qty": 49,
+          "orderNumStatus": "120082021161:2",
+          "dqQtyRem": 0,
+          "orderDateTime": "20-Aug-2020 09:33:30",
+          "orderValidity": "DAY",
+          "fyToken": "101000000011262",
+          "slNo": 13,
+          "message": "TRADE CONFIRMED",
+          "segment": "E",
+          "id": "120082021161",
+          "stopPrice": 0.0,
+          "instrument": "EQUITY",
+          "exchOrdId": "1100000001815348",
+          "remainingQuantity": 0,
+          "filledQty": 49,
+          "limitPrice": 0.0,
+          "offlineOrder": false,
+          "source": "ITS",
+          "productType": "INTRADAY",
+          "type": 2,
+          "side": 1,
+          "tradedPrice": 404.95,
+          "discloseQty": 0
+        }
+      ],
+      "required": [
+        "status",
+        "symbol",
+        "qty",
+        "orderNumStatus",
+        "dqQtyRem",
+        "orderDateTime",
+        "orderValidity",
+        "fyToken",
+        "slNo",
+        "message",
+        "segment",
+        "id",
+        "stopPrice",
+        "instrument",
+        "exchOrdId",
+        "remainingQuantity",
+        "filledQty",
+        "limitPrice",
+        "offlineOrder",
+        "source",
+        "productType",
+        "type",
+        "side",
+        "tradedPrice",
+        "discloseQty"
+      ],
+      "properties": {
+        "status": {
+          "$id": "#/properties/orderDetails/properties/status",
+          "type": "integer",
+          "title": "The status schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": 0,
+          "examples": [
+            2
+          ]
+        },
+        "symbol": {
+          "$id": "#/properties/orderDetails/properties/symbol",
+          "type": "string",
+          "title": "The symbol schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": "",
+          "examples": [
+            "NSE:IGL-EQ"
+          ]
+        },
+        "qty": {
+          "$id": "#/properties/orderDetails/properties/qty",
+          "type": "integer",
+          "title": "The qty schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": 0,
+          "examples": [
+            49
+          ]
+        },
+        "orderNumStatus": {
+          "$id": "#/properties/orderDetails/properties/orderNumStatus",
+          "type": "string",
+          "title": "The orderNumStatus schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": "",
+          "examples": [
+            "120082021161:2"
+          ]
+        },
+        "dqQtyRem": {
+          "$id": "#/properties/orderDetails/properties/dqQtyRem",
+          "type": "integer",
+          "title": "The dqQtyRem schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": 0,
+          "examples": [
+            0
+          ]
+        },
+        "orderDateTime": {
+          "$id": "#/properties/orderDetails/properties/orderDateTime",
+          "type": "string",
+          "title": "The orderDateTime schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": "",
+          "examples": [
+            "20-Aug-2020 09:33:30"
+          ]
+        },
+        "orderValidity": {
+          "$id": "#/properties/orderDetails/properties/orderValidity",
+          "type": "string",
+          "title": "The orderValidity schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": "",
+          "examples": [
+            "DAY"
+          ]
+        },
+        "fyToken": {
+          "$id": "#/properties/orderDetails/properties/fyToken",
+          "type": "string",
+          "title": "The fyToken schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": "",
+          "examples": [
+            "101000000011262"
+          ]
+        },
+        "slNo": {
+          "$id": "#/properties/orderDetails/properties/slNo",
+          "type": "integer",
+          "title": "The slNo schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": 0,
+          "examples": [
+            13
+          ]
+        },
+        "message": {
+          "$id": "#/properties/orderDetails/properties/message",
+          "type": "string",
+          "title": "The message schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": "",
+          "examples": [
+            "TRADE CONFIRMED"
+          ]
+        },
+        "segment": {
+          "$id": "#/properties/orderDetails/properties/segment",
+          "type": "string",
+          "title": "The segment schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": "",
+          "examples": [
+            "E"
+          ]
+        },
+        "id": {
+          "$id": "#/properties/orderDetails/properties/id",
+          "type": "string",
+          "title": "The id schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": "",
+          "examples": [
+            "120082021161"
+          ]
+        },
+        "stopPrice": {
+          "$id": "#/properties/orderDetails/properties/stopPrice",
+          "type": "number",
+          "title": "The stopPrice schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": 0.0,
+          "examples": [
+            0.0
+          ]
+        },
+        "instrument": {
+          "$id": "#/properties/orderDetails/properties/instrument",
+          "type": "string",
+          "title": "The instrument schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": "",
+          "examples": [
+            "EQUITY"
+          ]
+        },
+        "exchOrdId": {
+          "$id": "#/properties/orderDetails/properties/exchOrdId",
+          "type": "string",
+          "title": "The exchOrdId schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": "",
+          "examples": [
+            "1100000001815348"
+          ]
+        },
+        "remainingQuantity": {
+          "$id": "#/properties/orderDetails/properties/remainingQuantity",
+          "type": "integer",
+          "title": "The remainingQuantity schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": 0,
+          "examples": [
+            0
+          ]
+        },
+        "filledQty": {
+          "$id": "#/properties/orderDetails/properties/filledQty",
+          "type": "integer",
+          "title": "The filledQty schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": 0,
+          "examples": [
+            49
+          ]
+        },
+        "limitPrice": {
+          "$id": "#/properties/orderDetails/properties/limitPrice",
+          "type": "number",
+          "title": "The limitPrice schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": 0.0,
+          "examples": [
+            0.0
+          ]
+        },
+        "offlineOrder": {
+          "$id": "#/properties/orderDetails/properties/offlineOrder",
+          "type": "boolean",
+          "title": "The offlineOrder schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": false,
+          "examples": [
+            false
+          ]
+        },
+        "source": {
+          "$id": "#/properties/orderDetails/properties/source",
+          "type": "string",
+          "title": "The source schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": "",
+          "examples": [
+            "ITS"
+          ]
+        },
+        "productType": {
+          "$id": "#/properties/orderDetails/properties/productType",
+          "type": "string",
+          "title": "The productType schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": "",
+          "examples": [
+            "INTRADAY"
+          ]
+        },
+        "type": {
+          "$id": "#/properties/orderDetails/properties/type",
+          "type": "integer",
+          "title": "The type schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": 0,
+          "examples": [
+            2
+          ]
+        },
+        "side": {
+          "$id": "#/properties/orderDetails/properties/side",
+          "type": "integer",
+          "title": "The side schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": 0,
+          "examples": [
+            1
+          ]
+        },
+        "tradedPrice": {
+          "$id": "#/properties/orderDetails/properties/tradedPrice",
+          "type": "number",
+          "title": "The tradedPrice schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": 0.0,
+          "examples": [
+            404.95
+          ]
+        },
+        "discloseQty": {
+          "$id": "#/properties/orderDetails/properties/discloseQty",
+          "type": "integer",
+          "title": "The discloseQty schema",
+          "description": "An explanation about the purpose of this instance.",
+          "default": 0,
+          "examples": [
+            0
+          ]
+        }
+      }
+    }
+  }
+}

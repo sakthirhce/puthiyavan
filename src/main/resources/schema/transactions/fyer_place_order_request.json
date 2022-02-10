@@ -1,0 +1,162 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "http://example.com/example.json",
+  "javaType": "com.sakthi.trade.fyer.transactions.PlaceOrderRequest",
+  "type": "object",
+  "title": "The root schema",
+  "description": "The root schema comprises the entire JSON document.",
+  "default": {},
+  "examples": [
+    {
+      "symbol": "NSE:SBIN-EQ",
+      "qty": 1,
+      "type": 2,
+      "side": 1,
+      "productType": "INTRADAY",
+      "limitPrice": 0.1,
+      "stopPrice": 0.1,
+      "disclosedQty": 0,
+      "validity": "DAY",
+      "offlineOrder": "False",
+      "stopLoss": 0.1,
+      "takeProfit": 0.1
+    }
+  ],
+  "required": [
+    "symbol",
+    "qty",
+    "type",
+    "side",
+    "productType",
+    "limitPrice",
+    "stopPrice",
+    "disclosedQty",
+    "validity",
+    "offlineOrder",
+    "stopLoss",
+    "takeProfit"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "symbol": {
+      "$id": "#/properties/symbol",
+      "type": "string",
+      "title": "The symbol schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "NSE:SBIN-EQ"
+      ]
+    },
+    "qty": {
+      "$id": "#/properties/qty",
+      "type": "integer",
+      "title": "The qty schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": 0,
+      "examples": [
+        1
+      ]
+    },
+    "type": {
+      "$id": "#/properties/type",
+      "type": "integer",
+      "title": "The type schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": 0,
+      "examples": [
+        2
+      ]
+    },
+    "side": {
+      "$id": "#/properties/side",
+      "type": "integer",
+      "title": "The side schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": 0,
+      "examples": [
+        1
+      ]
+    },
+    "productType": {
+      "$id": "#/properties/productType",
+      "type": "string",
+      "title": "The productType schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "INTRADAY"
+      ]
+    },
+    "limitPrice": {
+      "$id": "#/properties/limitPrice",
+      "type": "number",
+      "title": "The limitPrice schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": 0.0,
+      "examples": [
+        0.1
+      ]
+    },
+    "stopPrice": {
+      "$id": "#/properties/stopPrice",
+      "type": "number",
+      "title": "The stopPrice schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": 0.0,
+      "examples": [
+        0.1
+      ]
+    },
+    "disclosedQty": {
+      "$id": "#/properties/disclosedQty",
+      "type": "integer",
+      "title": "The disclosedQty schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": 0,
+      "examples": [
+        0
+      ]
+    },
+    "validity": {
+      "$id": "#/properties/validity",
+      "type": "string",
+      "title": "The validity schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "DAY"
+      ]
+    },
+    "offlineOrder": {
+      "$id": "#/properties/offlineOrder",
+      "type": "string",
+      "title": "The offlineOrder schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "False"
+      ]
+    },
+    "stopLoss": {
+      "$id": "#/properties/stopLoss",
+      "type": "number",
+      "title": "The stopLoss schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": 0.0,
+      "examples": [
+        0.1
+      ]
+    },
+    "takeProfit": {
+      "$id": "#/properties/takeProfit",
+      "type": "number",
+      "title": "The takeProfit schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": 0.0,
+      "examples": [
+        0.1
+      ]
+    }
+  }
+}

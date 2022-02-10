@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "http://example.com/example.json",
+  "javaType": "com.sakthi.trade.truedata.HistoricRequest",
+  "type": "object",
+  "title": "The root schema",
+  "description": "The root schema comprises the entire JSON document.",
+  "default": {},
+  "examples": [
+    {
+      "method": "gethistory",
+      "interval": "tick",
+      "symbol": "NIFTY-I",
+      "from": "yyyy-mm-ddThh:mm:ss",
+      "to": "yyyy-mm-ddThh:mm:ss "
+    }
+  ],
+  "required": [
+    "method",
+    "interval",
+    "symbol",
+    "from",
+    "to"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "method": {
+      "$id": "#/properties/method",
+      "type": "string",
+      "title": "The method schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "gethistory"
+      ]
+    },
+    "interval": {
+      "$id": "#/properties/interval",
+      "type": "string",
+      "title": "The interval schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "tick"
+      ]
+    },
+    "symbol": {
+      "$id": "#/properties/symbol",
+      "type": "string",
+      "title": "The symbol schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "NIFTY-I"
+      ]
+    },
+    "from": {
+      "$id": "#/properties/from",
+      "type": "string",
+      "title": "The from schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "yyyy-mm-ddThh:mm:ss"
+      ]
+    },
+    "to": {
+      "$id": "#/properties/to",
+      "type": "string",
+      "title": "The to schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "yyyy-mm-ddThh:mm:ss "
+      ]
+    }
+  }
+}

@@ -1,0 +1,317 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "http://example.com/example.json",
+  "type": "object",
+  "javaType": "com.sakthi.trade.FOPreOpen",
+  "title": "The root schema",
+  "description": "The root schema comprises the entire JSON document.",
+  "default": {},
+  "examples": [
+    {
+      "declines": 23.0,
+      "noChange": 10.0,
+      "data": [
+        {
+          "symbol": "IDEA",
+          "series": "EQ",
+          "xDt": "-",
+          "caAct": "-",
+          "iep": "7.60",
+          "chn": "-0.25",
+          "perChn": "-3.18",
+          "pCls": "7.85",
+          "trdQnty": "1041293",
+          "iVal": "79.14",
+          "mktCap": "7160.86",
+          "yHigh": "12.60",
+          "yLow": "2.40",
+          "sumVal": "11370.86",
+          "sumQnty": "4152928",
+          "finQnty": "1041293",
+          "sumfinQnty": "4315275"
+        }
+      ]
+    }
+  ],
+  "required": [
+    "declines",
+    "noChange",
+    "data"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "declines": {
+      "$id": "#/properties/declines",
+      "type": "number",
+      "title": "The declines schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": 0.0,
+      "examples": [
+        23.0
+      ]
+    },
+    "noChange": {
+      "$id": "#/properties/noChange",
+      "type": "number",
+      "title": "The noChange schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": 0.0,
+      "examples": [
+        10.0
+      ]
+    },
+    "data": {
+      "$id": "#/properties/data",
+      "type": "array",
+      "title": "The data schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": [],
+      "examples": [
+        [
+          {
+            "symbol": "IDEA",
+            "series": "EQ",
+            "xDt": "-",
+            "caAct": "-",
+            "iep": "7.60",
+            "chn": "-0.25",
+            "perChn": "-3.18",
+            "pCls": "7.85",
+            "trdQnty": "1041293",
+            "iVal": "79.14",
+            "mktCap": "7160.86",
+            "yHigh": "12.60",
+            "yLow": "2.40",
+            "sumVal": "11370.86",
+            "sumQnty": "4152928",
+            "finQnty": "1041293",
+            "sumfinQnty": "4315275"
+          }
+        ]
+      ],
+      "additionalItems": true,
+      "items":
+          {
+            "$id": "#/properties/data/items/anyOf/0",
+            "type": "object",
+            "title": "The first anyOf schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": {},
+            "examples": [
+              {
+                "symbol": "IDEA",
+                "series": "EQ",
+                "xDt": "-",
+                "caAct": "-",
+                "iep": "7.60",
+                "chn": "-0.25",
+                "perChn": "-3.18",
+                "pCls": "7.85",
+                "trdQnty": "1041293",
+                "iVal": "79.14",
+                "mktCap": "7160.86",
+                "yHigh": "12.60",
+                "yLow": "2.40",
+                "sumVal": "11370.86",
+                "sumQnty": "4152928",
+                "finQnty": "1041293",
+                "sumfinQnty": "4315275"
+              }
+            ],
+            "required": [
+              "symbol",
+              "series",
+              "xDt",
+              "caAct",
+              "iep",
+              "chn",
+              "perChn",
+              "pCls",
+              "trdQnty",
+              "iVal",
+              "mktCap",
+              "yHigh",
+              "yLow",
+              "sumVal",
+              "sumQnty",
+              "finQnty",
+              "sumfinQnty"
+            ],
+            "additionalProperties": true,
+            "properties": {
+              "symbol": {
+                "$id": "#/properties/data/items/anyOf/0/properties/symbol",
+                "type": "string",
+                "title": "The symbol schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "IDEA"
+                ]
+              },
+              "series": {
+                "$id": "#/properties/data/items/anyOf/0/properties/series",
+                "type": "string",
+                "title": "The series schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "EQ"
+                ]
+              },
+              "xDt": {
+                "$id": "#/properties/data/items/anyOf/0/properties/xDt",
+                "type": "string",
+                "title": "The xDt schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "-"
+                ]
+              },
+              "caAct": {
+                "$id": "#/properties/data/items/anyOf/0/properties/caAct",
+                "type": "string",
+                "title": "The caAct schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "-"
+                ]
+              },
+              "iep": {
+                "$id": "#/properties/data/items/anyOf/0/properties/iep",
+                "type": "string",
+                "title": "The iep schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "7.60"
+                ]
+              },
+              "chn": {
+                "$id": "#/properties/data/items/anyOf/0/properties/chn",
+                "type": "string",
+                "title": "The chn schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "-0.25"
+                ]
+              },
+              "perChn": {
+                "$id": "#/properties/data/items/anyOf/0/properties/perChn",
+                "type": "string",
+                "title": "The perChn schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "-3.18"
+                ]
+              },
+              "pCls": {
+                "$id": "#/properties/data/items/anyOf/0/properties/pCls",
+                "type": "string",
+                "title": "The pCls schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "7.85"
+                ]
+              },
+              "trdQnty": {
+                "$id": "#/properties/data/items/anyOf/0/properties/trdQnty",
+                "type": "string",
+                "title": "The trdQnty schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "1041293"
+                ]
+              },
+              "iVal": {
+                "$id": "#/properties/data/items/anyOf/0/properties/iVal",
+                "type": "string",
+                "title": "The iVal schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "79.14"
+                ]
+              },
+              "mktCap": {
+                "$id": "#/properties/data/items/anyOf/0/properties/mktCap",
+                "type": "string",
+                "title": "The mktCap schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "7160.86"
+                ]
+              },
+              "yHigh": {
+                "$id": "#/properties/data/items/anyOf/0/properties/yHigh",
+                "type": "string",
+                "title": "The yHigh schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "12.60"
+                ]
+              },
+              "yLow": {
+                "$id": "#/properties/data/items/anyOf/0/properties/yLow",
+                "type": "string",
+                "title": "The yLow schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "2.40"
+                ]
+              },
+              "sumVal": {
+                "$id": "#/properties/data/items/anyOf/0/properties/sumVal",
+                "type": "string",
+                "title": "The sumVal schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "11370.86"
+                ]
+              },
+              "sumQnty": {
+                "$id": "#/properties/data/items/anyOf/0/properties/sumQnty",
+                "type": "string",
+                "title": "The sumQnty schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "4152928"
+                ]
+              },
+              "finQnty": {
+                "$id": "#/properties/data/items/anyOf/0/properties/finQnty",
+                "type": "string",
+                "title": "The finQnty schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "1041293"
+                ]
+              },
+              "sumfinQnty": {
+                "$id": "#/properties/data/items/anyOf/0/properties/sumfinQnty",
+                "type": "string",
+                "title": "The sumfinQnty schema",
+                "description": "An explanation about the purpose of this instance.",
+                "default": "",
+                "examples": [
+                  "4315275"
+                ]
+              }
+            }
+          },
+        "$id": "#/properties/data/items"
+    }
+  }
+}

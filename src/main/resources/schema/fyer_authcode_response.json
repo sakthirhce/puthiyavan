@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "javaType": "com.sakthi.trade.fyer.AuthTokenResponse",
+  "type": "object",
+  "properties": {
+    "s": {
+      "type": "string"
+    },
+    "code": {
+      "type": "integer"
+    },
+    "message": {
+      "type": "string"
+    },
+    "access_token": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "s",
+    "code",
+    "message",
+    "access_token"
+  ]
+}
