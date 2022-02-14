@@ -12,5 +12,6 @@ public class StraddleConfig {
     boolean enabled;
     public Map<String, TradeData> straddleTradeMap = new HashMap<>();
     public Map<String, String> lotConfig;
+    public BuyConfig buyConfig;
 
 }

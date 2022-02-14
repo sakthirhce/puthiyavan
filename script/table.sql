@@ -264,3 +264,21 @@ symbol VARCHAR(50),
 	  REFERENCES Crypto_Futures(symbol),
 	  UNIQUE(symbol,trade_time)
 );
+
+
+create table open_trade_data(stock_name varchar(100) primary key,
+qty numeric(20) not null,
+price numeric(60,2)not null,
+sl_price numeric(60,2)not null,
+stock_id numeric(40) not null,
+user_id  varchar(40) not null,
+status varchar(40) not null,
+is_order_placed boolean not null default false,
+is_sl_placed boolean not null default false,
+is_exited boolean not null default false,
+entry_order_id varchar(60),
+sl_order_id varchar(60),
+entry_type varchar(60),
+amount_per_stock numeric(60,2)not null,
+is_errored boolean not null default false);
+

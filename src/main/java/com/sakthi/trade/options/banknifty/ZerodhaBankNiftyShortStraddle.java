@@ -72,6 +72,8 @@ public class ZerodhaBankNiftyShortStraddle {
     @Autowired
     ZerodhaTransactionService zerodhaTransactionService;
 
+    public Map<String,String> atmStrikeMap=new HashMap<>();
+
 
     @Autowired
     UserList userList;
@@ -112,6 +114,7 @@ public class ZerodhaBankNiftyShortStraddle {
                         final Map<String, String> atmStrikesStraddle = zerodhaTransactionService.bankNiftyWeeklyOptions.get(String.valueOf(atmStrike));
                         atmStrikesStraddle.entrySet().forEach(entry -> {
                             System.out.println(entry.getKey() + " " + entry.getValue());
+                            atmStrikeMap.put(entry.getKey(),entry.getValue());
                         });
                         atmStrikesStraddle.entrySet().stream().filter(atmStrikeStraddle -> atmStrikeStraddle.getKey().contains(String.valueOf(atmStrike))).forEach(atmBankStrikeMap -> {
                             executorService.submit(() -> {
