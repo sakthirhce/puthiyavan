@@ -6,7 +6,6 @@ import com.sakthi.trade.zerodha.account.UserList;
 import com.sakthi.trade.zerodha.account.ZerodhaAccount;
 import com.zerodhatech.kiteconnect.KiteConnect;
 import lombok.extern.slf4j.Slf4j;
-import net.sourceforge.htmlunit.corejs.javascript.Kit;
 import okhttp3.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -29,7 +28,7 @@ public class TransactionService {
 
     KiteConnect kiteConnect;
     public void setup(){
-        User user =userList.getUser().stream().filter(user1 -> user1.isAdmin()).findFirst().get();
+        User user =userList.getUser().stream().filter(User::isAdmin).findFirst().get();
         kiteConnect = user.getKiteConnect();
     }
     public Request createPostPutDeleteRequest(HttpMethod httpMethod,String uri,String payload){
@@ -72,7 +71,10 @@ public class TransactionService {
         return requestBuilder.build();
     }
     public Request createZerodhaGetRequest(String uri){
-        if(kiteConnect != null) {
+        if(kiteConnect == null) {
+            User user =userList.getUser().stream().filter(user1 -> user1.isAdmin()).findFirst().get();
+            kiteConnect = user.getKiteConnect();
+        }
             log.info("uri:" + uri);
             Request.Builder requestBuilder = new Request.Builder();
             requestBuilder.addHeader("X-Kite-Version", "3");
@@ -81,8 +83,7 @@ public class TransactionService {
             requestBuilder.url(uri);
             requestBuilder.get();
             return requestBuilder.build();
-        }
-        return null;
+
     }
     public String callAPI(Request request){
         String responseStr=null;

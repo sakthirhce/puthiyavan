@@ -12,7 +12,7 @@ public class TradeData {
 
     String stockName;
     int qty=0;
-
+    String dataKey;
     BigDecimal reverseSlPrice;
     BigDecimal reverseSlTradedPrice;
     BigDecimal buyPrice;
@@ -26,6 +26,8 @@ public class TradeData {
     String slTime;
     String reverseSlTime;
     int stockId;
+    BigDecimal slPercentage;
+    String userId;
     String zerodhaExchangeId;
     public boolean isOrderPlaced;
     public boolean isSLCancelled;

@@ -45,7 +45,9 @@ public class ZerodhaTransactionService {
     public Map<String,String> niftyIndics=new HashMap<>();
     public Map<String,String> niftyVix  =new HashMap<>();
     public Map<String,Map<String,String>> bankNiftyWeeklyOptions=new HashMap<>();
+    public Map<String,Map<String,String>> bankNiftyNextWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>> niftyWeeklyOptions=new HashMap<>();
+    public String expDate;
     @Autowired
     SendMessage sendMessage;
     @Value("${telegram.orb.bot.token}")
@@ -76,6 +78,25 @@ public class ZerodhaTransactionService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public String nextWeekExpDate(Calendar currentWeekExpCal,boolean currentWeekExpOff,Map<String,String> lsHoliday){
+        if(currentWeekExpOff){
+            currentWeekExpCal.add(DAY_OF_MONTH, 1);
+        }
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        currentWeekExpCal.add(DAY_OF_MONTH, 7);
+        String weekExp=format.format(currentWeekExpCal.getTime());
+        boolean nextWeekExpOff=false;
+        if (lsHoliday.containsKey(weekExp)) {
+            nextWeekExpOff=true;
+        }
+        if(nextWeekExpOff){
+            currentWeekExpCal.add(DAY_OF_MONTH, -1);
+            weekExp=format.format(currentWeekExpCal.getTime());
+            log.info("Thursday falling on holiday. recalculated weekly exp date is:"+weekExp);
+        }
+        return weekExp;
     }
     @Scheduled(cron="${zerodha.get.instrument}")
     public void getInstrument() throws IOException, CsvValidationException {
@@ -118,11 +139,17 @@ public class ZerodhaTransactionService {
         }
         Date date = calendar.getTime();
         String weekExp=format.format(date);
-        if (lsHoliday.containsKey(weekExp)){
+        boolean currentWeekExpOff=false;
+        if (lsHoliday.containsKey(weekExp)) {
+            currentWeekExpOff=true;
+        }
+        if(currentWeekExpOff){
             calendar.add(DAY_OF_MONTH, -1);
             weekExp=format.format(calendar.getTime());
             log.info("Thursday falling on holiday. recalculated weekly exp date is:"+weekExp);
         }
+        expDate=weekExp;
+        String nextWeekExpDate=nextWeekExpDate(calendar,currentWeekExpOff,lsHoliday);
         String instrumentURI = baseURL+instrumentURL;
         String response=transactionService.callAPI(transactionService.createZerodhaGetRequest(instrumentURI));
         String lines[] = response.split("\\r?\\n");
@@ -151,6 +178,17 @@ public class ZerodhaTransactionService {
                     Map<String,String> map=new HashMap<>();
                     map.put(data[2],data[0]);
                     bankNiftyWeeklyOptions.put(data[6], map);
+                }
+            }
+            if( index.equals("BANKNIFTY") &&  data[5].equals(nextWeekExpDate) &&  data[10].equals("NFO-OPT") && data[11].equals("NFO")){
+                if(bankNiftyNextWeeklyOptions.get(data[6])!=null){
+                    Map<String,String> map=bankNiftyNextWeeklyOptions.get(data[6]);
+                    map.put(data[2],data[0]);
+                    bankNiftyNextWeeklyOptions.put(data[6], map);
+                }else {
+                    Map<String,String> map=new HashMap<>();
+                    map.put(data[2],data[0]);
+                    bankNiftyNextWeeklyOptions.put(data[6], map);
                 }
             }
 

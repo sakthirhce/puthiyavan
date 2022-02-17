@@ -21,6 +21,4 @@ public class User {
     boolean enabled;
     StraddleConfig straddleConfig;
     StrangleConfig strangleConfig;
-
-
 }

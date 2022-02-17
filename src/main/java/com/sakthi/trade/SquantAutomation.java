@@ -20,7 +20,7 @@ public class SquantAutomation {
         try {
             SpringApplication.run(SquantAutomation.class, args);
         }catch (Exception e){
-            e.printStackTrace();
+            System.out.println(e.getMessage());
         }
     }/*
     @Bean

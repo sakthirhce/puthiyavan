@@ -1,3 +1,4 @@
+/*
 package com.sakthi.trade.options.banknifty;
 
 import com.google.gson.Gson;
@@ -120,9 +121,11 @@ public class ZerodhaBankNiftyShortStraddleBuy {
                         log.info("Bank Nifty:" + atmStrike);
                         //check usuage of bankniftyFlyingLot
                         //   int qty = 25 * (Integer.valueOf(bankniftyLot));
-                   /* if("Mon".equals(weekDay.format(date))){
+                   */
+/* if("Mon".equals(weekDay.format(date))){
                         qty= qty+(Integer.valueOf(bankniftyFlyingLot)*25);
-                    }*/
+                    }*//*
+
                         HistoricalData historicalData2 = new HistoricalData();
                         final Map<String, String> atmStrikesStraddle = zerodhaTransactionService.bankNiftyWeeklyOptions.get(String.valueOf(atmStrike));
                         atmStrikesStraddle.entrySet().forEach(entry -> {
@@ -250,7 +253,7 @@ public class ZerodhaBankNiftyShortStraddleBuy {
     }
 
 
-    @Scheduled(cron = "${stradle.buy.sl.scheduler}")
+    @Scheduled(cron = "${straddle.buy.sl.scheduler}")
     public void sLMonitorScheduler() {
         userList.getUser().stream().filter(user -> user.getStraddleConfig().buyConfig.isEnabled()).forEach(user -> {
             BuyConfig buyConfig=user.getStraddleConfig().buyConfig;
@@ -474,3 +477,4 @@ public class ZerodhaBankNiftyShortStraddleBuy {
     }
 
 }
+*/

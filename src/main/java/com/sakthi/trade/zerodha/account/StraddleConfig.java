@@ -10,8 +10,8 @@ import java.util.Map;
 @Data
 public class StraddleConfig {
     boolean enabled;
+    boolean nrmlEnabled;
     public Map<String, TradeData> straddleTradeMap = new HashMap<>();
     public Map<String, String> lotConfig;
     public BuyConfig buyConfig;
-
 }

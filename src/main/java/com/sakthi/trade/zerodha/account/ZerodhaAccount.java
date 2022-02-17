@@ -304,11 +304,10 @@ public class ZerodhaAccount {
             System.out.println(margins.available.cash);
             System.out.println(margins.utilised.debits);
             sendMessage.sendToTelegram("Token :" + kiteConnect.getAccessToken(), telegramToken);
-            sendMessage.sendToTelegram("Available Cash :" + margins.available.cash, telegramToken);
             user1.kiteConnect=kiteConnect;
-            kiteSdk=kiteConnect;
             if (user1.admin){
                 transactionService.setup();
+                kiteSdk=kiteConnect;
             }
             webDriver.quit();
             } catch (URISyntaxException e) {
@@ -564,7 +563,7 @@ public class ZerodhaAccount {
                 e.printStackTrace();
             }
         });
-    }
+    }/*
     @Scheduled(cron = "${over.position.monitor.scheduler}")
    public void monitorPositionSize() throws IOException, KiteException {
        List<Position> positions = zerodhaAccount.kiteSdk.getPositions().get("net");
@@ -688,6 +687,6 @@ public class ZerodhaAccount {
        }
 
        });
-   }
+   }*/
 
 }
