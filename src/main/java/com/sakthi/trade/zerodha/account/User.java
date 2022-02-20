@@ -20,5 +20,6 @@ public class User {
     boolean admin;
     boolean enabled;
     StraddleConfig straddleConfig;
+    StraddleConfig straddleConfigOld;
     StrangleConfig strangleConfig;
 }

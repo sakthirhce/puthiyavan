@@ -287,3 +287,48 @@ entry_type varchar(60),
 amount_per_stock numeric(60,2) null,
 is_errored boolean not null default false);
 
+
+
+create table strangle_trade_data(
+data_key varchar(100) primary key,
+stock_name varchar(100) not null,
+qty numeric(20) not null,
+buy_price numeric(60,2) null,
+sell_price numeric(60,2) null,
+sl_percentage numeric(60,2) null,
+sl_price numeric(60,2) null,
+stock_id numeric(40)  null,
+user_id  varchar(40) not null,
+status varchar(40)  null,
+is_order_placed boolean not null default false,
+is_sl_placed boolean not null default false,
+is_exited boolean not null default false,
+entry_order_id varchar(60),
+sl_order_id varchar(60),
+algo_name varchar(60),
+entry_type varchar(60),
+amount_per_stock numeric(60,2) null,
+is_errored boolean not null default false);
+
+
+
+insert into public.open_trade_data(
+data_key ,
+stock_name,
+qty,
+buy_price,
+sell_price,
+sl_percentage,
+sl_price,
+stock_id,
+user_id,
+status,
+is_order_placed,
+is_sl_placed,
+is_exited,
+entry_order_id,
+sl_order_id,
+algo_name,
+entry_type,
+amount_per_stock,
+is_errored) values('79d3f426-9985-4342-866e-f9bf9a291c92','BANKNIFTY22FEB37800PE',75,0,0,20,0,0,'RS4899','',true,false,false,'220217200561728','','STRADDLE_LONG','SELL',0,false);

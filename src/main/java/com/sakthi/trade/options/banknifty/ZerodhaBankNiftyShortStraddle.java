@@ -131,10 +131,10 @@ public class ZerodhaBankNiftyShortStraddle {
                                 String today= dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
                                 String todayCaps=today.toUpperCase();
                                 userList.getUser().stream().filter(
-                                        user -> user.getStraddleConfig().isEnabled() && user.getStraddleConfig().getLotConfig().containsKey(todayCaps)
+                                        user -> user.getStraddleConfigOld().isEnabled() && user.getStraddleConfigOld().getLotConfig().containsKey(todayCaps)
                                 ).forEach( user -> {
                                     AtomicInteger qty=new AtomicInteger(1);
-                                    user.getStraddleConfig().getLotConfig().entrySet().stream().forEach(day->{
+                                    user.getStraddleConfigOld().getLotConfig().entrySet().stream().forEach(day->{
                                         String lotValue=day.getKey();
                                         if(lotValue.contains(todayCaps)) {
                                            int value=Integer.parseInt(day.getValue());
@@ -174,7 +174,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                         }
 
                                     }
-                                    user.getStraddleConfig().straddleTradeMap.put(atmBankStrikeMap.getKey(), tradeData);
+                                    user.getStraddleConfigOld().straddleTradeMap.put(atmBankStrikeMap.getKey(), tradeData);
                                 });
                             });
                         });
@@ -195,10 +195,10 @@ public class ZerodhaBankNiftyShortStraddle {
     public void sLMonitorScheduler() {
         // log.info("short straddle SLMonitor scheduler started");
 
-        userList.getUser().stream().filter(user -> user.getStraddleConfig().isEnabled()).forEach(user -> {
+        userList.getUser().stream().filter(user -> user.getStraddleConfigOld().isEnabled()).forEach(user -> {
 
-            if (user.getStraddleConfig().straddleTradeMap != null) {
-                user.getStraddleConfig().straddleTradeMap.entrySet().stream().filter(map -> map.getValue().isOrderPlaced && map.getValue().getEntryOrderId() != null)
+            if (user.getStraddleConfigOld().straddleTradeMap != null) {
+                user.getStraddleConfigOld().straddleTradeMap.entrySet().stream().filter(map -> map.getValue().isOrderPlaced && map.getValue().getEntryOrderId() != null)
                         .forEach(map -> {
                             TradeData trendTradeData = map.getValue();
                             // System.out.println(" trade data:"+new Gson().toJson(trendTradeData));
@@ -315,10 +315,10 @@ public class ZerodhaBankNiftyShortStraddle {
     public void exitPositions() throws KiteException, IOException {
         System.out.println("Straddle Exit positions scheduler started");
         ExecutorService executor = Executors.newSingleThreadExecutor();
-        userList.getUser().stream().filter(user -> user.getStraddleConfig().isEnabled()).forEach(user -> {
+        userList.getUser().stream().filter(user -> user.getStraddleConfigOld().isEnabled()).forEach(user -> {
 
-            if (user.getStraddleConfig().straddleTradeMap != null) {
-                user.getStraddleConfig().straddleTradeMap.entrySet().stream().filter(orbTradeDataEntity -> orbTradeDataEntity.getValue().isSlPlaced && !orbTradeDataEntity.getValue().isExited && !orbTradeDataEntity.getValue().isSLHit).forEach(trendMap -> {
+            if (user.getStraddleConfigOld().straddleTradeMap != null) {
+                user.getStraddleConfigOld().straddleTradeMap.entrySet().stream().filter(orbTradeDataEntity -> orbTradeDataEntity.getValue().isSlPlaced && !orbTradeDataEntity.getValue().isExited && !orbTradeDataEntity.getValue().isSLHit).forEach(trendMap -> {
                     executor.submit(() -> {
                         TradeData trendTradeData = trendMap.getValue();
                         if (trendTradeData.getSlOrderId() != null && trendTradeData.getSlOrderId() != "") {
@@ -375,8 +375,8 @@ public class ZerodhaBankNiftyShortStraddle {
                     try {
                         orderResponse = user.getKiteConnect().placeOrder(orderParams, "regular");
                         System.out.println(new Gson().toJson(orderResponse));
-                        if (user.getStraddleConfig().straddleTradeMap.get(position.tradingSymbol) != null) {
-                            user.getStraddleConfig().straddleTradeMap.get(position.tradingSymbol).isExited = true;
+                        if (user.getStraddleConfigOld().straddleTradeMap.get(position.tradingSymbol) != null) {
+                            user.getStraddleConfigOld().straddleTradeMap.get(position.tradingSymbol).isExited = true;
                         }
                         String message = MessageFormat.format("Closed Position {0}", orderParams.tradingsymbol);
                         System.out.println(message);
@@ -398,7 +398,7 @@ public class ZerodhaBankNiftyShortStraddle {
 
     @Scheduled(cron = "${straddle.monitor.position.scheduler}")
     public void monitorPositions() throws KiteException, IOException {
-        userList.getUser().stream().filter(user ->user.getStraddleConfig().isEnabled()).forEach(user -> {
+        userList.getUser().stream().filter(user ->user.getStraddleConfigOld().isEnabled()).forEach(user -> {
             List<Position> positions = null;
             try {
                 positions = user.getKiteConnect().getPositions().get("net");
@@ -407,8 +407,8 @@ public class ZerodhaBankNiftyShortStraddle {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            positions.stream().filter(position -> position.netQuantity == 0 && "MIS".equals(position.product) && user.getStraddleConfig().straddleTradeMap.get(position.tradingSymbol) != null && !user.getStraddleConfig().straddleTradeMap.get(position.tradingSymbol).isExited).forEach(position -> {
-            TradeData tradeData = user.getStraddleConfig().straddleTradeMap.get(position.tradingSymbol);
+            positions.stream().filter(position -> position.netQuantity == 0 && "MIS".equals(position.product) && user.getStraddleConfigOld().straddleTradeMap.get(position.tradingSymbol) != null && !user.getStraddleConfig().straddleTradeMap.get(position.tradingSymbol).isExited).forEach(position -> {
+            TradeData tradeData = user.getStraddleConfigOld().straddleTradeMap.get(position.tradingSymbol);
             List<com.zerodhatech.models.Order> orderList = null;
             try {
                 orderList = user.getKiteConnect().getOrders();
