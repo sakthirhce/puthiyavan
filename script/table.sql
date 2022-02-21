@@ -310,7 +310,8 @@ entry_type varchar(60),
 amount_per_stock numeric(60,2) null,
 is_errored boolean not null default false);
 
-
+ALTER TABLE open_trade_data
+ADD COLUMN is_sl_cancelled boolean default false;
 
 insert into public.open_trade_data(
 data_key ,
