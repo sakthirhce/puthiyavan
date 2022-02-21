@@ -28,6 +28,7 @@ public class OpenTradeDataEntity {
     String algoName;
     public boolean isOrderPlaced;
     public boolean isSlPlaced;
+    public boolean isSlCancelled;
     public boolean isExited;
     String entryOrderId;
     String slOrderId;
