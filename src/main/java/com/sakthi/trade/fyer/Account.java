@@ -536,7 +536,7 @@ public class Account {
     String trendPath;
     Map<String,Double> last20DayMax=new HashMap<>();
     Map<String,Double> last365Max=new HashMap<>();
-    @Scheduled(cron="${fyer.schedule.pivot.alert}")
+   // @Scheduled(cron="${fyer.schedule.pivot.alert}")
     public void findPivots() {
         SimpleDateFormat dateFormat1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.sss");
         List<StockEntity> stockEntityList=stockRepository.findAll();
