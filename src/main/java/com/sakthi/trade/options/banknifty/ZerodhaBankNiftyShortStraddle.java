@@ -78,7 +78,7 @@ public class ZerodhaBankNiftyShortStraddle {
     @Autowired
     UserList userList;
 
-    @Scheduled(cron = "${banknifty.historic.straddle.quote}")
+   // @Scheduled(cron = "${banknifty.historic.straddle.quote}")
     public void zerodhaBankNifty() {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -191,7 +191,7 @@ public class ZerodhaBankNiftyShortStraddle {
     }
 
 
-    @Scheduled(cron = "${stradle.sl.scheduler}")
+   // @Scheduled(cron = "${stradle.sl.scheduler}")
     public void sLMonitorScheduler() {
         // log.info("short straddle SLMonitor scheduler started");
 
@@ -311,7 +311,7 @@ public class ZerodhaBankNiftyShortStraddle {
         });
     }
 
-    @Scheduled(cron = "${straddle.exit.position.scheduler}")
+   // @Scheduled(cron = "${straddle.exit.position.scheduler}")
     public void exitPositions() throws KiteException, IOException {
         System.out.println("Straddle Exit positions scheduler started");
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -396,7 +396,7 @@ public class ZerodhaBankNiftyShortStraddle {
             }});
     }
 
-    @Scheduled(cron = "${straddle.monitor.position.scheduler}")
+   // @Scheduled(cron = "${straddle.monitor.position.scheduler}")
     public void monitorPositions() throws KiteException, IOException {
         userList.getUser().stream().filter(user ->user.getStraddleConfigOld().isEnabled()).forEach(user -> {
             List<Position> positions = null;

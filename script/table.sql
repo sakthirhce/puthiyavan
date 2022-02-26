@@ -332,4 +332,4 @@ sl_order_id,
 algo_name,
 entry_type,
 amount_per_stock,
-is_errored) values('79d3f426-9985-4342-866e-f9bf9a291c92','BANKNIFTY22FEB37800PE',75,0,0,20,0,0,'RS4899','',true,false,false,'220217200561728','','STRADDLE_LONG','SELL',0,false);
+is_errored) values('179d3f426-9985-4342-866e-f9bf9a291c92','BANKNIFTY2230336400PE',125,800,0,20,600,14664706,'RS4899','',true,false,false,'220247200561728','','STRADDLE_LONG','BUY',0,false);

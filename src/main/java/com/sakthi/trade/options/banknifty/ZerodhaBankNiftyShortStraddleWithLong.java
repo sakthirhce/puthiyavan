@@ -312,7 +312,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                 List<Order> orders = user.getKiteConnect().getOrders();
                 List<Position> positions = user.getKiteConnect().getPositions().get("net");
                 System.out.println(positions);
-                openTradeDataEntities.stream().filter(openTradeDataEntity -> !openTradeDataEntity.isExited).forEach(openTradeDataEntity -> {
+                openTradeDataEntities.stream().filter(openTradeDataEntity -> !openTradeDataEntity.isExited && user.getName().equals(openTradeDataEntity.getUserId())).forEach(openTradeDataEntity -> {
                             orders.stream().filter(order -> ("OPEN".equals(order.status) || "TRIGGER PENDING".equals(order.status)) && order.orderId.equals(openTradeDataEntity.getSlOrderId())).forEach(orderr -> {
                                 try {
                                     Order order = user.getKiteConnect().cancelOrder(orderr.orderId, "regular");
@@ -629,6 +629,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                         doubleToptradeData.isOrderPlaced = true;
                                                         doubleToptradeData.isSlPlaced = true;
                                                         doubleToptradeData.setBuyPrice(trendTradeData.getSlPrice());
+                                                        doubleToptradeData.setStockId(trendTradeData.getStockId());
                                                         doubleToptradeData.setSlPrice(triggerPrice);
                                                         doubleToptradeData.setQty(qty.get());
                                                         doubleToptradeData.setSlOrderId(orderd.orderId);
@@ -723,7 +724,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
     public void sLMonitorPositions() {
         userList.getUser().stream().filter(user -> user.getStraddleConfig().isNrmlEnabled()).forEach(user -> {
             if (user.getStraddleConfig().straddleTradeMap != null) {
-                user.getStraddleConfig().straddleTradeMap.entrySet().stream().filter(map -> map.getValue().isOrderPlaced && map.getValue().getEntryOrderId() != null)
+                user.getStraddleConfig().straddleTradeMap.entrySet().stream().filter(map -> map.getValue().isOrderPlaced && map.getValue().getEntryOrderId() != null && !map.getValue().isExited)
                         .forEach(openTradeData -> {
                             List<Order> orderList = null;
                             List<Position> positions = null;
