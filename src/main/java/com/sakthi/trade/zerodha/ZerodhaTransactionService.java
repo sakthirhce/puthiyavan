@@ -152,10 +152,10 @@ public class ZerodhaTransactionService {
         String nextWeekExpDate=nextWeekExpDate(calendar,currentWeekExpOff,lsHoliday);
         String instrumentURI = baseURL+instrumentURL;
         String response=transactionService.callAPI(transactionService.createZerodhaGetRequest(instrumentURI));
-        String lines[] = response.split("\\r?\\n");
+        String[] lines = response.split("\\r?\\n");
         System.out.println("output:"+ lines.length);
         for ( int j=0; j< lines.length;j++){
-            String data[] =lines[j].split(",");
+            String[] data =lines[j].split(",");
 
             if(lsSymbols.get(data[2].trim())!=null && data[9].equals("EQ") && data[11].equals("NSE")){
                // System.out.println(lines[j]);
@@ -210,5 +210,7 @@ public class ZerodhaTransactionService {
             System.out.println(map.getKey()+":"+map.getValue());
         });*/
         System.out.println(bankNiftyWeeklyOptions.size());
+        sendMessage.sendToTelegram("Total BNF current week expiry strike count :" + bankNiftyWeeklyOptions.size(), telegramToken,"-713214125");
+        sendMessage.sendToTelegram("Total BNF Next Week expiry strike count :" + bankNiftyNextWeeklyOptions.size(), telegramToken,"-713214125");
     }
 }

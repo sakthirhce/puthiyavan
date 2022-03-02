@@ -131,7 +131,7 @@ public class Account {
     @PostConstruct
     public void alertApplicationStartup() throws ParseException {
         try {
-        sendMessage.sendToTelegram("Application started successfully",telegramToken);
+        sendMessage.sendToTelegram("Application started/re-started successfully",telegramToken,"-713214125");
         }catch (Exception e){
             e.printStackTrace();
         }

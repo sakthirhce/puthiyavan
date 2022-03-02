@@ -50,8 +50,6 @@ import java.util.*;
 @Component
 public class ZerodhaAccount {
 
-    @Value("${zerodha.login.url}")
-    String zerodhaLoginURL;
     @Value("${zerodha.app.key}")
     public String zerodhaAppKey;
     @Value("${zerodha.api.secret}")
@@ -71,15 +69,8 @@ public class ZerodhaAccount {
     SendMessage sendMessage;
     @Value("${chromedriver.path}")
     String driverPath;
-    @Value("${filepath.trend}")
-    String trendPath;
     @Autowired
     TransactionService transactionService;
-    @Value("${option.banknifty.buy.max.lot}")
-    String bankniftyLot;
-
-    @Value("${option.nifty.buy.max.lot}")
-    String niftyLot;
 
     public com.zerodhatech.models.User user;
     public String token = null;
@@ -122,20 +113,20 @@ public class ZerodhaAccount {
             WebElement webElement = webDriver.findElement(By.xpath("//*[@id=\"app\"]/div[2]/div[1]/div/div[1]/div/div[2]/ul/div/li[1]"));
             Actions actions = new Actions(webDriver);
             actions.moveToElement(webElement).perform();
-            this.takeSnapShot(webDriver, "/home/hasvanth/test1.png");
+            takeSnapShot(webDriver, "/home/hasvanth/test1.png");
             //click buy
             webDriver.findElement(By.xpath("//*[@id=\"app\"]/div[2]/div[1]/div/div[1]/div/div[2]/ul/div/li/span[3]/button[2]")).click();
             Thread.sleep(1000);
-            this.takeSnapShot(webDriver, "/home/hasvanth/test2.png");
+            takeSnapShot(webDriver, "/home/hasvanth/test2.png");
 //short
 
             //mis
             webDriver.findElement(By.xpath("//html/body/div[1]/form/section/div[2]/div[1]/div/div[1]/label")).click();
-            this.takeSnapShot(webDriver, "/home/hasvanth/test4.png");
+            takeSnapShot(webDriver, "/home/hasvanth/test4.png");
 
             //market
             webDriver.findElement(By.xpath("/html/body/div[1]/form/section/div[2]/div[2]/div[2]/div[2]/div/div[1]/label")).click();
-            this.takeSnapShot(webDriver, "/home/hasvanth/test4.png");
+            takeSnapShot(webDriver, "/home/hasvanth/test4.png");
             //more options
 /*            webDriver.findElement(By.xpath("//*[@id=\"app\"]/div[3]/div/form/div[3]/div[3]/a")).click();
             this.takeSnapShot(webDriver, "/home/hasvan
@@ -145,14 +136,14 @@ public class ZerodhaAccount {
             th/test5.png") ;
 */
             webDriver.findElement(By.xpath("/html/body/div[1]/form/section/footer/div/div[2]/button[1]")).click();
-            this.takeSnapShot(webDriver, "/home/hasvanth/test3.png");
+            takeSnapShot(webDriver, "/home/hasvanth/test3.png");
 
             webDriver.findElement(By.xpath("//*[@id=\"app\"]/div[1]/div/div[2]/div[1]/a[3]/span")).click();
             Thread.sleep(2000);
-            this.takeSnapShot(webDriver, "/home/hasvanth/test5.png");
+            takeSnapShot(webDriver, "/home/hasvanth/test5.png");
             webDriver.findElement(By.xpath("//*[@id=\"app\"]/div[1]/div/div[2]/div[1]/a[4]/span")).click();
             Thread.sleep(2000);
-            this.takeSnapShot(webDriver, "/home/hasvanth/test6.png");
+            takeSnapShot(webDriver, "/home/hasvanth/test6.png");
             try {
                 sendMessage.sendToTelegram("Zerodha Token: ", telegramToken);
             } catch (Exception e) {
@@ -195,7 +186,7 @@ public class ZerodhaAccount {
     }
 
     @Scheduled(cron = "${zerodha.generate.token}")
-    public String generateAccessToken() throws IOException, InterruptedException, URISyntaxException {
+    public String generateAccessToken() {
 
         try {
 
@@ -278,15 +269,15 @@ public class ZerodhaAccount {
             webDriver.findElements(By.xpath("//input")).get(0).sendKeys(user1.name);
             webDriver.findElements(By.xpath("//input")).get(1).sendKeys(user1.password);
             webDriver.findElements(By.xpath("//button")).get(0).click();
-            this.takeSnapShot(webDriver, "/home/hasvanth/test3_"+user1.name+".png");
+            takeSnapShot(webDriver, "/home/hasvanth/test3_"+user1.name+".png");
             Thread.sleep(1000);
             String totp=getTotp(user1.totp);
             webDriver.findElements(By.xpath("//input")).get(0).sendKeys(totp);
-            this.takeSnapShot(webDriver, "/home/hasvanth/test2_"+user1.name+".png");
+            takeSnapShot(webDriver, "/home/hasvanth/test2_"+user1.name+".png");
             webDriver.findElements(By.xpath("//button")).get(0).click();
 
             Thread.sleep(1000);
-            this.takeSnapShot(webDriver, "/home/hasvanth/test1_"+user1.name+".png");
+            takeSnapShot(webDriver, "/home/hasvanth/test1_"+user1.name+".png");
                /* webDriver.findElements(By.xpath("//input")).get(0).sendKeys(zerodhaPin);
                 this.takeSnapShot(webDriver, "/home/hasvanth/test3.png");
                 webDriver.findElements(By.xpath("//button")).get(0).click();*/
@@ -303,25 +294,20 @@ public class ZerodhaAccount {
             Margin margins = kiteConnect.getMargins("equity");
             System.out.println(margins.available.cash);
             System.out.println(margins.utilised.debits);
-            sendMessage.sendToTelegram("Token :" + kiteConnect.getAccessToken(), telegramToken);
+            sendMessage.sendToTelegram("Token for user:"+user.userName+":" + kiteConnect.getAccessToken(), telegramToken,"-713214125");
+            sendMessage.sendToTelegram("Available Cash :" + margins.available.cash, telegramToken,"-713214125");
             user1.kiteConnect=kiteConnect;
             if (user1.admin){
                 transactionService.setup();
                 kiteSdk=kiteConnect;
             }
             webDriver.quit();
-            } catch (URISyntaxException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (KiteException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+            } catch (URISyntaxException | IOException | KiteException | InterruptedException e) {
             e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
             try {
-                sendMessage.sendToTelegram("Token generation failed", telegramToken);
+                sendMessage.sendToTelegram("Token generation failed", telegramToken,"-713214125");
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -499,13 +485,13 @@ public class ZerodhaAccount {
         oneYearDate.add(Calendar.DATE, -365);
         Calendar last20Days = Calendar.getInstance();
         last20Days.add(Calendar.DATE, -20);
-        zerodhaTransactionService.lsSymbols.entrySet().stream().forEach(symbolMap -> {
+        zerodhaTransactionService.lsSymbols.forEach((key, value) -> {
             try {
-                String yearMax = stockDayDataRepository.findHigh(symbolMap.getKey(), dateFormat.format(oneYearDate.getTime()));
-                String last20Max = stockDayDataRepository.findHigh(symbolMap.getKey(), dateFormat.format(last20Days.getTime()));
-                last20DayMax.put(symbolMap.getKey(), Double.parseDouble(last20Max));
-                last365Max.put(symbolMap.getKey(), Double.parseDouble(yearMax));
-            }catch (Exception e){
+                String yearMax = stockDayDataRepository.findHigh(key, dateFormat.format(oneYearDate.getTime()));
+                String last20Max = stockDayDataRepository.findHigh(key, dateFormat.format(last20Days.getTime()));
+                last20DayMax.put(key, Double.parseDouble(last20Max));
+                last365Max.put(key, Double.parseDouble(yearMax));
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         });

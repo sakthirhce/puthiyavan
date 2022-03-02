@@ -30,7 +30,9 @@ public class OpenTradeDataEntity {
     public boolean isSlPlaced;
     public boolean isSlCancelled;
     public boolean isExited;
+    public boolean isSLHit;
     String entryOrderId;
+    String exitOrderId;
     String slOrderId;
     String entryType;
     BigDecimal amountPerStock;
