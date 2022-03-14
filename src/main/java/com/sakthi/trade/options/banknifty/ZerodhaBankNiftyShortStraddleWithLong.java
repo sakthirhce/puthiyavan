@@ -232,8 +232,10 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                         String openDate = format.format(openDatetime);
                                                         if (sdf.format(openDatetime).equals(openDate + "T09:34:00")) {
                                                             BigDecimal triggerPriceTemp = ((new BigDecimal(historicalData1.close).divide(new BigDecimal(5))).add(new BigDecimal(historicalData1.close))).setScale(0, RoundingMode.HALF_UP);
+                                                            trendTradeData.setSellPrice(new BigDecimal(historicalData1.close));
                                                             triggerPriceAtomic.addAndGet(triggerPriceTemp.doubleValue());
                                                             slPrice.put(trendTradeData.getStockId(),triggerPriceTemp);
+                                                            System.out.println("setting sl price based on 9:34 close :"+trendTradeData.getStockId()+":"+triggerPriceTemp);
                                                         }
                                                     } catch (ParseException e) {
                                                         throw new RuntimeException(e);
@@ -249,7 +251,6 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                         if(triggerPriceAtomic.get()>0){
                                             triggerPrice= BigDecimal.valueOf(triggerPriceAtomic.get());
                                         }
-                                        trendTradeData.setSellPrice(new BigDecimal(order.averagePrice));
                                         trendTradeData.setSellTradedPrice(new BigDecimal(order.averagePrice));
                                         trendTradeData.setSellTime(order.exchangeTimestamp.toString());
                                         trendTradeData.setSlPercentage(new BigDecimal("20"));
@@ -392,7 +393,8 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                             trendTradeData.isSLHit = true;
                                             trendTradeData.isExited = true;
                                             trendTradeData.setExitOrderId(order.orderId);
-                                            trendTradeData.setBuyPrice(new BigDecimal(order.averagePrice));
+                                            trendTradeData.setBuyPrice(trendTradeData.getSlPrice());
+                                            trendTradeData.setBuyTradedPrice(new BigDecimal(order.averagePrice));
                                             String message = MessageFormat.format("SL Hit for {0}", trendTradeData.getStockName()+":"+user.getName());
                                             System.out.println(message);
                                             sendMessage.sendToTelegram(message, telegramTokenGroup,"-713214125");
@@ -441,6 +443,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                         doubleToptradeData.isOrderPlaced = true;
                                                         doubleToptradeData.isSlPlaced = true;
                                                         doubleToptradeData.setBuyPrice(trendTradeData.getSlPrice());
+                                                        doubleToptradeData.setBuyTradedPrice(new BigDecimal(order.averagePrice));
                                                         doubleToptradeData.setStockId(trendTradeData.getStockId());
                                                         doubleToptradeData.setSlPrice(triggerPrice);
                                                         doubleToptradeData.setQty(qty.get());
@@ -465,10 +468,11 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                             trendTradeData.isSLHit = true;
                                             trendTradeData.isExited = true;
                                             trendTradeData.setExitOrderId(order.orderId);
-                                            trendTradeData.setSellPrice(new BigDecimal(order.averagePrice));
+                                            trendTradeData.setSellPrice(trendTradeData.getSlPrice());
+                                            trendTradeData.setSellTradedPrice(new BigDecimal(order.averagePrice));
                                             String message = MessageFormat.format("SL Hit for {0}", map.getKey()+":"+user.getName());
                                              System.out.println(message);
-                                            sendMessage.sendToTelegram(message, telegramTokenGroup,"-713214125");
+                                            sendMessage.sendToTelegram(message, telegramToken);
                                             mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
                                         }
 
@@ -618,9 +622,70 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
         });
     }
 
-  //  @Scheduled(cron = "${banknifty.nrml.nextday.exit.price.schedule}")
+    @Scheduled(cron = "${banknifty.nrml.nextday.exit.price.schedule}")
     public void exitPriceNrmlPositions() {
+        userList.getUser().stream().filter(user -> user.getStraddleConfig().isNrmlEnabled()).forEach(user -> {
+            try {
+                List<Order> orders = user.getKiteConnect().getOrders();
+                List<Position> positions = user.getKiteConnect().getPositions().get("net");
+                System.out.println(positions);
+                openTradeDataEntities.stream().filter(openTradeDataEntity -> !openTradeDataEntity.isExited && user.getName().equals(openTradeDataEntity.getUserId())).forEach(openTradeDataEntity -> {
+                    orders.stream().filter(order -> "COMPLETE".equals(order.status) && order.orderId.equals(openTradeDataEntity.getExitOrderId())).findFirst().ifPresent(orderr -> {
+                        try {
+                            Date date = new Date();
+                            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+                            String currentDate = format.format(date);
+                            try {
 
+
+                                String historicURL = "https://api.kite.trade/instruments/historical/" + openTradeDataEntity.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
+                                String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
+                                System.out.print(openTradeDataEntity.getStockName() + " history api response:" + response);
+                                HistoricalData historicalData = new HistoricalData();
+                                JSONObject json = new JSONObject(response);
+                                String status = json.getString("status");
+                                if (!status.equals("error")) {
+                                    historicalData.parseResponse(json);
+                                }
+                                if (historicalData.dataArrayList.size() > 0) {
+                                    historicalData.dataArrayList.stream().forEach(historicalData1 -> {
+                                        try {
+                                            Date openDatetime = sdf.parse(historicalData1.timeStamp);
+                                            String openDate = format.format(openDatetime);
+                                            if (sdf.format(openDatetime).equals(openDate + "T09:33:00")) {
+                                                BigDecimal triggerPriceTemp = ((new BigDecimal(historicalData1.close).divide(new BigDecimal(5))).add(new BigDecimal(historicalData1.close))).setScale(0, RoundingMode.HALF_UP);
+                                                if ("SELL".equals(orderr.transactionType)) {
+                                                    openTradeDataEntity.setSellPrice(new BigDecimal(historicalData1.close));
+                                                } else {
+                                                    openTradeDataEntity.setBuyPrice(new BigDecimal(orderr.averagePrice));
+                                                }
+                                                System.out.println("setting  9:34 exit :" + openTradeDataEntity.getStockId() + ":" + triggerPriceTemp);
+                                            }
+                                        } catch (ParseException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    });
+                                }
+
+                            }catch (Exception e){
+                                System.out.println(e.getMessage());
+                            }
+                            openTradeDataEntity.isExited = true;
+                            if("SELL".equals(orderr.transactionType)) {
+                                openTradeDataEntity.setSellTradedPrice(new BigDecimal(orderr.averagePrice));
+                            }else {
+                                openTradeDataEntity.setBuyTradedPrice(new BigDecimal(orderr.averagePrice));
+                            }
+                            saveTradeData(openTradeDataEntity);
+                        } catch (Exception e) {
+                            System.out.println(e.getMessage());
+                        }
+                    });
+                });
+            } catch (Exception | KiteException e) {
+                System.out.println(e.getMessage());
+            }
+        });
     }
     @Scheduled(cron = "${banknifty.nrml.nextday.sl.place.schedule}")
     public void placeSLNrmlPositions() {
@@ -728,7 +793,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
 
 
     @Scheduled(cron = "${banknifty.nrml.nextday.exit.schedule}")
-    public void exitSLNrmlPositions() {
+    public void exitNrmlPositions() {
         userList.getUser().stream().filter(user -> user.getStraddleConfig().isNrmlEnabled()).forEach(user -> {
             try {
                 List<Order> orders = user.getKiteConnect().getOrders();
@@ -767,9 +832,9 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                     String message = MessageFormat.format("Closed Position {0}", orderParams.tradingsymbol);
                                     System.out.println(message);
                                     if( orderParams.transactionType.equals("SELL")){
-                                        sendMessage.sendToTelegram("placed sl order for:" + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId(), telegramToken );
+                                        sendMessage.sendToTelegram(message + ":" + openTradeDataEntity.getUserId(), telegramToken );
                                     }else {
-                                        sendMessage.sendToTelegram("placed sl order for:" + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId(), telegramTokenGroup, "-713214125");
+                                        sendMessage.sendToTelegram(message + ":" + openTradeDataEntity.getUserId(), telegramTokenGroup, "-713214125");
                                     }
                                 } catch (KiteException e) {
                                     System.out.println("Error while exiting straddle order: " + e.message);
@@ -798,20 +863,6 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
 
 
         });
-        Gson gson = new Gson();
-        openTradeDataEntities.stream().filter(openTradeDataEntity -> !openTradeDataEntity.isExited).forEach(openTradeDataEntity -> {
-            try {
-                openTradeDataEntity.isExited = true;
-                String openStr = gson.toJson(openTradeDataEntity);
-                OpenTradeDataBackupEntity openTradeDataBackupEntity = gson.fromJson(openStr, OpenTradeDataBackupEntity.class);
-                openTradeDataBackupRepo.save(openTradeDataBackupEntity);
-                openTradeDataRepo.deleteById(openTradeDataEntity.getDataKey());
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-            }
-        });
-
-
     }
     @Scheduled(cron = "${banknifty.nrml.nextday.sl.monitor.schedule}")
     public void sLNrmlMonitorPositions() {
@@ -834,9 +885,11 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                     openTradeDataEntity.isExited = true;
                    openTradeDataEntity.isSLHit=true;
                     if("SELL".equals(order.transactionType)) {
-                        openTradeDataEntity.setSellPrice(new BigDecimal(order.averagePrice));
+                        openTradeDataEntity.setSellPrice(openTradeDataEntity.getSlPrice());
+                        openTradeDataEntity.setSellTradedPrice(new BigDecimal(order.averagePrice));
                     }else {
-                        openTradeDataEntity.setBuyPrice(new BigDecimal(order.averagePrice));
+                        openTradeDataEntity.setBuyTradedPrice(new BigDecimal(order.averagePrice));
+                        openTradeDataEntity.setBuyTradedPrice(openTradeDataEntity.getSlPrice());
                     }
                     saveTradeData(openTradeDataEntity);
                     if( openTradeDataEntity.getEntryType().equals("SELL")) {

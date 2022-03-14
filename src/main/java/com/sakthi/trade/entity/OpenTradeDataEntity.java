@@ -20,6 +20,8 @@ public class OpenTradeDataEntity {
     int qty;
     BigDecimal buyPrice;
     BigDecimal sellPrice;
+    BigDecimal buyTradedPrice;
+    BigDecimal sellTradedPrice;
     BigDecimal slPrice;
     BigDecimal slPercentage;
     BigDecimal entrySlipage;
