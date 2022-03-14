@@ -22,6 +22,13 @@ public class OpenTradeDataEntity {
     BigDecimal sellPrice;
     BigDecimal slPrice;
     BigDecimal slPercentage;
+    BigDecimal entrySlipage;
+    BigDecimal slSlipage;
+    BigDecimal exitSlipage;
+    BigDecimal entrySystemPrice;
+    BigDecimal exitSystemPrice;
+    BigDecimal slExecutedPrice;
+    BigDecimal profitLoss;
     String userId;
     String status;
     int stockId;
@@ -30,7 +37,8 @@ public class OpenTradeDataEntity {
     public boolean isSlPlaced;
     public boolean isSlCancelled;
     public boolean isExited;
-    public boolean isSLHit;
+    @Column(name="isslhit")
+    public boolean isSLHit=false;
     String entryOrderId;
     String exitOrderId;
     String slOrderId;

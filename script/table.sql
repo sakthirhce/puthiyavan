@@ -266,7 +266,7 @@ symbol VARCHAR(50),
 );
 
 
-create table open_trade_data(
+create table open_trade_data_backup(
 data_key varchar(100) primary key,
 stock_name varchar(100) not null,
 qty numeric(20) not null,
@@ -310,26 +310,27 @@ entry_type varchar(60),
 amount_per_stock numeric(60,2) null,
 is_errored boolean not null default false);
 
-ALTER TABLE open_trade_data
+ALTER TABLE open_trade_data_backup
 ADD COLUMN is_sl_cancelled boolean default false;
 
-insert into public.open_trade_data(
-data_key ,
-stock_name,
-qty,
-buy_price,
-sell_price,
-sl_percentage,
-sl_price,
-stock_id,
-user_id,
-status,
-is_order_placed,
-is_sl_placed,
-is_exited,
-entry_order_id,
-sl_order_id,
-algo_name,
-entry_type,
-amount_per_stock,
-is_errored) values('179d3f426-9985-4342-866e-f9bf9a291c92','BANKNIFTY2230336400PE',125,800,0,20,600,14664706,'RS4899','',true,false,false,'220247200561728','','STRADDLE_LONG','BUY',0,false);
+  insert into public.open_trade_data(
+  data_key ,
+  stock_name,
+  qty,
+  buy_price,
+  sell_price,
+  sl_percentage,
+  sl_price,
+  stock_id,
+  user_id,
+  status,
+  is_order_placed,
+  is_sl_placed,
+  is_exited,
+  entry_order_id,
+  sl_order_id,
+  algo_name,
+  entry_type,
+  amount_per_stock,is_errored,
+  create_timestamp,exit_order_id,isslhit,is_sl_cancelled) values('f001e62f-cce4-4fa9-8389-a1e73f0aa3e5',
+  'BANKNIFTY2231035500CE',75,0,765.05,20,918.00,11030018,'RS4899','',true,false,false,'220247200561728','','STRADDLE_LONG','SELL',0,false,null,'',false,false);

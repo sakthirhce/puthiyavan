@@ -63,5 +63,13 @@ public class TradeData {
     String pyramidTime1;
     int stopLossCount;
     String comment;
+    BigDecimal entrySlipage;
+    BigDecimal slSlipage;
+    boolean isSLModified;
+    BigDecimal exitSlipage;
+    BigDecimal entrySystemPrice;
+    BigDecimal exitSystemPrice;
+    BigDecimal slExecutedPrice;
+    BigDecimal profitLoss;
 
 }

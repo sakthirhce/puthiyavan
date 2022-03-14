@@ -185,7 +185,7 @@ public class ZerodhaAccount {
 
     }
 
-    @Scheduled(cron = "${zerodha.generate.token}")
+    //Scheduled(cron = "${zerodha.generate.token}")
     public String generateAccessToken() {
 
         try {
@@ -269,15 +269,15 @@ public class ZerodhaAccount {
             webDriver.findElements(By.xpath("//input")).get(0).sendKeys(user1.name);
             webDriver.findElements(By.xpath("//input")).get(1).sendKeys(user1.password);
             webDriver.findElements(By.xpath("//button")).get(0).click();
-            takeSnapShot(webDriver, "/home/hasvanth/test3_"+user1.name+".png");
+           // takeSnapShot(webDriver, "/home/ubuntu/test3_"+user1.name+".png");
             Thread.sleep(1000);
             String totp=getTotp(user1.totp);
             webDriver.findElements(By.xpath("//input")).get(0).sendKeys(totp);
-            takeSnapShot(webDriver, "/home/hasvanth/test2_"+user1.name+".png");
+           // takeSnapShot(webDriver, "/home/ubuntu/test2_"+user1.name+".png");
             webDriver.findElements(By.xpath("//button")).get(0).click();
 
             Thread.sleep(1000);
-            takeSnapShot(webDriver, "/home/hasvanth/test1_"+user1.name+".png");
+           // takeSnapShot(webDriver, "/home/ubuntu/test1_"+user1.name+".png");
                /* webDriver.findElements(By.xpath("//input")).get(0).sendKeys(zerodhaPin);
                 this.takeSnapShot(webDriver, "/home/hasvanth/test3.png");
                 webDriver.findElements(By.xpath("//button")).get(0).click();*/

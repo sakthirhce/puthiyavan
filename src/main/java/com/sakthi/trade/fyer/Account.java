@@ -838,7 +838,7 @@ public class Account {
     Map<String,StandardPivots> indexPivots=new HashMap<>();
     Map<String,StandardPivots> stockPivots=new HashMap<>();
 
-    @Scheduled(cron="${fyer.pivots.data}")
+    //@Scheduled(cron="${fyer.pivots.data}")
     public void populatePivots(){
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         Calendar fromCalendar = Calendar.getInstance();
