@@ -489,7 +489,7 @@ public class Account {
     @Autowired
     StockMonthDataRepository stockMonthDataRepository;
 
-    @Scheduled(cron="${fyer.load.day.data}")
+  //  @Scheduled(cron="${fyer.load.day.data}")
     public void loadDayData(){
         List<StockEntity> stockEntityList=stockRepository.findAll();
         try {
@@ -505,7 +505,7 @@ public class Account {
             }
         });
     }
-    @Scheduled(cron="${fyer.load.long.timeframe.data}")
+   // @Scheduled(cron="${fyer.load.long.timeframe.data}")
     public void calculateBigTimeFrame(){
         List<StockEntity> stockEntityList=stockRepository.findAll();
 /*        loadIndexWMonthlyHistory("BANKNIFTY");
@@ -598,7 +598,7 @@ public class Account {
             }
         });
     }
-    @Scheduled(cron = "${zerodha.find.max.data}")
+  //  @Scheduled(cron = "${zerodha.find.max.data}")
     public void findMax() {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         List<StockEntity> stockEntityList=stockRepository.findAll();
@@ -618,7 +618,7 @@ public class Account {
             }
         });
     }
-    @Scheduled(cron="${fyer.bnf.schedule.pivot.alert}")
+ //   @Scheduled(cron="${fyer.bnf.schedule.pivot.alert}")
     public void BNFPivotsFactCheck(){
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         Calendar currentDate=Calendar.getInstance();

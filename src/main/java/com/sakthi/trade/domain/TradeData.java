@@ -71,5 +71,6 @@ public class TradeData {
     BigDecimal exitSystemPrice;
     BigDecimal slExecutedPrice;
     BigDecimal profitLoss;
+    int rentryCount;
 
 }

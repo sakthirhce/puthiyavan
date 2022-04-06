@@ -14,4 +14,6 @@ public class StraddleConfig {
     public Map<String, TradeData> straddleTradeMap = new HashMap<>();
     public Map<String, String> lotConfig;
     public BuyConfig buyConfig;
+    public ReverseEntry reverseEntry;
+
 }

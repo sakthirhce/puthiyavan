@@ -66,6 +66,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.websocket.Session;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -1031,5 +1032,11 @@ public class AutomationController {
     @GetMapping("/binanceRSITrigger")
     public void binanceRSITrigger() throws BinanceApiException {
         binanceTrendlive.binanceRSITrendLive();
+    }
+    @GetMapping("/sendDocumentTest")
+    public void testTelegram(){
+        File file= new File("/home/hasvanth/Downloads/BANKNIFTY/2022/Feb/2022-02-24/34500PE.json");
+//        sendMessage.sendDocumentToTelegram(file,"1162339611:AAGTezAs6970OmLwhcBuTlef_-dsfcoQi_o","-713214125");
+
     }
 }

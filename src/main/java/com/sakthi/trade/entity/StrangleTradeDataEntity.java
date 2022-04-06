@@ -35,6 +35,9 @@ public class StrangleTradeDataEntity {
     BigDecimal amountPerStock;
     public boolean isErrored;
     public Date createTimestamp;
+    public boolean isSlCancelled;
+    @Column(name="isslhit")
+    public boolean isSLHit=false;
 }
 
 

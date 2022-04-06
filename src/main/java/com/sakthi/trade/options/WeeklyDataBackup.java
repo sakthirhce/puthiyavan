@@ -2,6 +2,8 @@ package com.sakthi.trade.options;
 
 import com.opencsv.exceptions.CsvValidationException;
 import com.sakthi.trade.fyer.service.TransactionService;
+import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.util.ZipUtils;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +35,12 @@ public class WeeklyDataBackup {
 
     @Value("${filepath.trend}")
     String trendPath;
+
+    @Autowired
+    SendMessage sendMessage;
+
+    @Autowired
+    ZipUtils zipUtils;
 
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
     public Map<String,String> lsHoliday=new HashMap<>();
@@ -115,6 +123,10 @@ public class WeeklyDataBackup {
 
                 });
             });
+        zipUtils.zipExpData(expFolder.getPath(),currentExp);
+        File zipPath=new File(expFolder.getPath()+"/"+currentExp+".zip");
+      //  sendMessage.sendDocumentToTelegram(zipPath,"1162339611:AAGTezAs6970OmLwhcBuTlef_-dsfcoQi_o","-713214125");
+
         }
     }
 }

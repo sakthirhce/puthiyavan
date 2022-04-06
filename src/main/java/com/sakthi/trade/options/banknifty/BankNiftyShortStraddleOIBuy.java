@@ -220,7 +220,7 @@ public class BankNiftyShortStraddleOIBuy {
     }
 
 
-    @Scheduled(cron = "${stradle.sl.scheduler}")
+    //@Scheduled(cron = "${stradle.sl.scheduler}")
     public void sLMonitorScheduler() {
         // log.info("short straddle SLMonitor scheduler started");
         if (straddleOITradeMap != null) {
@@ -293,7 +293,7 @@ public class BankNiftyShortStraddleOIBuy {
         }
     }
 
-    @Scheduled(cron = "${straddle.exit.position.scheduler}")
+   // @Scheduled(cron = "${straddle.exit.position.scheduler}")
     public void exitPositions() throws KiteException, IOException {
         log.info("Straddle Exit positions scheduler started");
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -347,7 +347,7 @@ public class BankNiftyShortStraddleOIBuy {
 
     }
 
-    @Scheduled(cron = "${straddle.monitor.position.scheduler}")
+    //@Scheduled(cron = "${straddle.monitor.position.scheduler}")
     public void monitorPositions() throws KiteException, IOException {
         List<Position> positions = zerodhaAccount.kiteSdk.getPositions().get("net");
         positions.stream().filter(position -> position.netQuantity == 0 && "MIS".equals(position.product) && straddleOITradeMap.get(position.tradingSymbol) != null && !straddleOITradeMap.get(position.tradingSymbol).isExited).forEach(position -> {

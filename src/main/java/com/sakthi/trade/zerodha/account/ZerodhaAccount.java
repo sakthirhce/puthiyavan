@@ -76,6 +76,8 @@ public class ZerodhaAccount {
     public String token = null;
     public KiteConnect kiteSdk;
 
+
+
     //  @Scheduled(cron="${zerodha.login.schedule}")
     public String generateToken() throws IOException, InterruptedException, URISyntaxException {
 
@@ -294,8 +296,15 @@ public class ZerodhaAccount {
             Margin margins = kiteConnect.getMargins("equity");
             System.out.println(margins.available.cash);
             System.out.println(margins.utilised.debits);
-            sendMessage.sendToTelegram("Token for user:"+user.userName+":" + kiteConnect.getAccessToken(), telegramToken,"-713214125");
-            sendMessage.sendToTelegram("Available Cash :" + margins.available.cash, telegramToken,"-713214125");
+            String botId="";
+            TelegramBot telegramBot=user1.getTelegramBot();
+            if(telegramBot !=null){
+                botId=telegramBot.getGroupId();
+            }
+            String botIdFinal=botId;
+            sendMessage.sendToTelegram("Token for user:" + user.userName + ":" + kiteConnect.getAccessToken(), telegramToken, botIdFinal);
+            sendMessage.sendToTelegram("Available Cash :" + margins.available.cash, telegramToken, botIdFinal);
+
             user1.kiteConnect=kiteConnect;
             if (user1.admin){
                 transactionService.setup();
@@ -306,8 +315,11 @@ public class ZerodhaAccount {
             e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
-            try {
-                sendMessage.sendToTelegram("Token generation failed", telegramToken,"-713214125");
+            try {      if(user1.getStraddleConfigOld().enabled) {
+                sendMessage.sendToTelegram("Token generation failed", telegramToken);
+            }else {
+                sendMessage.sendToTelegram("Token generation failed", telegramToken, "-713214125");
+            }
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -372,7 +384,7 @@ public class ZerodhaAccount {
         return cal;
 
     }
-    @Scheduled(cron="${zerodha.pivots.data}")
+   // @Scheduled(cron="${zerodha.pivots.data}")
     public void populatePivots(){
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         Calendar fromCalendar = Calendar.getInstance();
@@ -478,7 +490,7 @@ public class ZerodhaAccount {
     Map<String,Double> last20DayMax=new HashMap<>();
     Map<String,Double> last365Max=new HashMap<>();
 
-    @Scheduled(cron = "${zerodha.find.max.data}")
+  //  @Scheduled(cron = "${zerodha.find.max.data}")
     public void findMax() {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         Calendar oneYearDate = Calendar.getInstance();
