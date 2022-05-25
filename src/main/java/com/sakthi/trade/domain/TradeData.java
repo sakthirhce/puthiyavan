@@ -29,6 +29,7 @@ public class TradeData {
     BigDecimal slPercentage;
     String userId;
     String zerodhaExchangeId;
+    String parentEntry;
     public boolean isOrderPlaced;
     public boolean isSLCancelled;
     public boolean isCancelled;

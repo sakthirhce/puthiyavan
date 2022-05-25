@@ -478,14 +478,34 @@ public class ZerodhaBankNiftyShortStraddle {
                                     } else if ("COMPLETE".equals(order.status)) {
                                         trendTradeData.isSLHit = true;
                                         trendTradeData.isExited = true;
+                                        LocalDate localDate = LocalDate.now();
+                                        DayOfWeek dow = localDate.getDayOfWeek();
+                                        String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
+                                        String todayCaps = today.toUpperCase();
                                         String message = MessageFormat.format("SL Hit for {0}", trendTradeData.getStockName());
                                         log.info(message);
                                         sendMessage.sendToTelegram(message, telegramToken, botIdFinal);
-                                        if (user.getStraddleConfigOld() != null && user.getStraddleConfigOld().reverseEntry != null && user.getStraddleConfigOld().reverseEntry.isEnabled() && !trendTradeData.getStockName().contains("REENTRY")) {
+                                        if (user.getStraddleConfigOld() != null && user.getStraddleConfigOld().reverseEntry != null && user.getStraddleConfigOld().reverseEntry.isEnabled()) {
                                             ReverseEntry reverseEntry=user.getStraddleConfigOld().reverseEntry;
-                                            if (trendTradeData.getRentryCount() < reverseEntry.getCount()) {
+                                            int totalRetry=0;
+                                            AtomicInteger retryCount=new AtomicInteger();
+                                            reverseEntry.retryCountConfig.forEach((lotValue, value1) -> {
+                                                    if (lotValue.contains(todayCaps)) {
+                                                        int value = (Integer.parseInt(value1));
+                                                        retryCount.getAndSet(value);
+                                                    }
+                                                });
+                                            TradeData parentTradeData=null;
+                                            if(trendTradeData.getStockName().contains("REENTRY")){
+                                                parentTradeData=user.getStraddleConfigOld().straddleTradeMap.get(trendTradeData.getParentEntry());
+                                                totalRetry=parentTradeData.getRentryCount();
+                                            }else {
+                                                totalRetry=trendTradeData.getRentryCount();
+                                            }
+                                            if (totalRetry<retryCount.get()) {
                                                 log.info("inside reverse entry sell");
-                                                trendTradeData.setRentryCount(1);
+                                                //.setRentryCount(1);
+
                                                 OrderParams orderParams = new OrderParams();
                                                 orderParams.tradingsymbol = trendTradeData.getStockName();
                                                 orderParams.exchange = "NFO";
@@ -499,6 +519,15 @@ public class ZerodhaBankNiftyShortStraddle {
                                                 BigDecimal price = trendTradeData.getSellPrice().setScale(0, RoundingMode.HALF_UP).subtract(trendTradeData.getSellPrice().divide(new BigDecimal(100))).setScale(0, RoundingMode.HALF_UP);
                                                 orderParams.price = price.doubleValue();
                                                 TradeData reverseTrade = new TradeData();
+                                                int retryCountN=0;
+                                                if(trendTradeData.getStockName().contains("REENTRY") && parentTradeData!=null){
+                                                    retryCountN=parentTradeData.getRentryCount()+1;
+                                                    parentTradeData.setRentryCount(retryCountN);
+                                                    reverseTrade.setParentEntry(parentTradeData.getStockName());
+                                                }else if(!trendTradeData.getStockName().contains("REENTRY")){
+                                                    retryCountN=1;
+                                                    trendTradeData.setRentryCount(retryCountN);
+                                                }
                                                 reverseTrade.setStockName(trendTradeData.getStockName());
                                                 try {
                                                     orderd = user.getKiteConnect().placeOrder(orderParams, "regular");
@@ -507,7 +536,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                                     reverseTrade.setQty(trendTradeData.getQty());
                                                     reverseTrade.setEntryType("SELL");
                                                     sendMessage.sendToTelegram("reentry Straddle option order placed for strike: " + reverseTrade.getStockName(),  telegramToken,botIdFinal);
-                                                    user.getStraddleConfigOld().straddleTradeMap.put(trendTradeData.getStockName() + "-REENTRY", reverseTrade);
+                                                    user.getStraddleConfigOld().straddleTradeMap.put(trendTradeData.getStockName() + "-REENTRY_"+retryCountN, reverseTrade);
 
                                                 } catch (KiteException | IOException e) {
                                                     reverseTrade.isErrored = true;

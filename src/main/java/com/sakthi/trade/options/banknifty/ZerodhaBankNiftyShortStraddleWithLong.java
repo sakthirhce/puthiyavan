@@ -142,7 +142,6 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                     TradeData tradeData = new TradeData();
                                     String dataKey = UUID.randomUUID().toString();
                                     tradeData.setDataKey(dataKey);
-                                    tradeData.setEntryType("BUY");
                                     tradeData.setStockName(atmBankStrikeMap.getKey());
                                     try {
                                         order = user.getKiteConnect().placeOrder(orderParams, "regular");
@@ -196,7 +195,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
     @Scheduled(cron = "${straddle.nrml.sl.immediate.scheduler}")
     public void sLMonitorSchedulerImmediate() {
         userList.getUser().stream().filter(user -> user.getStraddleConfig() != null && user.getStraddleConfig().isNrmlEnabled()).forEach(user -> {
-
+try{
             if (user.getStraddleConfig().straddleTradeMap != null) {
                 BigDecimal slPercent=user.getStraddleConfig().getSl();
                 user.getStraddleConfig().straddleTradeMap.entrySet().stream().filter(map -> map.getValue().isOrderPlaced && map.getValue().getEntryOrderId() != null)
@@ -299,7 +298,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                             System.out.println("Error while placing straddle order: " + e.message);
                                             sendMessage.sendToTelegram("Error while placing straddle SL order: " + trendTradeData.getStockName() + ":" + user.getName() + ":" + " error message:" + e.message + ":" + user.getName(), telegramTokenGroup, "-713214125");
                                             e.printStackTrace();
-                                        } catch (IOException e) {
+                                        } catch (Exception e) {
                                             System.out.println("Error while placing straddle order: " + e.getMessage());
                                             sendMessage.sendToTelegram("Error while placing straddle SL order: " + trendTradeData.getStockName() + ":" + user.getName() + ":" + ": error message:" + e.getMessage() + ":" + user.getName(), telegramTokenGroup, "-713214125");
                                             e.printStackTrace();
@@ -313,6 +312,8 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                 }
                             });
                         });
+            }}catch (Exception e){
+            e.printStackTrace();
             }
         });
     }
@@ -770,7 +771,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                 orderParams.triggerPrice = tradeData.getSlPrice().doubleValue();
                                                 BigDecimal price;
                                                 if (straddleTradeMap.getKey().contains("BUY")) {
-                                                     price = tradeData.getSlPrice().subtract(tradeData.getSlPrice().divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP);
+                                                    price = tradeData.getSlPrice().subtract(tradeData.getSlPrice().divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP);
                                                     orderParams.transactionType = "SELL";
                                                 } else {
                                                     price = tradeData.getSlPrice().add(tradeData.getSlPrice().divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP);
