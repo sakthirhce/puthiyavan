@@ -24,4 +24,6 @@ public class User {
     StraddleConfig straddleConfigOld;
     StrangleConfig strangleConfig;
     TelegramBot telegramBot;
+    boolean tokenGenerated;
+    int tokenCount=0;
 }

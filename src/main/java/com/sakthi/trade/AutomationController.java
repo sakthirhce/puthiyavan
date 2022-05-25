@@ -251,7 +251,12 @@ public class AutomationController {
     public void zerodhaloginmtest() throws Exception {
         zerodhaAccount.generateMultiUserAccessToken();
     }
-
+    @Autowired
+    ZerodhaBankNiftyShortStraddleWithLong zerodhaBankNiftyShortStraddleWithLong;
+    @GetMapping("/zerodhaloadmtest")
+    public void zerodhaloadmtest() throws Exception {
+        zerodhaBankNiftyShortStraddleWithLong.loadNrmlPositions();
+    }
 
     @GetMapping("/zerodha_instrument")
     public void generateInstrument() throws Exception {

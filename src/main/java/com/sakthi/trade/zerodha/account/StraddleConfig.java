@@ -3,6 +3,7 @@ package com.sakthi.trade.zerodha.account;
 import com.sakthi.trade.domain.TradeData;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,7 @@ import java.util.Map;
 public class StraddleConfig {
     boolean enabled;
     boolean nrmlEnabled;
+    BigDecimal sl;
     public Map<String, TradeData> straddleTradeMap = new HashMap<>();
     public Map<String, String> lotConfig;
     public BuyConfig buyConfig;

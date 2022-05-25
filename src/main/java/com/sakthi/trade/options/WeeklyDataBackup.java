@@ -123,8 +123,8 @@ public class WeeklyDataBackup {
 
                 });
             });
-        zipUtils.zipExpData(expFolder.getPath(),currentExp);
-        File zipPath=new File(expFolder.getPath()+"/"+currentExp+".zip");
+      /*  zipUtils.zipExpData(expFolder.getPath(),currentExp);
+        File zipPath=new File(expFolder.getPath()+"/"+currentExp+".zip");*/
       //  sendMessage.sendDocumentToTelegram(zipPath,"1162339611:AAGTezAs6970OmLwhcBuTlef_-dsfcoQi_o","-713214125");
 
         }

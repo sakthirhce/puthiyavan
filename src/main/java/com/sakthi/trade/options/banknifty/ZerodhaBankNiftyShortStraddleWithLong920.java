@@ -395,7 +395,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong920 {
                                         String message = MessageFormat.format("Broker Cancelled SL Order for {0}", trendTradeData.getStockName() + ":" + user.getName());
                                         System.out.println(message);
                                         sendMessage.sendToTelegram(message, telegramTokenGroup, "-713214125");
-                                    }
+                                    }/*
                                     if (order.orderId.equals(trendTradeData.getSlOrderId())){
                                         if(("OPEN".equals(order.status) || "TRIGGER PENDING".equals(order.status))  && !trendTradeData.isExited){
                                             System.out.println("inside open sl cancellation method");
@@ -411,7 +411,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong920 {
                                                     }
                                             );
                                         }
-                                    }
+                                    }*/
                                     if ("COMPLETE".equals(order.status)) {
                                         if ("BUY".equals(order.transactionType)) {
                                             trendTradeData.isSLHit = true;
@@ -631,7 +631,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong920 {
                     positions.stream().filter(position -> "NRML".equals(position.product) && openTradeDataEntity.getStockName().equals(position.tradingSymbol) && (position.netQuantity != 0)).findFirst().ifPresent(position -> {
                         int positionQty = Math.abs(position.netQuantity);
                         if (positionQty != openTradeDataEntity.getQty()) {
-                            openTradeDataEntity.setQty(positionQty);
+                          //  openTradeDataEntity.setQty(positionQty);
                             if ("SELL".equals(openTradeDataEntity.getEntryType())) {
                                 System.out.println("Position qty mismatch for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ", over riding position qty as trade qty.");
                                 sendMessage.sendToTelegram("Position qty mismatch for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ", over riding position qty as trade qty.", telegramTokenGroup, "-713214125");
