@@ -234,7 +234,7 @@ try{
                                                             String openDate = format.format(openDatetime);
                                                             if (sdf.format(openDatetime).equals(openDate + "T09:34:00")) {
                                                                 //BigDecimal triggerPriceTemp = ((new BigDecimal(historicalData1.close).divide(new BigDecimal(5))).add(new BigDecimal(historicalData1.close))).setScale(0, RoundingMode.HALF_UP);
-                                                                BigDecimal triggerPriceTemp=MathUtils.percentageValueOfAmount(slPercent,new BigDecimal(historicalData1.close));
+                                                                BigDecimal triggerPriceTemp=(MathUtils.percentageValueOfAmount(slPercent,new BigDecimal(historicalData1.close)).add(new BigDecimal(historicalData1.close))).setScale(0, RoundingMode.HALF_UP);
                                                                 trendTradeData.setSellPrice(new BigDecimal(historicalData1.close));
                                                                 triggerPriceAtomic.addAndGet(triggerPriceTemp.doubleValue());
                                                                 slPrice.put(trendTradeData.getStockId(), triggerPriceTemp);
@@ -367,7 +367,7 @@ try{
                                                         String openDate = format.format(openDatetime);
                                                         if (sdf.format(openDatetime).equals(openDate + "T09:34:00")) {
                                                            // BigDecimal triggerPriceTemp = ((new BigDecimal(historicalData1.close).divide(new BigDecimal(5))).add(new BigDecimal(historicalData1.close))).setScale(0, RoundingMode.HALF_UP);
-                                                            BigDecimal triggerPriceTemp=MathUtils.percentageValueOfAmount(slPercent,new BigDecimal(historicalData1.close));
+                                                            BigDecimal triggerPriceTemp=(MathUtils.percentageValueOfAmount(slPercent,new BigDecimal(historicalData1.close)).add(new BigDecimal(historicalData1.close))).setScale(0, RoundingMode.HALF_UP);
                                                             trendTradeData.setSellPrice(new BigDecimal(historicalData1.close));
                                                             triggerPriceAtomic.addAndGet(triggerPriceTemp.doubleValue());
                                                             slPrice.put(trendTradeData.getStockId(), triggerPriceTemp);
@@ -487,7 +487,7 @@ try{
                                             //doubleTopCount.getAndAdd(1);
                                             if (user.getStraddleConfig().buyConfig != null && user.getStraddleConfig().buyConfig.isEnabled()) {
                                             //    BigDecimal triggerPrice = trendTradeData.getSlPrice().subtract(trendTradeData.getSlPrice().divide(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP);
-                                                BigDecimal triggerPriceTemp=MathUtils.percentageValueOfAmount(slPercent,trendTradeData.getSlPrice());
+                                                BigDecimal triggerPriceTemp=(trendTradeData.getSlPrice().subtract(MathUtils.percentageValueOfAmount(slPercent,trendTradeData.getSlPrice()))).setScale(0, RoundingMode.HALF_UP);
                                                 System.out.println("inside options stop sell filter" + trendTradeData.getStockName());
                                                 LocalDate localDate = LocalDate.now();
                                                 DayOfWeek dow = localDate.getDayOfWeek();
