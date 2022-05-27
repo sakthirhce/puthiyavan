@@ -46,6 +46,7 @@ public class ZerodhaTransactionService {
     public Map<String,String> niftyVix  =new HashMap<>();
     public Map<String,Map<String,String>> bankNiftyWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>> bankNiftyNextWeeklyOptions=new HashMap<>();
+    public Map<String,Map<String,String>> niftyNextWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>> niftyWeeklyOptions=new HashMap<>();
     public String expDate;
     @Autowired
@@ -201,6 +202,17 @@ public class ZerodhaTransactionService {
                     Map<String,String> map=new HashMap<>();
                     map.put(data[2],data[0]);
                     niftyWeeklyOptions.put(data[6], map);
+                }
+            }
+            if( index.equals("NIFTY") &&  data[5].equals(nextWeekExpDate) &&  data[10].equals("NFO-OPT") && data[11].equals("NFO")){
+                if(niftyNextWeeklyOptions.get(data[6])!=null){
+                    Map<String,String> map=niftyNextWeeklyOptions.get(data[6]);
+                    map.put(data[2],data[0]);
+                    niftyNextWeeklyOptions.put(data[6], map);
+                }else {
+                    Map<String,String> map=new HashMap<>();
+                    map.put(data[2],data[0]);
+                    niftyNextWeeklyOptions.put(data[6], map);
                 }
             }
 

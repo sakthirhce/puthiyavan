@@ -20,6 +20,8 @@ public class User {
     boolean admin;
     boolean enabled;
     StraddleConfig straddleConfig;
+    StraddleConfig niftyBuy935;
+    StraddleConfig niftyBuy1035;
     StraddleConfig straddleConfig920;
     StraddleConfig straddleConfigOld;
     StrangleConfig strangleConfig;
