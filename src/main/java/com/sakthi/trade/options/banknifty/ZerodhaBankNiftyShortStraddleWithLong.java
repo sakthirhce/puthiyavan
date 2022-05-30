@@ -284,25 +284,29 @@ try{
                                         orderParams.transactionType = "BUY";
                                         orderParams.validity = "DAY";
                                         Order orderResponse;
-                                        try {
+                                        try{
                                             orderResponse = user.getKiteConnect().placeOrder(orderParams, "regular");
                                             trendTradeData.setSlOrderId(orderResponse.orderId);
                                             trendTradeData.setSlPrice(new BigDecimal(orderParams.triggerPrice));
                                             trendTradeData.isSlPlaced = true;
                                             mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
+                                        }catch (Exception | KiteException e){
+                                            sendMessage.sendToTelegram("Placed SL order for: " + trendTradeData.getStockName() + ":" + user.getName(), telegramTokenGroup, "-713214125");
+                                        }
+                                        double slippage=0;
+                                        try {
+
                                             BigDecimal slipage = (trendTradeData.getSellTradedPrice().subtract(trendTradeData.getSellPrice())).multiply(new BigDecimal(25)).setScale(0, BigDecimal.ROUND_UP);
-                                            sendMessage.sendToTelegram("Placed SL order for: " + trendTradeData.getStockName() + ":" + user.getName() + ": sell slipage" + slipage.toString(), telegramTokenGroup, "-713214125");
+                                            slippage=slipage.doubleValue();
                                             System.out.println("Placed SL order for: " + trendTradeData.getStockName() + ":" + user.getName() + ":" + trendTradeData.getSlOrderId());
 
-                                        } catch (KiteException e) {
-                                            System.out.println("Error while placing straddle order: " + e.message);
-                                            sendMessage.sendToTelegram("Error while placing straddle SL order: " + trendTradeData.getStockName() + ":" + user.getName() + ":" + " error message:" + e.message + ":" + user.getName(), telegramTokenGroup, "-713214125");
-                                            e.printStackTrace();
                                         } catch (Exception e) {
                                             System.out.println("Error while placing straddle order: " + e.getMessage());
                                             sendMessage.sendToTelegram("Error while placing straddle SL order: " + trendTradeData.getStockName() + ":" + user.getName() + ":" + ": error message:" + e.getMessage() + ":" + user.getName(), telegramTokenGroup, "-713214125");
                                             e.printStackTrace();
                                         }
+                                        sendMessage.sendToTelegram("Sl slipage: " + trendTradeData.getStockName() + ":" + user.getName() + ": sell slipage" + slippage, telegramTokenGroup, "-713214125");
+
                                     } else if ("REJECTED".equals(order.status)) {
                                         String message = MessageFormat.format("Entry order placement rejected for {0}", map.getKey() + ":" + user.getName() + ":" + order.status + ":" + order.statusMessage);
                                         System.out.println(message);
