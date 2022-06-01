@@ -716,7 +716,7 @@ public class ZerodhaBankNiftyShortStraddle {
                     }
                 });
             }catch (Exception e){
-                log.info("error while executing monitorsl:"+user.getName()+":"+e.getMessage());
+                log.info("error while executing monitorsl:"+user.getName()+":"+e);
             }
         });
     }

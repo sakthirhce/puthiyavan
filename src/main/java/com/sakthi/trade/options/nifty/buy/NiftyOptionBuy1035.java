@@ -113,8 +113,9 @@ public class NiftyOptionBuy1035 {
                         atmStrikesStraddle.entrySet().stream().filter(atmStrikeStraddle -> atmStrikeStraddle.getKey().contains(String.valueOf(atmStrike))).forEach(atmNiftyStrikeMap -> {
                             executorService.submit(() -> {
                                 AtomicDouble triggerPriceAtomic = new AtomicDouble();
+                                AtomicDouble closePriceAtomic = new AtomicDouble();
                                 try {
-                                    String historicPriceURL = "https://api.kite.trade/instruments/historical/" + atmNiftyStrikeMap.getValue() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
+                                    String historicPriceURL = "https://api.kite.trade/instruments/historical/" + atmNiftyStrikeMap.getValue() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+10:34:00";
                                     String priceResponse = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicPriceURL));
                                     System.out.print(priceResponse);
                                     HistoricalData historicalPriceData = new HistoricalData();
@@ -122,15 +123,17 @@ public class NiftyOptionBuy1035 {
                                     String responseStatus = priceJson.getString("status");
 
                                     if (!responseStatus.equals("error")) {
-                                        historicalPriceData.parseResponse(json);
+                                        historicalPriceData.parseResponse(priceJson);
                                         System.out.println();
                                         historicalPriceData.dataArrayList.stream().forEach(historicalDataPrice -> {
                                             try {
                                                 Date priceDatetime = sdf.parse(historicalDataPrice.timeStamp);
                                                 String priceDate = format.format(priceDatetime);
+
                                                 if (sdf.format(priceDatetime).equals(priceDate + "T10:34:00")) {
+                                                    closePriceAtomic.getAndSet(historicalDataPrice.close);
                                                     //BigDecimal triggerPriceTemp = ((new BigDecimal(historicalData1.close).divide(new BigDecimal(5))).add(new BigDecimal(historicalData1.close))).setScale(0, RoundingMode.HALF_UP);
-                                                    BigDecimal triggerPriceTemp = (MathUtils.percentageValueOfAmount(new BigDecimal(10), new BigDecimal(historicalData1.close)).add(new BigDecimal(historicalDataPrice.close))).setScale(0, RoundingMode.HALF_UP);
+                                                    BigDecimal triggerPriceTemp = (MathUtils.percentageValueOfAmount(new BigDecimal(10), new BigDecimal(historicalDataPrice.close)).add(new BigDecimal(historicalDataPrice.close))).setScale(0, RoundingMode.HALF_UP);
                                                     triggerPriceAtomic.addAndGet(triggerPriceTemp.doubleValue());
                                                     System.out.println("buy trigger price based on 9:34 close :" + atmNiftyStrikeMap.getKey() + ":" + triggerPriceTemp);
                                                 }
@@ -150,7 +153,7 @@ public class NiftyOptionBuy1035 {
                                 orderParams.product = "NRML";
                                 orderParams.transactionType = "BUY";
                                 orderParams.validity = "DAY";
-                                double triggerPrice = triggerPriceAtomic.get() + historicalData1.close;
+                                double triggerPrice = triggerPriceAtomic.get() + closePriceAtomic.get()/100;
                                 orderParams.triggerPrice = triggerPrice;
                                 BigDecimal price = BigDecimal.valueOf(triggerPrice).setScale(0, RoundingMode.HALF_UP).add(BigDecimal.valueOf(triggerPrice).setScale(0, RoundingMode.HALF_UP).divide(new BigDecimal(100))).setScale(0, RoundingMode.HALF_UP);
                                 orderParams.price = price.doubleValue();

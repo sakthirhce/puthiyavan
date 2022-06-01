@@ -830,7 +830,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong920 {
 
     @Scheduled(cron = "${straddle.banknifty.run1.nextday.exit.schedule}")
     public void exitNrmlPositions() {
-        userList.getUser().stream().filter(user -> user.getStraddleConfig920().isNrmlEnabled()).forEach(user -> {
+        userList.getUser().stream().filter(user -> user.getStraddleConfig920()!=null && user.getStraddleConfig920().isNrmlEnabled()).forEach(user -> {
             try {
                 List<Order> orders = user.getKiteConnect().getOrders();
                 List<Position> positions = user.getKiteConnect().getPositions().get("net");
