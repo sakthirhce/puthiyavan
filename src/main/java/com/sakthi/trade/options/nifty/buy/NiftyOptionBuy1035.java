@@ -56,6 +56,7 @@ public class NiftyOptionBuy1035 {
     TransactionService transactionService;
     @Autowired
     ZerodhaTransactionService zerodhaTransactionService;
+    @Autowired
     SendMessage sendMessage;
 
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
