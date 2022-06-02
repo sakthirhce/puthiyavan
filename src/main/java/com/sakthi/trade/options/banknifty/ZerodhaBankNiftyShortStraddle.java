@@ -496,7 +496,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                                     }
                                                 });
                                             TradeData parentTradeData=null;
-                                            if(trendTradeData.getStockName().contains("REENTRY")){
+                                            if(map.getKey().contains("REENTRY")){
                                                 parentTradeData=user.getStraddleConfigOld().straddleTradeMap.get(trendTradeData.getParentEntry());
                                                 totalRetry=parentTradeData.getRentryCount();
                                             }else {
@@ -520,32 +520,34 @@ public class ZerodhaBankNiftyShortStraddle {
                                                 orderParams.price = price.doubleValue();
                                                 TradeData reverseTrade = new TradeData();
                                                 int retryCountN=0;
-                                                if(trendTradeData.getStockName().contains("REENTRY") && parentTradeData!=null){
+                                                if(map.getKey().contains("REENTRY") && parentTradeData!=null){
                                                     retryCountN=parentTradeData.getRentryCount()+1;
                                                     parentTradeData.setRentryCount(retryCountN);
                                                     reverseTrade.setParentEntry(parentTradeData.getStockName());
-                                                }else if(!trendTradeData.getStockName().contains("REENTRY")){
+                                                }else if(!map.getKey().contains("REENTRY")){
                                                     retryCountN=1;
                                                     trendTradeData.setRentryCount(retryCountN);
                                                 }
                                                 reverseTrade.setStockName(trendTradeData.getStockName());
+                                                String retryKey=trendTradeData.getStockName() + "_REENTRY_"+retryCountN;
                                                 try {
                                                     orderd = user.getKiteConnect().placeOrder(orderParams, "regular");
                                                     reverseTrade.setEntryOrderId(orderd.orderId);
                                                     reverseTrade.isOrderPlaced = true;
                                                     reverseTrade.setQty(trendTradeData.getQty());
                                                     reverseTrade.setEntryType("SELL");
-                                                    sendMessage.sendToTelegram("reentry Straddle option order placed for strike: " + reverseTrade.getStockName(),  telegramToken,botIdFinal);
-                                                    user.getStraddleConfigOld().straddleTradeMap.put(trendTradeData.getStockName() + "-REENTRY_"+retryCountN, reverseTrade);
+
+                                                    sendMessage.sendToTelegram("reentry Straddle option order placed for strike: "+retryKey+":" + reverseTrade.getStockName(),  telegramToken,botIdFinal);
+                                                    user.getStraddleConfigOld().straddleTradeMap.put(retryKey, reverseTrade);
 
                                                 } catch (KiteException | IOException e) {
                                                     reverseTrade.isErrored = true;
                                                     System.out.println("Error while placing straddle order: " + e.getMessage()+":"+new Gson().toJson(orderParams));
                                                     System.out.println("order reseponse: " +new Gson().toJson(orderd));
                                                     if (order != null) {
-                                                        sendMessage.sendToTelegram("Error while placing reentry straddle order: " + reverseTrade.getStockName() + ": Status: " + order.status + ": error message:" + order.statusMessage, telegramToken,botIdFinal);
+                                                        sendMessage.sendToTelegram("Error while placing reentry straddle order: "+retryKey+":" + reverseTrade.getStockName() + ": Status: " + order.status + ": error message:" + order.statusMessage, telegramToken,botIdFinal);
                                                     } else {
-                                                        sendMessage.sendToTelegram("Error while placing reentry straddle order: " + reverseTrade.getStockName(), telegramToken,botIdFinal);
+                                                        sendMessage.sendToTelegram("Error while placing reentry straddle order: "+retryKey+":" + reverseTrade.getStockName(), telegramToken,botIdFinal);
 
                                                     }
                                                     //e.printStackTrace();
@@ -663,7 +665,7 @@ public class ZerodhaBankNiftyShortStraddle {
                 });
 
             }});
-    }
+    }/*
 
     @Scheduled(cron = "${straddle.monitor.position.scheduler}")
     public void monitorPositions() throws KiteException, IOException {
@@ -684,7 +686,7 @@ public class ZerodhaBankNiftyShortStraddle {
                     e.printStackTrace();
                 }
 
-                positions.stream().filter(position -> position.netQuantity == 0 && "MIS".equals(position.product) && user.getStraddleConfigOld() != null && user.getStraddleConfigOld().straddleTradeMap != null && user.getStraddleConfigOld().straddleTradeMap.get(position.tradingSymbol) != null && !user.getStraddleConfig().straddleTradeMap.get(position.tradingSymbol).isExited).forEach(position -> {
+                positions.stream().filter(position -> position.netQuantity == 0 && "MIS".equals(position.product) && user.getStraddleConfigOld().straddleTradeMap != null && user.getStraddleConfigOld().straddleTradeMap.get(position.tradingSymbol) != null && !user.getStraddleConfig().straddleTradeMap.get(position.tradingSymbol).isExited).forEach(position -> {
                     if (user.getStraddleConfigOld() != null) {
                         TradeData tradeData = user.getStraddleConfigOld().straddleTradeMap.get(position.tradingSymbol);
                         List<com.zerodhatech.models.Order> orderList = null;
@@ -719,6 +721,6 @@ public class ZerodhaBankNiftyShortStraddle {
                 log.info("error while executing monitorsl:"+user.getName()+":"+e);
             }
         });
-    }
+    }*/
 
 }
