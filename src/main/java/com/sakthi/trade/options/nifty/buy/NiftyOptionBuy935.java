@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 
 @Component
 @Slf4j
@@ -68,7 +69,7 @@ public class NiftyOptionBuy935 {
     public String getAlgoName() {
         return "NIFTY_BUY_935";
     }
-
+    public static final Logger LOGGER = Logger.getLogger(NiftyOptionBuy935.class.getName());;
     @Scheduled(cron = "${niftyBuy935.schedule.entry}")
     public void buy() throws ParseException, KiteException, IOException {
 
@@ -80,13 +81,12 @@ public class NiftyOptionBuy935 {
 
         String historicURL = "https://api.kite.trade/instruments/historical/" + nifty + "/5minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+11:15:00";
         String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
-        System.out.print(response);
+        LOGGER.info(response);
         HistoricalData historicalData = new HistoricalData();
         JSONObject json = new JSONObject(response);
         String status = json.getString("status");
         if (!status.equals("error")) {
             historicalData.parseResponse(json);
-            System.out.println();
             historicalData.dataArrayList.forEach(historicalData1 -> {
                 try {
                     Date openDatetime = sdf.parse(historicalData1.timeStamp);
@@ -119,7 +119,6 @@ public class NiftyOptionBuy935 {
 
                                     if (!responseStatus.equals("error")) {
                                         historicalPriceData.parseResponse(priceJson);
-                                        System.out.println();
                                         historicalPriceData.dataArrayList.forEach(historicalDataPrice -> {
                                             try {
                                                 Date priceDatetime = sdf.parse(historicalDataPrice.timeStamp);
@@ -129,7 +128,7 @@ public class NiftyOptionBuy935 {
                                                     //BigDecimal triggerPriceTemp = ((new BigDecimal(historicalData1.close).divide(new BigDecimal(5))).add(new BigDecimal(historicalData1.close))).setScale(0, RoundingMode.HALF_UP);
                                                     BigDecimal triggerPriceTemp = (MathUtils.percentageValueOfAmount(new BigDecimal(10), new BigDecimal(historicalDataPrice.close)).add(new BigDecimal(historicalDataPrice.close))).setScale(0, RoundingMode.HALF_UP);
                                                     triggerPriceAtomic.addAndGet(triggerPriceTemp.doubleValue());
-                                                    System.out.println("buy trigger price based on 9:34 close :" + atmNiftyStrikeMap.getKey() + ":" + triggerPriceTemp);
+                                                    LOGGER.info("buy trigger price based on 9:34 close :" + atmNiftyStrikeMap.getKey() + ":" + triggerPriceTemp);
                                                 }
                                             } catch (ParseException e) {
                                                 throw new RuntimeException(e);
@@ -184,7 +183,7 @@ public class NiftyOptionBuy935 {
                                         user.getNiftyBuy935().straddleTradeMap.put(atmNiftyStrikeMap.getKey(), tradeData);
                                         mapTradeDataToSaveOpenTradeDataEntity(tradeData);
                                         String message="option buy limit order placed for for user:" + user.getName() + " strike: " + atmNiftyStrikeMap.getKey();
-                                        System.out.println(message);
+                                        LOGGER.info(message);
                                         try {
                                             sendMessage.sendToTelegram(message, telegramToken);
                                         }catch (Exception e){
@@ -192,12 +191,12 @@ public class NiftyOptionBuy935 {
                                         }
                                     } catch (KiteException e) {
                                         tradeData.isErrored = true;
-                                        log.info("Error while placing nifty buy order: "+ atmNiftyStrikeMap.getKey()+":" + e);
+                                        LOGGER.info("Error while placing nifty buy order: "+ atmNiftyStrikeMap.getKey()+":" + e);
                                         sendMessage.sendToTelegram("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + user.getName() + ",Exception:" + e.getMessage(), telegramToken);
 
                                     } catch (IOException e) {
                                         tradeData.isErrored = true;
-                                        log.info("Error while placing nifty buy order: "+ atmNiftyStrikeMap.getKey()+":" + e);
+                                        LOGGER.info("Error while placing nifty buy order: "+ atmNiftyStrikeMap.getKey()+":" + e);
                                         if (order != null) {
                                             sendMessage.sendToTelegram("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + order.statusMessage + ",Exception:" + e.getMessage(), telegramToken, "-713214125");
                                         } else {
@@ -218,7 +217,7 @@ public class NiftyOptionBuy935 {
 
     @Scheduled(cron = "${niftyBuy935.schedule.slMonitor}")
     public void sLMonitorScheduler() {
-          System.out.println("short straddle SLMonitor scheduler started");
+        //  System.out.println("short straddle SLMonitor scheduler started");
 
         userList.getUser().stream().filter(user -> user.getNiftyBuy935() != null && user.getNiftyBuy935().isNrmlEnabled()).forEach(user -> {
 
@@ -240,7 +239,7 @@ public class NiftyOptionBuy935 {
                                             trendTradeData.isSLCancelled = true;
 
                                             String message = MessageFormat.format("Broker Cancelled SL Order for {0}", trendTradeData.getStockName() + ":" + user.getName());
-                                            System.out.println(message);
+                                            LOGGER.info(message);
                                             try {
                                                 sendMessage.sendToTelegram(message, telegramToken);
                                             }catch (Exception e){
@@ -252,11 +251,12 @@ public class NiftyOptionBuy935 {
                                     }
                                     if (trendTradeData.getEntryOrderId().equals(order.orderId) && !trendTradeData.isSlPlaced) {
                                         if ("COMPLETE".equals(order.status)) {
-                                            System.out.println("buy completed"+trendTradeData.trueDataSymbol+":"+trendTradeData.getEntryOrderId());
+
                                             if ("BUY".equals(order.transactionType)) {
+                                                LOGGER.info("buy completed"+trendTradeData.trueDataSymbol+":"+trendTradeData.getEntryOrderId());
                                                 try
                                                 {
-                                                System.out.println("buy completed");
+                                             //   System.out.println("buy completed");
                                                 trendTradeData.setBuyTradedPrice(new BigDecimal(order.averagePrice));
                                                 try {
                                                     BigDecimal slipage = (trendTradeData.getBuyPrice().subtract(trendTradeData.getBuyTradedPrice())).multiply(new BigDecimal(50)).setScale(0, RoundingMode.UP);
@@ -292,15 +292,16 @@ public class NiftyOptionBuy935 {
                                                     trendTradeData.setSlPrice(triggerPriceTemp);
                                                     mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
                                                     try {
+                                                        LOGGER.info("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL");
                                                         sendMessage.sendToTelegram("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL", telegramToken);
                                                     }catch (Exception e){
-                                                        log.error("error:"+e);
+                                                        LOGGER.info("error:"+e);
                                                     }
                                                     ///sendMessage.sendToTelegram("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL", telegramToken);
 
                                                 } catch (KiteException | IOException e) {
                                                     // tradeData.isErrored = true;
-                                                    System.out.println("Nifty option order: " + e.getMessage() + ":" + user.getName());
+                                                    LOGGER.info("Nifty option order: " + e.getMessage() + ":" + user.getName());
                                                     sendMessage.sendToTelegram("Nifty option order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + order.statusMessage, telegramToken);
                                                     //e.printStackTrace();
                                                 }
@@ -318,7 +319,7 @@ public class NiftyOptionBuy935 {
                                             trendTradeData.setSellTradedPrice(new BigDecimal(order.averagePrice));
                                             BigDecimal slipage = (trendTradeData.getSellTradedPrice().subtract(trendTradeData.getSellPrice())).multiply(new BigDecimal(25)).setScale(0, RoundingMode.UP);
                                             String message = MessageFormat.format("SL Hit for {0}" + ": sl sell slipage" + slipage.toString(), map.getKey() + ":" + user.getName());
-                                            System.out.println(message);
+                                            LOGGER.info(message);
                                             sendMessage.sendToTelegram(message, telegramToken);
                                             mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
                                         }
