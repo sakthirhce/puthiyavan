@@ -9,6 +9,7 @@ import com.sakthi.trade.fyer.model.PivotTimeFrame;
 import com.sakthi.trade.fyer.model.StandardPivot;
 import com.sakthi.trade.fyer.model.StandardPivots;
 import com.sakthi.trade.fyer.service.TransactionService;
+import com.sakthi.trade.options.nifty.buy.NiftyOptionBuy935;
 import com.sakthi.trade.repo.*;
 import com.sakthi.trade.telegram.SendMessage;
 import com.sakthi.trade.util.MathUtils;
@@ -45,6 +46,7 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.logging.Logger;
 
 @Slf4j
 @Component
@@ -247,7 +249,7 @@ public class ZerodhaAccount {
         return null;
     }
 
-
+    public static final Logger LOGGER = Logger.getLogger(ZerodhaAccount.class.getName());;
     @Autowired
     UserList userList;
     @Scheduled(cron = "${zerodha.generate.token}")
@@ -295,8 +297,8 @@ public class ZerodhaAccount {
                     token = user.accessToken;
                     kiteConnect.setPublicToken(user.publicToken);
                     Margin margins = kiteConnect.getMargins("equity");
-                    System.out.println(margins.available.cash);
-                    System.out.println(margins.utilised.debits);
+                    LOGGER.info(margins.available.cash);
+                    LOGGER.info(margins.utilised.debits);
                     String botId = "";
                     TelegramBot telegramBot = user1.getTelegramBot();
                     if (telegramBot != null) {

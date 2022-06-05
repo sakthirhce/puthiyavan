@@ -69,7 +69,7 @@ public class NiftyOptionBuy935 {
     public String getAlgoName() {
         return "NIFTY_BUY_935";
     }
-    public static final Logger LOGGER = Logger.getLogger(NiftyOptionBuy935.class.getName());;
+    public static final Logger LOGGER = Logger.getLogger(NiftyOptionBuy935.class.getName());
     @Scheduled(cron = "${niftyBuy935.schedule.entry}")
     public void buy() throws ParseException, KiteException, IOException {
 
@@ -275,10 +275,9 @@ public class NiftyOptionBuy935 {
                                                 orderParams.tradingsymbol = trendTradeData.getStockName();
                                                 orderParams.exchange = "NFO";
                                                 orderParams.quantity = trendTradeData.getQty();
-                                                BigDecimal triggerPrice = trendTradeData.getBuyPrice().subtract(triggerPriceTemp);
-                                                orderParams.triggerPrice = triggerPrice.doubleValue();
+                                                orderParams.triggerPrice = triggerPriceTemp.doubleValue();
 
-                                                BigDecimal price = triggerPrice.subtract(triggerPrice.divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP);
+                                                BigDecimal price = triggerPriceTemp.subtract(triggerPriceTemp.divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP);
                                                 orderParams.price = price.doubleValue();
                                                 orderParams.orderType = "SL";
                                                 orderParams.product = "NRML";

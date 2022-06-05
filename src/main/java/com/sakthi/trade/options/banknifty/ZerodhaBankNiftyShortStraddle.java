@@ -3,7 +3,6 @@ package com.sakthi.trade.options.banknifty;
 import com.google.common.util.concurrent.AtomicDouble;
 import com.google.gson.Gson;
 import com.sakthi.trade.domain.*;
-import com.sakthi.trade.eventday.EventDayConfiguration;
 import com.sakthi.trade.fyer.service.TransactionService;
 import com.sakthi.trade.telegram.SendMessage;
 import com.sakthi.trade.util.CommonUtil;
@@ -11,7 +10,6 @@ import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import com.sakthi.trade.zerodha.account.ReverseEntry;
 import com.sakthi.trade.zerodha.account.TelegramBot;
 import com.sakthi.trade.zerodha.account.UserList;
-import com.sakthi.trade.zerodha.account.ZerodhaAccount;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
 import com.zerodhatech.models.*;
 import com.zerodhatech.models.Order;
@@ -35,34 +33,24 @@ import java.time.format.TextStyle;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 
 
 @Component
 @Slf4j
 public class ZerodhaBankNiftyShortStraddle {
 
-    @Autowired
-    EventDayConfiguration eventDayConfiguration;
 
-    @Value("${filepath.trend}")
-    String trendPath;
-    @Value("${home.path}")
-    String homeFilePath;
 
     @Autowired
     CommonUtil commonUtil;
-    String expDate = "";
 
 
     @Value("${telegram.straddle.bot.token}")
     String telegramToken;
+    public static final Logger LOGGER = Logger.getLogger(ZerodhaBankNiftyShortStraddle.class.getName());
 
-    @Value("${straddle.banknifty.lot}")
-    String bankniftyLot;
 
-    @Value("${banknifty.historic.straddle.flying}")
-    String bankniftyFlyingLot;
-    AtomicInteger doubleTopCount = new AtomicInteger(0);
 
 
     @Autowired
@@ -100,13 +88,13 @@ public class ZerodhaBankNiftyShortStraddle {
         String status = json.getString("status");
         if (!status.equals("error")) {
             historicalData.parseResponse(json);
-            System.out.println();
+
             historicalData.dataArrayList.stream().forEach(historicalData1 -> {
                 try {
                     Date openDatetime = sdf.parse(historicalData1.timeStamp);
                     String openDate = format.format(openDatetime);
                     if (sdf.format(openDatetime).equals(openDate + "T09:15:00")) {
-                        System.out.println(historicalData1.close);
+                     //   LOGGER.info(historicalData1.close);
                         int atmStrike = commonUtil.findATM((int) historicalData1.close);
                         log.info("Bank Nifty:" + atmStrike);
                         //check usuage of bankniftyFlyingLot
@@ -116,12 +104,12 @@ public class ZerodhaBankNiftyShortStraddle {
                     }*/
                         final Map<String, String> atmStrikesStraddle = zerodhaTransactionService.bankNiftyWeeklyOptions.get(String.valueOf(atmStrike));
                         atmStrikesStraddle.entrySet().forEach(entry -> {
-                            System.out.println(entry.getKey() + " " + entry.getValue());
+                            LOGGER.info(entry.getKey() + " " + entry.getValue());
                             atmStrikeMap.put(entry.getKey(),entry.getValue());
                         });
                         atmStrikesStraddle.entrySet().stream().filter(atmStrikeStraddle -> atmStrikeStraddle.getKey().contains(String.valueOf(atmStrike))).forEach(atmBankStrikeMap -> {
                             executorService.submit(() -> {
-                                System.out.println(atmBankStrikeMap.getKey());
+                                LOGGER.info(atmBankStrikeMap.getKey());
                                 OrderParams orderParams = new OrderParams();
                                 orderParams.tradingsymbol = atmBankStrikeMap.getKey();
                                 orderParams.exchange = "NFO";
@@ -165,7 +153,7 @@ public class ZerodhaBankNiftyShortStraddle {
 
                                     } catch (KiteException e) {
                                         tradeData.isErrored = true;
-                                        System.out.println("Error while placing straddle order: " + e.message);
+                                        LOGGER.info("Error while placing straddle order: " + e.message);
                                         if (order != null) {
                                             sendMessage.sendToTelegram("Error while placing straddle order: " + atmBankStrikeMap.getKey() + ": Status: " + order.status + ": error message:" + order.statusMessage, telegramToken,botIdFinal);
                                         } else {
@@ -216,11 +204,11 @@ public class ZerodhaBankNiftyShortStraddle {
                 user.getStraddleConfigOld().straddleTradeMap.entrySet().stream().filter(map -> map.getValue().isOrderPlaced && map.getValue().getEntryOrderId() != null)
                         .forEach(map -> {
                             TradeData trendTradeData = map.getValue();
-                            // System.out.println(" trade data:"+new Gson().toJson(trendTradeData));
+                            // LOGGER.info(" trade data:"+new Gson().toJson(trendTradeData));
                             List<com.zerodhatech.models.Order> orderList = null;
                             try {
                                 orderList = user.getKiteConnect().getOrders();
-                                //   System.out.println("get trade response:"+new Gson().toJson(orderList));
+                                //   LOGGER.info("get trade response:"+new Gson().toJson(orderList));
                             } catch (KiteException e) {
                                 e.printStackTrace();
                             } catch (IOException e) {
@@ -246,7 +234,7 @@ public class ZerodhaBankNiftyShortStraddle {
 
                                             if (!status.equals("error")) {
                                                 historicalData.parseResponse(json);
-                                                System.out.println();
+
                                                 historicalData.dataArrayList.stream().forEach(historicalData1 -> {
                                                     try {
                                                         Date openDatetime = sdf.parse(historicalData1.timeStamp);
@@ -256,7 +244,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                                             trendTradeData.setSellPrice(new BigDecimal(historicalData1.close));
                                                             triggerPriceAtomic.addAndGet(triggerPriceTemp.doubleValue());
                                                             slPrice.put(trendTradeData.getStockId(),triggerPriceTemp);
-                                                            System.out.println("setting sl price based on 9:19 close :"+trendTradeData.getStockId()+":"+triggerPriceTemp);
+                                                            LOGGER.info("setting sl price based on 9:19 close :"+trendTradeData.getStockId()+":"+triggerPriceTemp);
                                                         }
                                                     } catch (ParseException e) {
                                                         throw new RuntimeException(e);
@@ -264,7 +252,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                                 });
                                             }
                                         }catch (Exception e){
-                                            System.out.println(e.getMessage());
+                                            LOGGER.info(e.getMessage());
                                         }
                                     }else {
                                         triggerPrice=slPrice.get(trendTradeData.getStockId());
@@ -343,8 +331,8 @@ public class ZerodhaBankNiftyShortStraddle {
 
                                                         } catch (KiteException | IOException e) {
                                                             reverseTrade.isErrored = true;
-                                                            System.out.println("Error while placing straddle order: " + e.getMessage()+":"+new Gson().toJson(orderParams));
-                                                            System.out.println("order reseponse: " +new Gson().toJson(orderd));
+                                                            LOGGER.info("Error while placing straddle order: " + e.getMessage()+":"+new Gson().toJson(orderParams));
+                                                            LOGGER.info("order reseponse: " +new Gson().toJson(orderd));
                                                             if (order != null) {
                                                                 sendMessage.sendToTelegram("Error while placing reentry straddle order: " + reverseTrade.getStockName() + ": Status: " + order.status + ": error message:" + order.statusMessage, telegramToken,botIdFinal);
                                                             } else {
@@ -384,11 +372,11 @@ public class ZerodhaBankNiftyShortStraddle {
                 user.getStraddleConfigOld().straddleTradeMap.entrySet().stream().filter(map -> map.getValue().isOrderPlaced && map.getValue().getEntryOrderId() != null)
                         .forEach(map -> {
                             TradeData trendTradeData = map.getValue();
-                            // System.out.println(" trade data:"+new Gson().toJson(trendTradeData));
+                            // LOGGER.info(" trade data:"+new Gson().toJson(trendTradeData));
                             List<com.zerodhatech.models.Order> orderList = null;
                             try {
                                 orderList = user.getKiteConnect().getOrders();
-                                //   System.out.println("get trade response:"+new Gson().toJson(orderList));
+                                //   LOGGER.info("get trade response:"+new Gson().toJson(orderList));
                             } catch (KiteException e) {
                                 e.printStackTrace();
                             } catch (IOException e) {
@@ -414,7 +402,7 @@ public class ZerodhaBankNiftyShortStraddle {
 
                                             if (!status.equals("error")) {
                                                 historicalData.parseResponse(json);
-                                                System.out.println();
+
                                                 historicalData.dataArrayList.stream().forEach(historicalData1 -> {
                                                     try {
                                                         Date openDatetime = sdf.parse(historicalData1.timeStamp);
@@ -424,7 +412,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                                             trendTradeData.setSellPrice(new BigDecimal(historicalData1.close));
                                                             triggerPriceAtomic.addAndGet(triggerPriceTemp.doubleValue());
                                                             slPrice.put(trendTradeData.getStockId(),triggerPriceTemp);
-                                                            System.out.println("setting sl price based on 9:19 close :"+trendTradeData.getStockId()+":"+triggerPriceTemp);
+                                                            LOGGER.info("setting sl price based on 9:19 close :"+trendTradeData.getStockId()+":"+triggerPriceTemp);
                                                         }
                                                     } catch (ParseException e) {
                                                         throw new RuntimeException(e);
@@ -432,7 +420,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                                 });
                                             }
                                         }catch (Exception e){
-                                            System.out.println(e.getMessage());
+                                            LOGGER.info(e.getMessage());
                                         }
                                     }else {
                                         triggerPrice=slPrice.get(trendTradeData.getStockId());
@@ -542,8 +530,8 @@ public class ZerodhaBankNiftyShortStraddle {
 
                                                 } catch (KiteException | IOException e) {
                                                     reverseTrade.isErrored = true;
-                                                    System.out.println("Error while placing straddle order: " + e.getMessage()+":"+new Gson().toJson(orderParams));
-                                                    System.out.println("order reseponse: " +new Gson().toJson(orderd));
+                                                    LOGGER.info("Error while placing straddle order: " + e.getMessage()+":"+new Gson().toJson(orderParams));
+                                                    LOGGER.info("order reseponse: " +new Gson().toJson(orderd));
                                                     if (order != null) {
                                                         sendMessage.sendToTelegram("Error while placing reentry straddle order: "+retryKey+":" + reverseTrade.getStockName() + ": Status: " + order.status + ": error message:" + order.statusMessage, telegramToken,botIdFinal);
                                                     } else {
@@ -567,7 +555,7 @@ public class ZerodhaBankNiftyShortStraddle {
     }
     @Scheduled(cron = "${straddle.exit.position.scheduler}")
     public void exitPositions() throws KiteException, IOException {
-        System.out.println("Straddle Exit positions scheduler started");
+        LOGGER.info("Straddle Exit positions scheduler started");
         ExecutorService executor = Executors.newSingleThreadExecutor();
         userList.getUser().stream().filter(user -> user.getStraddleConfigOld() !=null && user.getStraddleConfigOld().isEnabled()).forEach(user -> {
             String botId="";
@@ -586,18 +574,18 @@ public class ZerodhaBankNiftyShortStraddle {
                                     Order order = user.getKiteConnect().cancelOrder(trendTradeData.getSlOrderId(), "regular");
                                     trendMap.getValue().isSLCancelled = true;
                                     String message = MessageFormat.format("System Cancelled SL {0}", trendMap.getValue().getStockName());
-                                    System.out.println(message);
+                                    LOGGER.info(message);
                                     sendMessage.sendToTelegram(message, telegramToken,botIdFinal);
                                 }
                             } catch (KiteException e) {
                                 e.printStackTrace();
                                 String message = MessageFormat.format("Error while System cancelling SL {0},[1]", trendMap.getValue().getStockName(), e.message);
-                                System.out.println(message);
+                                LOGGER.info(message);
                                 sendMessage.sendToTelegram(message, telegramToken,botIdFinal);
                             } catch (IOException e) {
                                 e.printStackTrace();
                                 String message = MessageFormat.format("Error while System cancelling SL {0},{1}", trendMap.getValue().getStockName(), e.getMessage());
-                                System.out.println(message);
+                                LOGGER.info(message);
                                 sendMessage.sendToTelegram(message, telegramToken,botIdFinal);
                             }
                         }
@@ -605,7 +593,7 @@ public class ZerodhaBankNiftyShortStraddle {
                             try {
                                 user.getKiteConnect().cancelOrder(trendTradeData.getEntryOrderId(), "regular");
                                 String message = MessageFormat.format("System Cancelled Re-Entry Order {0}", trendTradeData.getStockName());
-                                System.out.println(message);
+                                LOGGER.info(message);
                                 sendMessage.sendToTelegram(message, telegramToken,botIdFinal);
                             } catch (KiteException e) {
                                 throw new RuntimeException(e);
@@ -621,7 +609,7 @@ public class ZerodhaBankNiftyShortStraddle {
                 List<Position> positions = null;
                 try {
                     positions = user.getKiteConnect().getPositions().get("net");
-                    System.out.println(positions);
+                    LOGGER.info(new Gson().toJson(positions));
                 } catch (KiteException e) {
                     e.printStackTrace();
                 } catch (IOException e) {
@@ -645,19 +633,19 @@ public class ZerodhaBankNiftyShortStraddle {
                     com.zerodhatech.models.Order orderResponse = null;
                     try {
                         orderResponse = user.getKiteConnect().placeOrder(orderParams, "regular");
-                        System.out.println(new Gson().toJson(orderResponse));
+                        LOGGER.info(new Gson().toJson(orderResponse));
                         if (user.getStraddleConfigOld().straddleTradeMap.get(position.tradingSymbol) != null) {
                             user.getStraddleConfigOld().straddleTradeMap.get(position.tradingSymbol).isExited = true;
                         }
                         String message = MessageFormat.format("Closed Position {0}", orderParams.tradingsymbol);
-                        System.out.println(message);
+                        LOGGER.info(message);
                         sendMessage.sendToTelegram(message, telegramToken,botIdFinal);
                     } catch (KiteException e) {
-                        System.out.println("Error while placing straddle order: " + e.message);
+                        LOGGER.info("Error while placing straddle order: " + e.message);
                         sendMessage.sendToTelegram("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.message + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position), telegramToken,botIdFinal);
                         e.printStackTrace();
                     } catch (IOException e) {
-                        System.out.println("Error while placing straddle order: " + e.getMessage());
+                        LOGGER.info("Error while placing straddle order: " + e.getMessage());
                         sendMessage.sendToTelegram("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.getMessage() + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position), telegramToken,botIdFinal);
                         e.printStackTrace();
                     }
@@ -692,7 +680,7 @@ public class ZerodhaBankNiftyShortStraddle {
                         List<com.zerodhatech.models.Order> orderList = null;
                         try {
                             orderList = user.getKiteConnect().getOrders();
-                            //   System.out.println("get trade response:"+new Gson().toJson(orderList));
+                            //   LOGGER.info("get trade response:"+new Gson().toJson(orderList));
                         } catch (KiteException e) {
                             e.printStackTrace();
                         } catch (IOException e) {
