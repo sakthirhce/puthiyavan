@@ -524,19 +524,17 @@ public class ZerodhaBankNiftyShortStraddle {
                                                     reverseTrade.isOrderPlaced = true;
                                                     reverseTrade.setQty(trendTradeData.getQty());
                                                     reverseTrade.setEntryType("SELL");
-
                                                     sendMessage.sendToTelegram("reentry Straddle option order placed for strike: "+retryKey+":" + reverseTrade.getStockName(),  telegramToken,botIdFinal);
                                                     user.getStraddleConfigOld().straddleTradeMap.put(retryKey, reverseTrade);
 
                                                 } catch (KiteException | IOException e) {
                                                     reverseTrade.isErrored = true;
                                                     LOGGER.info("Error while placing straddle order: " + e.getMessage()+":"+new Gson().toJson(orderParams));
-                                                    LOGGER.info("order reseponse: " +new Gson().toJson(orderd));
+                                                    LOGGER.info("order response: " +new Gson().toJson(orderd));
                                                     if (order != null) {
                                                         sendMessage.sendToTelegram("Error while placing reentry straddle order: "+retryKey+":" + reverseTrade.getStockName() + ": Status: " + order.status + ": error message:" + order.statusMessage, telegramToken,botIdFinal);
                                                     } else {
                                                         sendMessage.sendToTelegram("Error while placing reentry straddle order: "+retryKey+":" + reverseTrade.getStockName(), telegramToken,botIdFinal);
-
                                                     }
                                                     //e.printStackTrace();
                                                 }
