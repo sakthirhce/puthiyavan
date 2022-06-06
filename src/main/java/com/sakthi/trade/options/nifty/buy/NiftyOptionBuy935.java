@@ -172,6 +172,7 @@ public class NiftyOptionBuy935 {
                                     tradeData.setDataKey(dataKey);
                                     tradeData.setStockName(atmNiftyStrikeMap.getKey());
                                     try {
+                                        log.info("input:"+gson.toJson(orderParams));
                                         order = user.getKiteConnect().placeOrder(orderParams, "regular");
                                         tradeData.setEntryOrderId(order.orderId);
                                         tradeData.isOrderPlaced = true;
@@ -191,12 +192,12 @@ public class NiftyOptionBuy935 {
                                         }
                                     } catch (KiteException e) {
                                         tradeData.isErrored = true;
-                                        LOGGER.info("Error while placing nifty buy order: "+ atmNiftyStrikeMap.getKey()+":" + e);
+                                        LOGGER.info("Error while placing nifty buy order: "+ atmNiftyStrikeMap.getKey()+":" + e.getMessage()+":"+e.code);
                                         sendMessage.sendToTelegram("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + user.getName() + ",Exception:" + e.getMessage(), telegramToken);
 
                                     } catch (IOException e) {
                                         tradeData.isErrored = true;
-                                        LOGGER.info("Error while placing nifty buy order: "+ atmNiftyStrikeMap.getKey()+":" + e);
+                                        LOGGER.info("Error while placing nifty buy order: "+ atmNiftyStrikeMap.getKey()+":" + e.getMessage());
                                         if (order != null) {
                                             sendMessage.sendToTelegram("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + order.statusMessage + ",Exception:" + e.getMessage(), telegramToken, "-713214125");
                                         } else {
@@ -286,6 +287,7 @@ public class NiftyOptionBuy935 {
                                                 com.zerodhatech.models.Order orderd;
 
                                                 try {
+                                                    log.info("input:"+gson.toJson(orderParams));
                                                     orderd = user.getKiteConnect().placeOrder(orderParams, "regular");
                                                     trendTradeData.isSlPlaced = true;
                                                     trendTradeData.setSlPrice(triggerPriceTemp);

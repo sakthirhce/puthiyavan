@@ -178,6 +178,7 @@ public class NiftyOptionBuy1035 {
                                     tradeData.setDataKey(dataKey);
                                     tradeData.setStockName(atmNiftyStrikeMap.getKey());
                                     try {
+                                        log.info("input:"+gson.toJson(orderParams));
                                         order = user.getKiteConnect().placeOrder(orderParams, "regular");
                                         tradeData.setEntryOrderId(order.orderId);
                                         tradeData.isOrderPlaced = true;
@@ -288,6 +289,7 @@ public class NiftyOptionBuy1035 {
                                                     com.zerodhatech.models.Order orderd;
 
                                                     try {
+                                                        log.info("input:"+gson.toJson(orderParams));
                                                         orderd = user.getKiteConnect().placeOrder(orderParams, "regular");
                                                         trendTradeData.isSlPlaced = true;
                                                         trendTradeData.setSlPrice(triggerPriceTemp);
