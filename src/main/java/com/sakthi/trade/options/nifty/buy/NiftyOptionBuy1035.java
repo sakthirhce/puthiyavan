@@ -87,7 +87,7 @@ public class NiftyOptionBuy1035 {
 
         String historicURL = "https://api.kite.trade/instruments/historical/" + nifty + "/5minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+11:15:00";
         String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
-        System.out.print(response);
+        LOGGER.info(response);
         HistoricalData historicalData = new HistoricalData();
         JSONObject json = new JSONObject(response);
         String status = json.getString("status");
@@ -117,7 +117,7 @@ public class NiftyOptionBuy1035 {
                                 try {
                                     String historicPriceURL = "https://api.kite.trade/instruments/historical/" + atmNiftyStrikeMap.getValue() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+10:34:00";
                                     String priceResponse = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicPriceURL));
-                                    System.out.print(priceResponse);
+                                    LOGGER.info(priceResponse);
                                     HistoricalData historicalPriceData = new HistoricalData();
                                     JSONObject priceJson = new JSONObject(priceResponse);
                                     String responseStatus = priceJson.getString("status");
@@ -392,7 +392,7 @@ public class NiftyOptionBuy1035 {
 
                                 String historicURL = "https://api.kite.trade/instruments/historical/" + openTradeDataEntity.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
                                 String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
-                                System.out.print(openTradeDataEntity.getStockName() + " history api response:" + response);
+                                LOGGER.info(openTradeDataEntity.getStockName() + " history api response:" + response);
                                 HistoricalData historicalData = new HistoricalData();
                                 JSONObject json = new JSONObject(response);
                                 String status = json.getString("status");
@@ -459,7 +459,7 @@ public class NiftyOptionBuy1035 {
                 try {
                     String historicURL = "https://api.kite.trade/instruments/historical/" + openTradeDataEntity.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+11:15:00";
                     String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
-                    System.out.print(openTradeDataEntity.getStockName() + " history api response:" + response);
+                    LOGGER.info(openTradeDataEntity.getStockName() + " history api response:" + response);
 
                     JSONObject json = new JSONObject(response);
                     status = json.getString("status");
