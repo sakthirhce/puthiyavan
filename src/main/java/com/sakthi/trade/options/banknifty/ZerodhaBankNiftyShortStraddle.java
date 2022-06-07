@@ -64,7 +64,9 @@ public class ZerodhaBankNiftyShortStraddle {
     ZerodhaTransactionService zerodhaTransactionService;
 
     public Map<String,String> atmStrikeMap=new HashMap<>();
-
+    public String getAlgoName() {
+        return "INTRDAY_STRADDLE_920";
+    }
 
     @Autowired
     UserList userList;
@@ -149,15 +151,15 @@ public class ZerodhaBankNiftyShortStraddle {
                                         tradeData.setQty(25 * qty.get());
                                         tradeData.setEntryType("SELL");
                                         tradeData.setStockId(Integer.valueOf(atmBankStrikeMap.getValue()));
-                                        sendMessage.sendToTelegram("Straddle option sold for user:"+user.getName()+" strike: " + atmBankStrikeMap.getKey()+":"+user.getName(), telegramToken,botIdFinal);
+                                        sendMessage.sendToTelegram("Straddle option sold for user:"+user.getName()+" strike: " + atmBankStrikeMap.getKey()+":"+user.getName()+":"+getAlgoName(), telegramToken,botIdFinal);
 
                                     } catch (KiteException e) {
                                         tradeData.isErrored = true;
                                         LOGGER.info("Error while placing straddle order: " + e.message);
                                         if (order != null) {
-                                            sendMessage.sendToTelegram("Error while placing straddle order: " + atmBankStrikeMap.getKey() + ": Status: " + order.status + ": error message:" + order.statusMessage, telegramToken,botIdFinal);
+                                            sendMessage.sendToTelegram("Error while placing straddle order: " + atmBankStrikeMap.getKey() + ": Status: " + order.status + ": error message:" + order.statusMessage+":"+getAlgoName(), telegramToken,botIdFinal);
                                         } else {
-                                            sendMessage.sendToTelegram("Error while placing straddle order: " + atmBankStrikeMap.getKey() + ",Exception:" + e.getMessage(), telegramToken,botIdFinal);
+                                            sendMessage.sendToTelegram("Error while placing straddle order: " + atmBankStrikeMap.getKey() + ",Exception:" + e.getMessage()+":"+getAlgoName(), telegramToken,botIdFinal);
 
                                         }
                                         //e.printStackTrace();
@@ -165,9 +167,9 @@ public class ZerodhaBankNiftyShortStraddle {
                                         tradeData.isErrored = true;
                                         LOGGER.info("Error while placing straddle order: " + e.getMessage());
                                         if (order != null) {
-                                            sendMessage.sendToTelegram("Error while placing straddle order: " + atmBankStrikeMap.getKey() + ": Status: " + order.status + ": error message:" + order.statusMessage + ",Exception:" + e.getMessage(), telegramToken,botIdFinal);
+                                            sendMessage.sendToTelegram("Error while placing straddle order: " + atmBankStrikeMap.getKey() + ": Status: " + order.status + ": error message:" + order.statusMessage + ",Exception:" + e.getMessage()+":"+getAlgoName(), telegramToken,botIdFinal);
                                         } else {
-                                            sendMessage.sendToTelegram("Error while placing straddle order: " + atmBankStrikeMap.getKey() + ",Exception:" + e.getMessage(), telegramToken,botIdFinal);
+                                            sendMessage.sendToTelegram("Error while placing straddle order: " + atmBankStrikeMap.getKey() + ",Exception:" + e.getMessage()+":"+getAlgoName(), telegramToken,botIdFinal);
 
                                         }
 
@@ -216,7 +218,7 @@ public class ZerodhaBankNiftyShortStraddle {
                             }
                             orderList.stream().forEach(order -> {
                                 if (trendTradeData.getEntryOrderId().equals(order.orderId) && !trendTradeData.isSlPlaced && "COMPLETE".equals(order.status) && "SELL".equals(order.transactionType)) {
-                                    trendTradeData.setSellPrice(new BigDecimal(order.averagePrice));
+                                 //   trendTradeData.setSellPrice(new BigDecimal(order.averagePrice));
                                     trendTradeData.setSellTradedPrice(new BigDecimal(order.averagePrice));
                                     Date date = new Date();
                                     String currentDate = format.format(date);
@@ -267,7 +269,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                     orderParams.orderType = "SL";
                                     orderParams.product = "MIS";
 
-                                        BigDecimal price = ((new BigDecimal(order.averagePrice).divide(new BigDecimal(100))).multiply(new BigDecimal(5)).add(triggerPrice)).setScale(0, RoundingMode.HALF_UP);
+                                    BigDecimal price = ((new BigDecimal(order.averagePrice).divide(new BigDecimal(100))).multiply(new BigDecimal(5)).add(triggerPrice)).setScale(0, RoundingMode.HALF_UP);
 
                                     orderParams.triggerPrice = triggerPrice.doubleValue();
                                     trendTradeData.setSlPrice(triggerPrice);
@@ -279,76 +281,108 @@ public class ZerodhaBankNiftyShortStraddle {
                                         orderResponse = user.getKiteConnect().placeOrder(orderParams, "regular");
                                         trendTradeData.setSlOrderId(orderResponse.orderId);
                                         trendTradeData.isSlPlaced = true;
-                                        sendMessage.sendToTelegram("Placed SL order for: " + trendTradeData.getStockName()+":"+user.getName(), telegramToken,botIdFinal);
+                                        sendMessage.sendToTelegram("Placed SL order for: " + trendTradeData.getStockName()+":"+user.getName()+":"+getAlgoName(), telegramToken,botIdFinal);
                                         LOGGER.info("SL order placed for: " + trendTradeData.getStockName()+":"+trendTradeData.getUserId() );
 
                                     } catch (KiteException e) {
                                         LOGGER.info("Error while placing straddle order: " + e.message);
-                                        sendMessage.sendToTelegram("Error while placing straddle SL order: " + trendTradeData.getStockName() + " error message:" + e.message+":"+user.getName(), telegramToken,botIdFinal);
+                                        sendMessage.sendToTelegram("Error while placing straddle SL order: " + trendTradeData.getStockName() + " error message:" + e.message+":"+user.getName()+":"+getAlgoName(), telegramToken,botIdFinal);
                                         e.printStackTrace();
                                     } catch (IOException e) {
                                         LOGGER.info("Error while placing straddle order: " + e.getMessage());
-                                        sendMessage.sendToTelegram("Error while placing straddle SL order: " + trendTradeData.getStockName() + ": error message:" + e.getMessage()+":"+user.getName(), telegramToken,botIdFinal);
+                                        sendMessage.sendToTelegram("Error while placing straddle SL order: " + trendTradeData.getStockName() + ": error message:" + e.getMessage()+":"+user.getName()+":"+getAlgoName(), telegramToken,botIdFinal);
                                         e.printStackTrace();
                                     }
                                 } else if (order.orderId.equals(trendTradeData.getSlOrderId()) && trendTradeData.isSlPlaced && !trendTradeData.isSLCancelled && !trendTradeData.isExited && !trendTradeData.isSLHit) {
                                     if ("CANCELLED".equals(order.status)) {
                                         trendTradeData.isSLCancelled = true;
-                                        String message = MessageFormat.format("Broker Cancelled SL Order for {0}", trendTradeData.getStockName()+":"+user.getName());
+                                        String message = MessageFormat.format("Broker Cancelled SL Order for {0}", trendTradeData.getStockName()+":"+user.getName()+":"+getAlgoName());
                                         LOGGER.info(message);
                                         sendMessage.sendToTelegram(message, telegramToken,botIdFinal);
                                     } else if ("COMPLETE".equals(order.status)) {
                                         trendTradeData.isSLHit = true;
                                         trendTradeData.isExited = true;
-                                        String message = MessageFormat.format("SL Hit for {0}", trendTradeData.getStockName()+":"+user.getName());
+                                        LocalDate localDate = LocalDate.now();
+                                        DayOfWeek dow = localDate.getDayOfWeek();
+                                        String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
+                                        String todayCaps = today.toUpperCase();
+                                        String message = MessageFormat.format("SL Hit for {0}"+":"+user.getName()+":"+getAlgoName(), trendTradeData.getStockName());
                                         LOGGER.info(message);
                                         sendMessage.sendToTelegram(message, telegramToken, botIdFinal);
-                                        if (user.getStraddleConfigOld() != null && user.getStraddleConfigOld().reverseEntry != null && user.getStraddleConfigOld().reverseEntry.isEnabled() && !map.getKey().contains("REENTRY")) {
+                                        if (user.getStraddleConfigOld() != null && user.getStraddleConfigOld().reverseEntry != null && user.getStraddleConfigOld().reverseEntry.isEnabled()) {
                                             ReverseEntry reverseEntry=user.getStraddleConfigOld().reverseEntry;
-                                            if (trendTradeData.getRentryCount() < reverseEntry.getCount()) {
-                                                LOGGER.info("inside reverse entry sell");
-                                                trendTradeData.setRentryCount(1);
-                                                        OrderParams orderParams = new OrderParams();
-                                                        orderParams.tradingsymbol = trendTradeData.getStockName();
-                                                        orderParams.exchange = "NFO";
-                                                        orderParams.quantity = trendTradeData.getQty();
-                                                        orderParams.orderType = "SL";
-                                                        orderParams.product = "MIS";
-                                                        orderParams.transactionType = "SELL";
-                                                        orderParams.validity = "DAY";
-                                                        com.zerodhatech.models.Order orderd=null;
-                                                        orderParams.triggerPrice = trendTradeData.getSellPrice().setScale(0, RoundingMode.HALF_UP).doubleValue();
-                                                        BigDecimal price = trendTradeData.getSellPrice().setScale(0, RoundingMode.HALF_UP).subtract(trendTradeData.getSellPrice().divide(new BigDecimal(100))).setScale(0, RoundingMode.HALF_UP);
-                                                        orderParams.price = price.doubleValue();
-                                                        TradeData reverseTrade = new TradeData();
-                                                        reverseTrade.setStockName(trendTradeData.getStockName());
-                                                        try {
-                                                            orderd = user.getKiteConnect().placeOrder(orderParams, "regular");
-                                                            reverseTrade.setEntryOrderId(orderd.orderId);
-                                                            reverseTrade.isOrderPlaced = true;
-                                                            reverseTrade.setQty(trendTradeData.getQty());
-                                                            reverseTrade.setEntryType("SELL");
-                                                            reverseTrade.setStockId(trendTradeData.getStockId());
-                                                            sendMessage.sendToTelegram("reentry Straddle option order placed for strike: " + reverseTrade.getStockName()+":"+user.getName(),  telegramToken,botIdFinal);
-                                                            user.getStraddleConfigOld().straddleTradeMap.put(trendTradeData.getStockName() + "-REENTRY", reverseTrade);
-
-                                                        } catch (KiteException | IOException e) {
-                                                            reverseTrade.isErrored = true;
-                                                            LOGGER.info("Error while placing straddle order: " + e.getMessage()+":"+new Gson().toJson(orderParams)+":"+trendTradeData.getUserId());
-                                                            LOGGER.info("order reseponse: " +new Gson().toJson(orderd)+":"+trendTradeData.getUserId());
-                                                            if (order != null) {
-                                                                sendMessage.sendToTelegram("Error while placing reentry straddle order: " + reverseTrade.getStockName() + ": Status: " + order.status + ": error message:" + order.statusMessage, telegramToken,botIdFinal);
-                                                            } else {
-                                                                sendMessage.sendToTelegram("Error while placing reentry straddle order: " + reverseTrade.getStockName(), telegramToken,botIdFinal);
-
-                                                            }
-                                                            //e.printStackTrace();
-                                                        }
-                                                    }
-
-
+                                            int totalRetry=0;
+                                            AtomicInteger retryCount=new AtomicInteger();
+                                            reverseEntry.retryCountConfig.forEach((lotValue, value1) -> {
+                                                if (lotValue.contains(todayCaps)) {
+                                                    int value = (Integer.parseInt(value1));
+                                                    retryCount.getAndSet(value);
+                                                }
+                                            });
+                                            TradeData parentTradeData=null;
+                                            double triggerPrice=0;
+                                            if(map.getKey().contains("REENTRY")){
+                                                parentTradeData=user.getStraddleConfigOld().straddleTradeMap.get(trendTradeData.getParentEntry());
+                                                triggerPrice=parentTradeData.getSellPrice().doubleValue();
+                                                totalRetry=parentTradeData.getRentryCount();
+                                            }else {
+                                                totalRetry=trendTradeData.getRentryCount();
+                                                triggerPrice=trendTradeData.getSellPrice().doubleValue();
                                             }
+                                            if (totalRetry<retryCount.get()) {
+                                                LOGGER.info("inside reverse entry sell");
+                                                //.setRentryCount(1);
+
+                                                OrderParams orderParams = new OrderParams();
+                                                orderParams.tradingsymbol = trendTradeData.getStockName();
+                                                orderParams.exchange = "NFO";
+                                                orderParams.quantity = trendTradeData.getQty();
+                                                orderParams.orderType = "SL";
+                                                orderParams.product = "MIS";
+                                                orderParams.transactionType = "SELL";
+                                                orderParams.validity = "DAY";
+                                                com.zerodhatech.models.Order orderd=null;
+                                                orderParams.triggerPrice = triggerPrice;
+                                                BigDecimal price = new BigDecimal(triggerPrice).setScale(0, RoundingMode.HALF_UP).subtract(new BigDecimal(triggerPrice).divide(new BigDecimal(100))).setScale(0, RoundingMode.HALF_UP);
+                                                orderParams.price = price.doubleValue();
+                                                TradeData reverseTrade = new TradeData();
+                                                int retryCountN=0;
+                                                if(map.getKey().contains("REENTRY") && parentTradeData!=null){
+                                                    retryCountN=parentTradeData.getRentryCount()+1;
+                                                    parentTradeData.setRentryCount(retryCountN);
+                                                    reverseTrade.setParentEntry(parentTradeData.getStockName());
+                                                }else if(!map.getKey().contains("REENTRY")){
+                                                    retryCountN=1;
+                                                    trendTradeData.setRentryCount(retryCountN);
+                                                }
+                                                reverseTrade.setStockName(trendTradeData.getStockName());
+                                                String retryKey=trendTradeData.getStockName() + "_REENTRY_"+retryCountN;
+                                                try {
+                                                    orderd = user.getKiteConnect().placeOrder(orderParams, "regular");
+                                                    reverseTrade.setEntryOrderId(orderd.orderId);
+                                                    reverseTrade.setSellPrice(new BigDecimal(triggerPrice));
+                                                    reverseTrade.isOrderPlaced = true;
+                                                    reverseTrade.setQty(trendTradeData.getQty());
+                                                    reverseTrade.setEntryType("SELL");
+                                                    sendMessage.sendToTelegram("reentry Straddle option order placed for strike: "+retryKey+":" + reverseTrade.getStockName()+":"+user.getName()+":"+getAlgoName(),  telegramToken,botIdFinal);
+                                                    user.getStraddleConfigOld().straddleTradeMap.put(retryKey, reverseTrade);
+
+                                                } catch (KiteException | IOException e) {
+                                                    reverseTrade.isErrored = true;
+                                                    LOGGER.info("Error while placing straddle order: " + e.getMessage()+":"+new Gson().toJson(orderParams));
+                                                    LOGGER.info("order response: " +new Gson().toJson(orderd));
+                                                    if (order != null) {
+                                                        sendMessage.sendToTelegram("Error while placing reentry straddle order: "+retryKey+":" + reverseTrade.getStockName() + ": Status: " + order.status + ": error message:" + order.statusMessage+":"+getAlgoName(), telegramToken,botIdFinal);
+                                                    } else {
+                                                        sendMessage.sendToTelegram("Error while placing reentry straddle order: "+retryKey+":" + reverseTrade.getStockName()+":"+getAlgoName(), telegramToken,botIdFinal);
+                                                    }
+                                                    //e.printStackTrace();
+                                                }
+                                            }
+
+
                                         }
+                                    }
                                     }
 
                             });
@@ -448,22 +482,22 @@ public class ZerodhaBankNiftyShortStraddle {
                                         orderResponse = user.getKiteConnect().placeOrder(orderParams, "regular");
                                         trendTradeData.setSlOrderId(orderResponse.orderId);
                                         trendTradeData.isSlPlaced = true;
-                                        sendMessage.sendToTelegram("Placed SL order for: " + trendTradeData.getStockName()+":"+user.getName(), telegramToken,botIdFinal);
-                                        LOGGER.info("SL order placed for: " + trendTradeData.getStockName()+":"+user.getName());
+                                        sendMessage.sendToTelegram("Placed SL order for: " + trendTradeData.getStockName()+":"+user.getName()+":"+getAlgoName(), telegramToken,botIdFinal);
+                                        LOGGER.info("SL order placed for: " + trendTradeData.getStockName()+":"+user.getName()+":"+getAlgoName());
 
                                     } catch (KiteException e) {
                                         LOGGER.info("Error while placing straddle order: " + e.message);
-                                        sendMessage.sendToTelegram("Error while placing straddle SL order: " + trendTradeData.getStockName() + " error message:" + e.message, telegramToken,botIdFinal);
+                                        sendMessage.sendToTelegram("Error while placing straddle SL order: " + trendTradeData.getStockName() + " error message:" + e.message+":"+getAlgoName(), telegramToken,botIdFinal);
                                         e.printStackTrace();
                                     } catch (IOException e) {
                                         LOGGER.info("Error while placing straddle order: " + e.getMessage());
-                                        sendMessage.sendToTelegram("Error while placing straddle SL order: " + trendTradeData.getStockName() + ": error message:" + e.getMessage(), telegramToken,botIdFinal);
+                                        sendMessage.sendToTelegram("Error while placing straddle SL order: " + trendTradeData.getStockName() + ": error message:" + e.getMessage()+":"+getAlgoName(), telegramToken,botIdFinal);
                                         e.printStackTrace();
                                     }
                                 } else if (order.orderId.equals(trendTradeData.getSlOrderId()) && trendTradeData.isSlPlaced && !trendTradeData.isSLCancelled && !trendTradeData.isExited && !trendTradeData.isSLHit) {
                                     if ("CANCELLED".equals(order.status)) {
                                         trendTradeData.isSLCancelled = true;
-                                        String message = MessageFormat.format("Broker Cancelled SL Order for {0}", trendTradeData.getStockName());
+                                        String message = MessageFormat.format("Broker Cancelled SL Order for {0}"+":"+getAlgoName(), trendTradeData.getStockName());
                                         LOGGER.info(message);
                                         sendMessage.sendToTelegram(message, telegramToken,botIdFinal);
                                     } else if ("COMPLETE".equals(order.status)) {
@@ -473,7 +507,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                         DayOfWeek dow = localDate.getDayOfWeek();
                                         String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
                                         String todayCaps = today.toUpperCase();
-                                        String message = MessageFormat.format("SL Hit for {0}"+":"+user.getName(), trendTradeData.getStockName());
+                                        String message = MessageFormat.format("SL Hit for {0}"+":"+user.getName()+":"+getAlgoName(), trendTradeData.getStockName());
                                         LOGGER.info(message);
                                         sendMessage.sendToTelegram(message, telegramToken, botIdFinal);
                                         if (user.getStraddleConfigOld() != null && user.getStraddleConfigOld().reverseEntry != null && user.getStraddleConfigOld().reverseEntry.isEnabled()) {
@@ -527,7 +561,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                                     reverseTrade.isOrderPlaced = true;
                                                     reverseTrade.setQty(trendTradeData.getQty());
                                                     reverseTrade.setEntryType("SELL");
-                                                    sendMessage.sendToTelegram("reentry Straddle option order placed for strike: "+retryKey+":" + reverseTrade.getStockName()+":"+user.getName(),  telegramToken,botIdFinal);
+                                                    sendMessage.sendToTelegram("reentry Straddle option order placed for strike: "+retryKey+":" + reverseTrade.getStockName()+":"+user.getName()+":"+getAlgoName(),  telegramToken,botIdFinal);
                                                     user.getStraddleConfigOld().straddleTradeMap.put(retryKey, reverseTrade);
 
                                                 } catch (KiteException | IOException e) {
@@ -535,9 +569,9 @@ public class ZerodhaBankNiftyShortStraddle {
                                                     LOGGER.info("Error while placing straddle order: " + e.getMessage()+":"+new Gson().toJson(orderParams));
                                                     LOGGER.info("order response: " +new Gson().toJson(orderd));
                                                     if (order != null) {
-                                                        sendMessage.sendToTelegram("Error while placing reentry straddle order: "+retryKey+":" + reverseTrade.getStockName() + ": Status: " + order.status + ": error message:" + order.statusMessage, telegramToken,botIdFinal);
+                                                        sendMessage.sendToTelegram("Error while placing reentry straddle order: "+retryKey+":" + reverseTrade.getStockName() + ": Status: " + order.status + ": error message:" + order.statusMessage+":"+getAlgoName(), telegramToken,botIdFinal);
                                                     } else {
-                                                        sendMessage.sendToTelegram("Error while placing reentry straddle order: "+retryKey+":" + reverseTrade.getStockName(), telegramToken,botIdFinal);
+                                                        sendMessage.sendToTelegram("Error while placing reentry straddle order: "+retryKey+":" + reverseTrade.getStockName()+":"+getAlgoName(), telegramToken,botIdFinal);
                                                     }
                                                     //e.printStackTrace();
                                                 }
@@ -574,7 +608,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                 if (trendTradeData.isSlPlaced &&!trendTradeData.isSLCancelled && !trendTradeData.isSLHit) {
                                     Order order = user.getKiteConnect().cancelOrder(trendTradeData.getSlOrderId(), "regular");
                                     trendMap.getValue().isSLCancelled = true;
-                                    String message = MessageFormat.format("System Cancelled SL {0}"+":"+user.getName(), trendMap.getValue().getStockName());
+                                    String message = MessageFormat.format("System Cancelled SL {0}"+":"+user.getName()+":"+getAlgoName(), trendMap.getValue().getStockName());
                                     LOGGER.info(message);
                                     sendMessage.sendToTelegram(message, telegramToken,botIdFinal);
                                 }
@@ -582,12 +616,12 @@ public class ZerodhaBankNiftyShortStraddle {
                                 e.printStackTrace();
                                 String message = MessageFormat.format("Error while System cancelling SL {0},[1]", trendMap.getValue().getStockName(), e.message);
                                 LOGGER.info(message);
-                                sendMessage.sendToTelegram(message, telegramToken,botIdFinal);
+                                sendMessage.sendToTelegram(message+":"+getAlgoName(), telegramToken,botIdFinal);
                             } catch (IOException e) {
                                 e.printStackTrace();
                                 String message = MessageFormat.format("Error while System cancelling SL {0},{1}", trendMap.getValue().getStockName(), e.getMessage());
                                 LOGGER.info(message);
-                                sendMessage.sendToTelegram(message, telegramToken,botIdFinal);
+                                sendMessage.sendToTelegram(message+":"+getAlgoName(), telegramToken,botIdFinal);
                             }
                         }
                         if(!trendTradeData.isSlPlaced && !trendTradeData.isExited && trendTradeData.isOrderPlaced){
@@ -595,7 +629,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                 user.getKiteConnect().cancelOrder(trendTradeData.getEntryOrderId(), "regular");
                                 String message = MessageFormat.format("System Cancelled Re-Entry Order {0}", trendTradeData.getStockName());
                                 LOGGER.info(message);
-                                sendMessage.sendToTelegram(message, telegramToken,botIdFinal);
+                                sendMessage.sendToTelegram(message+":"+getAlgoName(), telegramToken,botIdFinal);
                             } catch (KiteException e) {
                                 throw new RuntimeException(e);
                             } catch (IOException e) {
@@ -640,14 +674,14 @@ public class ZerodhaBankNiftyShortStraddle {
                         }
                         String message = MessageFormat.format("Closed Position {0}"+":"+user.getName(), orderParams.tradingsymbol);
                         LOGGER.info(message);
-                        sendMessage.sendToTelegram(message, telegramToken,botIdFinal);
+                        sendMessage.sendToTelegram(message+":"+getAlgoName(), telegramToken,botIdFinal);
                     } catch (KiteException e) {
                         LOGGER.info("Error while placing straddle order: " + e.message);
-                        sendMessage.sendToTelegram("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.message + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position), telegramToken,botIdFinal);
+                        sendMessage.sendToTelegram("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.message + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position)+":"+getAlgoName(), telegramToken,botIdFinal);
                         e.printStackTrace();
                     } catch (IOException e) {
                         LOGGER.info("Error while placing straddle order: " + e.getMessage());
-                        sendMessage.sendToTelegram("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.getMessage() + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position), telegramToken,botIdFinal);
+                        sendMessage.sendToTelegram("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.getMessage() + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position)+":"+getAlgoName(), telegramToken,botIdFinal);
                         e.printStackTrace();
                     }
                     //  }
