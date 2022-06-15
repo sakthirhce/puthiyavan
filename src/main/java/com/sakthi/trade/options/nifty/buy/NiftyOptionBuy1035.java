@@ -116,32 +116,34 @@ public class NiftyOptionBuy1035 {
                                 try {
                                     String historicPriceURL = "https://api.kite.trade/instruments/historical/" + atmNiftyStrikeMap.getValue() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+10:34:00";
                                     String priceResponse = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicPriceURL));
-                                    LOGGER.info(priceResponse);
+                                    LOGGER.info("API response:"+priceResponse);
                                     HistoricalData historicalPriceData = new HistoricalData();
                                     JSONObject priceJson = new JSONObject(priceResponse);
                                     String responseStatus = priceJson.getString("status");
 
                                     if (!responseStatus.equals("error")) {
                                         historicalPriceData.parseResponse(priceJson);
+                                        LOGGER.info("response after conversion:"+priceResponse+":"+atmNiftyStrikeMap.getKey());
                                         historicalPriceData.dataArrayList.stream().forEach(historicalDataPrice -> {
                                             try {
                                                 Date priceDatetime = sdf.parse(historicalDataPrice.timeStamp);
                                                 String priceDate = format.format(priceDatetime);
 
                                                 if (sdf.format(priceDatetime).equals(priceDate + "T10:34:00")) {
+                                                    LOGGER.info("DATA:"+historicalDataPrice.timeStamp+":"+atmNiftyStrikeMap.getKey()+":"+historicalDataPrice.timeStamp);
                                                     closePriceAtomic.getAndSet(historicalDataPrice.close);
                                                     //BigDecimal triggerPriceTemp = ((new BigDecimal(historicalData1.close).divide(new BigDecimal(5))).add(new BigDecimal(historicalData1.close))).setScale(0, RoundingMode.HALF_UP);
                                                     BigDecimal triggerPriceTemp = (new BigDecimal(10).add(new BigDecimal(historicalDataPrice.close))).setScale(0, RoundingMode.HALF_UP);
-                                                    triggerPriceAtomic.addAndGet(triggerPriceTemp.doubleValue());
-                                                    LOGGER.info("buy trigger price based on 9:34 close :" + atmNiftyStrikeMap.getKey() + ":" + triggerPriceTemp);
+                                                    triggerPriceAtomic.getAndSet(triggerPriceTemp.doubleValue());
+                                                    LOGGER.info("buy trigger price based on 10:34 close :" + atmNiftyStrikeMap.getKey() + ":" + triggerPriceTemp);
                                                 }
                                             } catch (ParseException e) {
-                                                throw new RuntimeException(e);
+                                                LOGGER.info("error:"+atmNiftyStrikeMap.getKey()+":"+e.getMessage());
                                             }
                                         });
                                     }
                                 } catch (Exception e) {
-                                    LOGGER.info(e.getMessage());
+                                    LOGGER.info("error:"+atmNiftyStrikeMap.getKey()+":"+e.getMessage());
                                 }
                                 LOGGER.info(atmNiftyStrikeMap.getKey());
                                 OrderParams orderParams = new OrderParams();
@@ -186,7 +188,7 @@ public class NiftyOptionBuy1035 {
                                         tradeData.setUserId(user.getName());
                                         tradeData.setStockId(Integer.parseInt(atmNiftyStrikeMap.getValue()));
                                         tradeData.setBuyPrice(BigDecimal.valueOf(triggerPriceAtomic.get()));
-                                        mapTradeDataToSaveOpenTradeDataEntity(tradeData);
+                                       // mapTradeDataToSaveOpenTradeDataEntity(tradeData);
                                         String message="option buy limit order placed for for user:" + user.getName() + " strike: " + atmNiftyStrikeMap.getKey()+":"+getAlgoName();
                                         LOGGER.info(message);
                                         sendMessage.sendToTelegram(message, telegramToken);
@@ -228,7 +230,7 @@ public class NiftyOptionBuy1035 {
         userList.getUser().stream().filter(user -> user.getNiftyBuy1035() != null && user.getNiftyBuy1035().isNrmlEnabled()).forEach(user -> {
 
             if (user.getNiftyBuy1035().straddleTradeMap != null) {
-                BigDecimal slPercent = user.getStraddleConfig().getSl();
+                BigDecimal slPercent =  user.getNiftyBuy935().getSl();
                 user.getNiftyBuy1035().straddleTradeMap.entrySet().stream().filter(map -> map.getValue().isOrderPlaced && map.getValue().getEntryOrderId() != null)
                         .forEach(map -> {
                             TradeData trendTradeData = map.getValue();
@@ -269,9 +271,10 @@ public class NiftyOptionBuy1035 {
                                                     mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
 
                                                     LOGGER.info("inside options stop sell");
-                                                    BigDecimal triggerPriceTemp = (trendTradeData.getBuyPrice().subtract(MathUtils.percentageValueOfAmount(slPercent, trendTradeData.getBuyPrice()))).setScale(0, RoundingMode.HALF_UP);
+                                                    BigDecimal triggerPriceTemp = (trendTradeData.getBuyPrice().subtract(new BigDecimal(10))).setScale(0, RoundingMode.HALF_UP);
                                                     AtomicInteger qty = new AtomicInteger(0);
                                                     //    if (qty.get() > 0 && user.getStraddleConfig().getBuyConfig() != null && user.getStraddleConfig().getBuyConfig().isEnabled()) {
+                                                    LOGGER.info("buy price:"+trendTradeData.getBuyPrice().doubleValue()+" sl price: "+triggerPriceTemp.doubleValue());
                                                     OrderParams orderParams = new OrderParams();
                                                     orderParams.tradingsymbol = trendTradeData.getStockName();
                                                     orderParams.exchange = "NFO";
@@ -291,6 +294,7 @@ public class NiftyOptionBuy1035 {
                                                         log.info("input:"+gson.toJson(orderParams));
                                                         orderd = user.getKiteConnect().placeOrder(orderParams, "regular");
                                                         trendTradeData.isSlPlaced = true;
+                                                        trendTradeData.setSlOrderId(orderd.orderId);
                                                         trendTradeData.setSlPrice(triggerPriceTemp);
                                                         mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
                                                         sendMessage.sendToTelegram("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL"+":"+getAlgoName(), telegramToken);
@@ -306,7 +310,7 @@ public class NiftyOptionBuy1035 {
                                                     LOGGER.info("error while placing sl:" + e.getMessage() + trendTradeData.getEntryOrderId() + ":" + trendTradeData.getStockName());
                                                 }
                                             }
-                                        }
+                                        }}
                                         if ("SELL".equals(order.transactionType) && trendTradeData.getSlOrderId().equals(order.orderId) && !trendTradeData.isExited) {
                                             trendTradeData.isSLHit = true;
                                             trendTradeData.isExited = true;
@@ -320,14 +324,14 @@ public class NiftyOptionBuy1035 {
                                             mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
                                         }
 
-                                    } else if ("REJECTED".equals(order.status)) {
+                                    } else if ("REJECTED".equals(order.status) && !trendTradeData.isErrored && trendTradeData.getSlOrderId().equals(order.orderId)) {
                                         String message = MessageFormat.format("SL order placement rejected for {0}", map.getKey() + ":" + user.getName() + ":" + order.status + ":" + order.statusMessage+":"+getAlgoName());
                                         LOGGER.info(message);
                                         trendTradeData.isErrored = true;
                                         sendMessage.sendToTelegram(message, telegramToken);
                                     }
 
-                                }
+
 
                             });
                         });

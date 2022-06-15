@@ -39,6 +39,8 @@ import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URISyntaxException;
 import java.text.DecimalFormat;
 import java.text.MessageFormat;
@@ -314,13 +316,13 @@ public class ZerodhaAccount {
                         sendMessage.sendToTelegram("Token for user:" + user.userName + ":" + kiteConnect.getAccessToken(), telegramToken, botIdFinal);
                         try {
                             Double amount = Double.parseDouble(margins.available.cash) - 1000000;
-                            sendMessage.sendToTelegram("Available Cash :" + amount, telegramToken, botIdFinal);
+                            sendMessage.sendToTelegram("Available Cash :" + new BigDecimal(amount).setScale(0, RoundingMode.HALF_UP).doubleValue(), telegramToken, botIdFinal);
                         }catch (Exception e){
                             e.printStackTrace();
                         }
                     }else {
                         sendMessage.sendToTelegram("Token for user:" + user.userName + ":" + kiteConnect.getAccessToken(), telegramToken, botIdFinal);
-                        sendMessage.sendToTelegram("Available Cash :" + margins.available.cash, telegramToken, botIdFinal);
+                        sendMessage.sendToTelegram("Available Cash :" +  + new BigDecimal(margins.available.cash).setScale(0, RoundingMode.HALF_UP).doubleValue(), telegramToken, botIdFinal);
                     }
                     user1.tokenCount=user1.tokenCount+1;
                     webDriver.quit();

@@ -16,6 +16,7 @@ import com.sakthi.trade.entity.CryptoFuturesEntity;
 import com.sakthi.trade.entity.IndexEntity;
 import com.sakthi.trade.entity.StockDataEntity;
 import com.sakthi.trade.entity.StockEntity;
+import com.sakthi.trade.futures.banknifty.BNFFuturesTrendFollowing;
 import com.sakthi.trade.fyer.Account;
 import com.sakthi.trade.fyer.FyerTrendTest;
 import com.sakthi.trade.fyer.mapper.FyerTransactionMapper;
@@ -242,7 +243,12 @@ public class AutomationController {
         List<com.zerodhatech.models.Order> trades = zerodhaAccount.kiteSdk.getOrderHistory(orderId);
         log.info("zerodhaOrdersId:" + new Gson().toJson(trades));
     }
-
+    @Autowired
+    BNFFuturesTrendFollowing bnfFuturesTrendFollowing;
+    @GetMapping("/bnfFutures")
+    public void bnfFutures() throws Exception, KiteException {
+        bnfFuturesTrendFollowing.bnfFutures();
+    }
     @GetMapping("/zerodhalogintest")
     public void generateAccessToken() throws Exception {
         zerodhaAccount.generateAccessToken();

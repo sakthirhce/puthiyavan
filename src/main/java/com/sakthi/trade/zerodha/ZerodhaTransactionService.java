@@ -6,6 +6,7 @@ import com.sakthi.trade.fyer.service.TransactionService;
 import com.sakthi.trade.telegram.SendMessage;
 import com.sakthi.trade.zerodha.account.ZerodhaAccount;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.jni.Local;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -14,8 +15,12 @@ import org.springframework.stereotype.Service;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 
+import static java.time.DayOfWeek.THURSDAY;
+import static java.time.temporal.TemporalAdjusters.lastInMonth;
 import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.DAY_OF_WEEK;
 
@@ -43,6 +48,9 @@ public class ZerodhaTransactionService {
     public Map<String,String> lsSymbols=new HashMap<>();
     public Map<String,String> lsHoliday=new HashMap<>();
     public Map<String,String> niftyIndics=new HashMap<>();
+
+    public Map<String,Map<String,String>> currentFutures=new HashMap<>();
+    public Map<String,String> nearFutures=new HashMap<>();
     public Map<String,String> niftyVix  =new HashMap<>();
     public Map<String,Map<String,String>> bankNiftyWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>> bankNiftyNextWeeklyOptions=new HashMap<>();
@@ -150,6 +158,8 @@ public class ZerodhaTransactionService {
             log.info("Thursday falling on holiday. recalculated weekly exp date is:"+weekExp);
         }
         expDate=weekExp;
+        Date monthlyExpDate=getMonthExpDay();
+        String monthlyExp=format.format(monthlyExpDate);
         String nextWeekExpDate=nextWeekExpDate(calendar,currentWeekExpOff,lsHoliday);
         String instrumentURI = baseURL+instrumentURL;
         String response=transactionService.callAPI(transactionService.createZerodhaGetRequest(instrumentURI));
@@ -192,7 +202,17 @@ public class ZerodhaTransactionService {
                     bankNiftyNextWeeklyOptions.put(data[6], map);
                 }
             }
-
+            if(data[5].equals(monthlyExp) &&  data[10].equals("NFO-FUT") && data[11].equals("NFO")){
+                if(currentFutures.get(index)!=null){
+                    Map<String,String> map=currentFutures.get(index);
+                    map.put(data[2],data[0]);
+                    currentFutures.put(index, map);
+                }else {
+                    Map<String,String> map=new HashMap<>();
+                    map.put(data[2],data[0]);
+                    currentFutures.put(index, map);
+                }
+            }
             if( index.equals("NIFTY") &&  data[5].equals(weekExp) &&  data[10].equals("NFO-OPT") && data[11].equals("NFO")){
                 if(niftyWeeklyOptions.get(data[6])!=null){
                     Map<String,String> map=niftyWeeklyOptions.get(data[6]);
@@ -224,5 +244,44 @@ public class ZerodhaTransactionService {
         System.out.println(bankNiftyWeeklyOptions.size());
         sendMessage.sendToTelegram("Total BNF current week expiry strike count :" + bankNiftyWeeklyOptions.size(), telegramToken,"-713214125");
         sendMessage.sendToTelegram("Total BNF Next Week expiry strike count :" + bankNiftyNextWeeklyOptions.size(), telegramToken,"-713214125");
+        sendMessage.sendToTelegram("Total BNF Futures strike Count for monthly exp :" +monthlyExp+":"+ currentFutures.size(), telegramToken,"-713214125");
+    }
+   /* public static void main(String args[]){
+        ZerodhaTransactionService zerodhaTransactionService=new ZerodhaTransactionService();
+        zerodhaTransactionService.getMonthExpDay();
+    }*/
+    public Date getMonthExpDay() {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat dayFormat = new SimpleDateFormat("dd");
+        SimpleDateFormat monthFormat = new SimpleDateFormat("MM");// 01-12
+        SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");// 01-12
+        LocalDate expDateTemp=getLastThursday(Integer.parseInt(monthFormat.format(cal.getTime())),Integer.parseInt(yearFormat.format(cal.getTime())));
+       // String monthlyExpTemp1=format.format(expDateTemp);
+        int expDayTemp=expDateTemp.getDayOfMonth();
+       int curDayTemp=LocalDate.now().getDayOfMonth();
+        //Calendar calCurTemp = Calendar.getInstance();
+        if(curDayTemp>=expDayTemp){
+            int month=Integer.parseInt(monthFormat.format(cal.getTime()));
+            int year=Integer.parseInt(yearFormat.format(cal.getTime()));
+            if(month==12){
+                month=1;
+                year=year+1;
+            }else {
+                month=month+1;
+            }
+            LocalDate date= getLastThursday(month,year);
+            return Date.from(date.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+        }
+        return Date.from(expDateTemp.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+    }
+
+    public LocalDate getLastThursday(int month, int year){
+        LocalDate lastThursday = LocalDate.of(year, month, 1).with(lastInMonth(THURSDAY));
+        if (lsHoliday.containsKey(lastThursday)) {
+            lastThursday.minusDays(1);
+            log.info("Thursday falling on holiday. recalculated weekly exp date is:"+lastThursday);
+        }
+        return lastThursday;
     }
 }

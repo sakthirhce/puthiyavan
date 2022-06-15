@@ -17,7 +17,7 @@ public class MathUtils
      */
 
     public static BigDecimal percentageValueOfAmount(BigDecimal percent, BigDecimal amount){
-        BigDecimal value=amount.divide(new BigDecimal("100"),2,BigDecimal.ROUND_UP).multiply(percent).setScale(2,BigDecimal.ROUND_UP);
+        BigDecimal value=amount.divide(new BigDecimal("100"),2,BigDecimal.ROUND_UP).multiply(percent).setScale(0, RoundingMode.HALF_UP);
         return value;
     }
     public static BigDecimal percentageMove(BigDecimal open, BigDecimal close){
