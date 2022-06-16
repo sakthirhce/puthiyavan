@@ -353,14 +353,14 @@ public class ZerodhaBankNiftyShortStraddle {
                                                     TradeData reverseTrade = new TradeData();
                                                     reverseTrade.setStockId(stockId);
                                                     int retryCountN = 0;
-                                                   /* if (key.contains("REENTRY") && parentTradeData != null) {
+                                                    if (key.contains("REENTRY") && parentTradeData != null) {
                                                         retryCountN = parentTradeData.getRentryCount() + 1;
                                                         parentTradeData.setRentryCount(retryCountN);
                                                         reverseTrade.setParentEntry(parentTradeData.getStockName());
                                                     } else if (!key.contains("REENTRY")) {
                                                         retryCountN = 1;
                                                         trendTradeData.setRentryCount(retryCountN);
-                                                    }*/
+                                                    }
                                                     reverseTrade.setStockName(trendTradeData.getStockName());
                                                     String retryKey = trendTradeData.getStockName() + "_REENTRY_" + retryCountN;
                                                     try {

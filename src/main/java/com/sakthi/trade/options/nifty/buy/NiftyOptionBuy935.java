@@ -133,7 +133,7 @@ public class NiftyOptionBuy935 {
                                                     LOGGER.info("buy trigger price based on 9:34 close :" + atmNiftyStrikeMap.getKey() + ":" + triggerPriceTemp);
                                                 }
                                             } catch (ParseException e) {
-                                                LOGGER.info("error:"+atmNiftyStrikeMap.getKey()+":"+e.getMessage());
+                                                LOGGER.info("error:"+atmNiftyStrikeMap.getKey()+":"+e.getMessage()+":"+gson.toJson(historicalDataPrice));
                                             }
                                         });
                                     }
@@ -174,7 +174,7 @@ public class NiftyOptionBuy935 {
                                     tradeData.setDataKey(dataKey);
                                     tradeData.setStockName(atmNiftyStrikeMap.getKey());
                                     try {
-                                        log.info("input:"+gson.toJson(orderParams));
+                                        LOGGER.info("input:"+gson.toJson(orderParams));
                                         order = user.getKiteConnect().placeOrder(orderParams, "regular");
                                         tradeData.setEntryOrderId(order.orderId);
                                         tradeData.isOrderPlaced = true;
@@ -225,121 +225,123 @@ public class NiftyOptionBuy935 {
         userList.getUser().stream().filter(user -> user.getNiftyBuy935() != null && user.getNiftyBuy935().isNrmlEnabled()).forEach(user -> {
 
             if (user.getNiftyBuy935().straddleTradeMap != null) {
-                BigDecimal slPercent =  user.getNiftyBuy935().getSl();
                 user.getNiftyBuy935().straddleTradeMap.entrySet().stream().filter(map -> map.getValue().isOrderPlaced && map.getValue().getEntryOrderId() != null)
                         .forEach(map -> {
-                            TradeData trendTradeData = map.getValue();
-                            List<Order> orderList = null;
                             try {
-                                orderList = user.getKiteConnect().getOrders();
-                            } catch (KiteException | IOException e) {
-                                e.printStackTrace();
-                            }
-                            orderList.forEach(order -> {
-                                if (!trendTradeData.isErrored && !trendTradeData.isSLCancelled && !trendTradeData.isExited && !trendTradeData.isSLHit) {
-                                    if (order.orderId.equals(trendTradeData.getSlOrderId()) && trendTradeData.isSlPlaced) {
-                                        if ("CANCELLED".equals(order.status)) {
-                                            trendTradeData.isSLCancelled = true;
+                                TradeData trendTradeData = map.getValue();
+                                List<Order> orderList = null;
+                                try {
+                                    orderList = user.getKiteConnect().getOrders();
+                                } catch (KiteException | IOException e) {
+                                    e.printStackTrace();
+                                }
+                                orderList.forEach(order -> {
+                                    if (!trendTradeData.isErrored && !trendTradeData.isSLCancelled && !trendTradeData.isExited && !trendTradeData.isSLHit) {
+                                        if (order.orderId.equals(trendTradeData.getSlOrderId()) && trendTradeData.isSlPlaced) {
+                                            if ("CANCELLED".equals(order.status)) {
+                                                trendTradeData.isSLCancelled = true;
 
-                                            String message = MessageFormat.format("Broker Cancelled SL Order for {0}", trendTradeData.getStockName() + ":" + user.getName()+":"+getAlgoName());
-                                            LOGGER.info(message);
-                                            try {
-                                                sendMessage.sendToTelegram(message, telegramToken);
-                                            }catch (Exception e){
-                                                log.error("error:"+e);
-                                            }
-
-
-                                        }
-                                    }
-                                    if (trendTradeData.getEntryOrderId().equals(order.orderId) && !trendTradeData.isSlPlaced) {
-                                        if ("COMPLETE".equals(order.status)) {
-
-                                            if ("BUY".equals(order.transactionType)) {
-                                                LOGGER.info("buy completed" + trendTradeData.trueDataSymbol + ":" + trendTradeData.getEntryOrderId());
+                                                String message = MessageFormat.format("Broker Cancelled SL Order for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName());
+                                                LOGGER.info(message);
                                                 try {
-                                                    //   LOGGER.info("buy completed");
-                                                    trendTradeData.setBuyTradedPrice(new BigDecimal(order.averagePrice));
-                                                    try {
-                                                        BigDecimal slipage = (trendTradeData.getBuyPrice().subtract(trendTradeData.getBuyTradedPrice())).multiply(new BigDecimal(50)).setScale(0, RoundingMode.UP);
-                                                        String message = MessageFormat.format("Option Buy Triggered for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName());
-                                                        LOGGER.info(message);
-                                                        sendMessage.sendToTelegram(message, telegramToken);
-                                                    } catch (Exception e) {
-                                                        e.printStackTrace();
-                                                    }
-                                                    mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
-
-                                                    LOGGER.info("inside options stop sell");
-
-                                                    BigDecimal triggerPriceTemp = (trendTradeData.getBuyPrice().subtract(new BigDecimal(10))).setScale(0, RoundingMode.HALF_UP);
-                                                    //    if (qty.get() > 0 && user.getStraddleConfig().getBuyConfig() != null && user.getStraddleConfig().getBuyConfig().isEnabled()) {
-                                                    LOGGER.info("buy price:" + trendTradeData.getBuyPrice().doubleValue() + " sl price: " + triggerPriceTemp.doubleValue());
-                                                    OrderParams orderParams = new OrderParams();
-                                                    orderParams.tradingsymbol = trendTradeData.getStockName();
-                                                    orderParams.exchange = "NFO";
-                                                    orderParams.quantity = trendTradeData.getQty();
-                                                    orderParams.triggerPrice = triggerPriceTemp.doubleValue();
-
-                                                    BigDecimal price = triggerPriceTemp.subtract(triggerPriceTemp.divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP);
-                                                    orderParams.price = price.doubleValue();
-                                                    orderParams.orderType = "SL";
-                                                    orderParams.product = "NRML";
-                                                    orderParams.transactionType = "SELL";
-                                                    orderParams.validity = "DAY";
-                                                    com.zerodhatech.models.Order orderd;
-
-                                                    try {
-                                                        log.info("input:" + gson.toJson(orderParams));
-                                                        orderd = user.getKiteConnect().placeOrder(orderParams, "regular");
-                                                        trendTradeData.isSlPlaced = true;
-                                                        trendTradeData.setSlPrice(triggerPriceTemp);
-                                                        trendTradeData.setSlOrderId(orderd.orderId);
-                                                        mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
-                                                        try {
-                                                            LOGGER.info("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL");
-                                                            sendMessage.sendToTelegram("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL" + ":" + getAlgoName(), telegramToken);
-                                                        } catch (Exception e) {
-                                                            LOGGER.info("error:" + e);
-                                                        }
-                                                        ///sendMessage.sendToTelegram("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL", telegramToken);
-
-                                                    } catch (KiteException | IOException e) {
-                                                        // tradeData.isErrored = true;
-                                                        LOGGER.info("Nifty option order: " + e.getMessage() + ":" + user.getName());
-                                                        sendMessage.sendToTelegram("Nifty option order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + order.statusMessage + ":" + getAlgoName(), telegramToken);
-                                                        //e.printStackTrace();
-                                                    }
-
+                                                    sendMessage.sendToTelegram(message, telegramToken);
                                                 } catch (Exception e) {
-                                                    log.info("error while placing sl:" + e.getMessage() + trendTradeData.getEntryOrderId() + ":" + trendTradeData.getStockName());
+                                                    log.error("error:" + e);
+                                                }
+
+
+                                            }
+                                        }
+                                        if (trendTradeData.getEntryOrderId().equals(order.orderId) && !trendTradeData.isSlPlaced) {
+                                            if ("COMPLETE".equals(order.status)) {
+
+                                                if ("BUY".equals(order.transactionType)) {
+                                                    LOGGER.info("buy completed" + trendTradeData.trueDataSymbol + ":" + trendTradeData.getEntryOrderId());
+                                                    try {
+                                                        //   LOGGER.info("buy completed");
+                                                        trendTradeData.setBuyTradedPrice(new BigDecimal(order.averagePrice));
+                                                        try {
+                                                            BigDecimal slipage = (trendTradeData.getBuyPrice().subtract(trendTradeData.getBuyTradedPrice())).multiply(new BigDecimal(50)).setScale(0, RoundingMode.UP);
+                                                            String message = MessageFormat.format("Option Buy Triggered for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName());
+                                                            LOGGER.info(message);
+                                                            sendMessage.sendToTelegram(message, telegramToken);
+                                                        } catch (Exception e) {
+                                                            e.printStackTrace();
+                                                        }
+                                                        mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
+
+                                                        LOGGER.info("inside options stop sell");
+
+                                                        BigDecimal triggerPriceTemp = (trendTradeData.getBuyPrice().subtract(new BigDecimal(10))).setScale(0, RoundingMode.HALF_UP);
+                                                        //    if (qty.get() > 0 && user.getStraddleConfig().getBuyConfig() != null && user.getStraddleConfig().getBuyConfig().isEnabled()) {
+                                                        LOGGER.info("buy price:" + trendTradeData.getBuyPrice().doubleValue() + " sl price: " + triggerPriceTemp.doubleValue());
+                                                        OrderParams orderParams = new OrderParams();
+                                                        orderParams.tradingsymbol = trendTradeData.getStockName();
+                                                        orderParams.exchange = "NFO";
+                                                        orderParams.quantity = trendTradeData.getQty();
+                                                        orderParams.triggerPrice = triggerPriceTemp.doubleValue();
+
+                                                        BigDecimal price = triggerPriceTemp.subtract(triggerPriceTemp.divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP);
+                                                        orderParams.price = price.doubleValue();
+                                                        orderParams.orderType = "SL";
+                                                        orderParams.product = "NRML";
+                                                        orderParams.transactionType = "SELL";
+                                                        orderParams.validity = "DAY";
+                                                        com.zerodhatech.models.Order orderd;
+
+                                                        try {
+                                                            LOGGER.info("input:" + gson.toJson(orderParams));
+                                                            orderd = user.getKiteConnect().placeOrder(orderParams, "regular");
+                                                            trendTradeData.isSlPlaced = true;
+                                                            trendTradeData.setSlPrice(triggerPriceTemp);
+                                                            trendTradeData.setSlOrderId(orderd.orderId);
+                                                            mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
+                                                            try {
+                                                                LOGGER.info("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL");
+                                                                sendMessage.sendToTelegram("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL" + ":" + getAlgoName(), telegramToken);
+                                                            } catch (Exception e) {
+                                                                LOGGER.info("error:" + e);
+                                                            }
+                                                            ///sendMessage.sendToTelegram("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL", telegramToken);
+
+                                                        } catch (KiteException | IOException e) {
+                                                            // tradeData.isErrored = true;
+                                                            LOGGER.info("Nifty option order: " + e.getMessage() + ":" + user.getName());
+                                                            sendMessage.sendToTelegram("Nifty option order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + order.statusMessage + ":" + getAlgoName(), telegramToken);
+                                                            //e.printStackTrace();
+                                                        }
+
+                                                    } catch (Exception e) {
+                                                        LOGGER.info("error while placing sl:" + e.getMessage() + trendTradeData.getEntryOrderId() + ":" + trendTradeData.getStockName());
+                                                    }
                                                 }
                                             }
                                         }
-                                    }
-                                        if ("SELL".equals(order.transactionType) && trendTradeData.getSlOrderId().equals(order.orderId) && !trendTradeData.isExited) {
+                                        if ("SELL".equals(order.transactionType) && order.orderId.equals(trendTradeData.getSlOrderId()) && !trendTradeData.isExited) {
                                             trendTradeData.isSLHit = true;
                                             trendTradeData.isExited = true;
                                             trendTradeData.setExitOrderId(order.orderId);
                                             trendTradeData.setSellPrice(trendTradeData.getSlPrice());
                                             trendTradeData.setSellTradedPrice(new BigDecimal(order.averagePrice));
                                             BigDecimal slipage = (trendTradeData.getSellTradedPrice().subtract(trendTradeData.getSellPrice())).multiply(new BigDecimal(25)).setScale(0, RoundingMode.UP);
-                                            String message = MessageFormat.format("SL Hit for {0}" + ": sl sell slipage" + slipage.toString(), map.getKey() + ":" + user.getName()+":"+getAlgoName());
+                                            String message = MessageFormat.format("SL Hit for {0}" + ": sl sell slipage" + slipage.toString(), map.getKey() + ":" + user.getName() + ":" + getAlgoName());
                                             LOGGER.info(message);
                                             sendMessage.sendToTelegram(message, telegramToken);
                                             mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
                                         }
 
-                                    } else if ("REJECTED".equals(order.status) && !trendTradeData.isErrored && trendTradeData.getSlOrderId().equals(order.orderId)) {
-                                        String message = MessageFormat.format("SL order placement rejected for {0}", map.getKey() + ":" + user.getName() + ":" + order.status + ":" + order.statusMessage+":"+getAlgoName());
+                                    } else if ("REJECTED".equals(order.status) && !trendTradeData.isErrored && order.orderId.equals(trendTradeData.getSlOrderId())) {
+                                        String message = MessageFormat.format("SL order placement rejected for {0}", map.getKey() + ":" + user.getName() + ":" + order.status + ":" + order.statusMessage + ":" + getAlgoName());
                                         LOGGER.info(message);
                                         trendTradeData.isErrored = true;
                                         sendMessage.sendToTelegram(message, telegramToken);
                                     }
 
 
-
-                            });
+                                });
+                            }catch (Exception e){
+                                LOGGER.info("error while processing sl monitor:"+e.getMessage());
+                            }
                         });
 
             }
