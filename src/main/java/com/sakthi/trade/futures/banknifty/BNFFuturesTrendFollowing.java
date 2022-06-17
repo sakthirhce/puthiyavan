@@ -322,7 +322,7 @@ public class BNFFuturesTrendFollowing {
         });
     }
 
-    @Scheduled(cron = "${banknifty.nrml.nextday.position.load.schedule}")
+    @Scheduled(cron = "${banknifty.futures.nextday.load.data}")
     public void loadNrmlPositions() {
         Iterable<OpenTradeDataEntity> openTradeDataEntities1 = openTradeDataRepo.findAll();
         openTradeDataEntities1.forEach(openTradeDataEntity -> {
@@ -362,72 +362,7 @@ public class BNFFuturesTrendFollowing {
         });
     }
 
-    @Scheduled(cron = "${banknifty.nrml.nextday.exit.price.schedule}")
-    public void exitPriceNrmlPositions() {
-        userList.getUser().stream().filter(user -> user.getStraddleConfig() != null && user.getStraddleConfig().isNrmlEnabled()).forEach(user -> {
-            try {
-                List<Order> orders = user.getKiteConnect().getOrders();
-                List<Position> positions = user.getKiteConnect().getPositions().get("net");
-                LOGGER.info(new Gson().toJson(positions));
-                openTradeDataEntities.stream().filter(openTradeDataEntity -> !openTradeDataEntity.isExited && user.getName().equals(openTradeDataEntity.getUserId())).forEach(openTradeDataEntity -> {
-                    orders.stream().filter(order -> "COMPLETE".equals(order.status) && order.orderId.equals(openTradeDataEntity.getExitOrderId())).findFirst().ifPresent(orderr -> {
-                        try {
-                            Date date = new Date();
-                            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-                            String currentDate = format.format(date);
-                            try {
-
-
-                                String historicURL = "https://api.kite.trade/instruments/historical/" + openTradeDataEntity.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
-                                String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
-                                System.out.print(openTradeDataEntity.getStockName() + " history api response:" + response);
-                                HistoricalData historicalData = new HistoricalData();
-                                JSONObject json = new JSONObject(response);
-                                String status = json.getString("status");
-                                if (!status.equals("error")) {
-                                    historicalData.parseResponse(json);
-                                }
-                                if (historicalData.dataArrayList.size() > 0) {
-                                    historicalData.dataArrayList.stream().forEach(historicalData1 -> {
-                                        try {
-                                            Date openDatetime = sdf.parse(historicalData1.timeStamp);
-                                            String openDate = format.format(openDatetime);
-                                            if (sdf.format(openDatetime).equals(openDate + "T09:33:00")) {
-                                                BigDecimal triggerPriceTemp = ((new BigDecimal(historicalData1.close).divide(new BigDecimal(5))).add(new BigDecimal(historicalData1.close))).setScale(0, RoundingMode.HALF_UP);
-                                                if ("SELL".equals(orderr.transactionType)) {
-                                                    openTradeDataEntity.setSellPrice(new BigDecimal(historicalData1.close));
-                                                } else {
-                                                    openTradeDataEntity.setBuyPrice(new BigDecimal(orderr.averagePrice));
-                                                }
-                                                LOGGER.info("setting  9:34 exit :" + openTradeDataEntity.getStockId() + ":" + historicalData1.close);
-                                            }
-                                        } catch (ParseException e) {
-                                            throw new RuntimeException(e);
-                                        }
-                                    });
-                                }
-
-                            } catch (Exception e) {
-                                LOGGER.info(e.getMessage());
-                            }
-                            openTradeDataEntity.isExited = true;
-                            if ("SELL".equals(orderr.transactionType)) {
-                                openTradeDataEntity.setSellTradedPrice(new BigDecimal(orderr.averagePrice));
-                            } else {
-                                openTradeDataEntity.setBuyTradedPrice(new BigDecimal(orderr.averagePrice));
-                            }
-                            saveTradeData(openTradeDataEntity);
-                        } catch (Exception e) {
-                            LOGGER.info(e.getMessage());
-                        }
-                    });
-                });
-            } catch (Exception | KiteException e) {
-                LOGGER.info(e.getMessage());
-            }
-        });
-    }
-    @Scheduled(cron = "${banknifty.nrml.nextday.sl.place.schedule}")
+    @Scheduled(cron = "${banknifty.futures.nextday.sl.place}")
     public void placeSLNrmlPositions() {
         openTradeDataEntities.stream().filter(openTradeDataEntity -> !openTradeDataEntity.isSlPlaced && !openTradeDataEntity.isExited).forEach(openTradeDataEntity -> {
             try {
@@ -525,7 +460,7 @@ public class BNFFuturesTrendFollowing {
     }
 
 
-    @Scheduled(cron = "${banknifty.nrml.nextday.exit.schedule}")
+    @Scheduled(cron = "${banknifty.futures.nextday.exit.schedule}")
     public void exitNrmlPositions() {
         userList.getUser().stream().filter(user -> user.getStraddleConfig() != null && user.getStraddleConfig().isNrmlEnabled()).forEach(user -> {
             try {
@@ -593,7 +528,7 @@ public class BNFFuturesTrendFollowing {
         });
     }
 
-    @Scheduled(cron = "${banknifty.nrml.nextday.sl.monitor.schedule}")
+    @Scheduled(cron = "${banknifty.futures.nextday.sl.monitor}")
     public void sLNrmlMonitorPositions() {
         openTradeDataEntities.stream().filter(openTradeDataEntity -> openTradeDataEntity.isSlPlaced && !openTradeDataEntity.isExited).forEach(openTradeDataEntity -> {
             User user = userList.getUser().stream().filter(user1 -> user1.getName().equals(openTradeDataEntity.getUserId())).findFirst().get();
