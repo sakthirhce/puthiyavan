@@ -11,6 +11,8 @@ import java.util.Date;
 public class TradeData {
 
     String stockName;
+    String algoName;
+    String tradeDate;
     int qty=0;
     String dataKey;
     BigDecimal reverseSlPrice;

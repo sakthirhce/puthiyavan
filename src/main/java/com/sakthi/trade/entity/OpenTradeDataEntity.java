@@ -48,6 +48,7 @@ public class OpenTradeDataEntity {
     BigDecimal amountPerStock;
     public boolean isErrored;
     public Date createTimestamp;
+    public String tradeDate;
 }
 
 

@@ -269,7 +269,7 @@ public class NiftyOptionBuy1035 {
                                                         } catch (Exception e) {
                                                             e.printStackTrace();
                                                         }
-                                                        mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
+                                                        mapTradeDataToSaveOpenTradeDataEntity(trendTradeData,true);
 
                                                         LOGGER.info("inside options stop sell");
                                                         BigDecimal triggerPriceTemp = (trendTradeData.getBuyPrice().subtract(new BigDecimal(10))).setScale(0, RoundingMode.HALF_UP);
@@ -297,7 +297,7 @@ public class NiftyOptionBuy1035 {
                                                             trendTradeData.isSlPlaced = true;
                                                             trendTradeData.setSlOrderId(orderd.orderId);
                                                             trendTradeData.setSlPrice(triggerPriceTemp);
-                                                            mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
+                                                            mapTradeDataToSaveOpenTradeDataEntity(trendTradeData,true);
                                                             sendMessage.sendToTelegram("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL" + ":" + getAlgoName(), telegramToken);
 
                                                         } catch (KiteException | IOException e) {
@@ -313,7 +313,7 @@ public class NiftyOptionBuy1035 {
                                                 }
                                             }
                                         }
-                                        if ("SELL".equals(order.transactionType) && order.orderId.equals(trendTradeData.getSlOrderId()) && !trendTradeData.isExited) {
+                                        if ("COMPLETE".equals(order.status) && "SELL".equals(order.transactionType) && order.orderId.equals(trendTradeData.getSlOrderId()) && !trendTradeData.isExited && trendTradeData.isSlPlaced) {
                                             trendTradeData.isSLHit = true;
                                             trendTradeData.isExited = true;
                                             trendTradeData.setExitOrderId(order.orderId);
@@ -323,7 +323,7 @@ public class NiftyOptionBuy1035 {
                                             String message = MessageFormat.format("SL Hit for {0}" + ": sl sell slipage" + slipage.toString(), map.getKey() + ":" + user.getName() + ":" + getAlgoName());
                                             LOGGER.info(message);
                                             sendMessage.sendToTelegram(message, telegramToken);
-                                            mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
+                                            mapTradeDataToSaveOpenTradeDataEntity(trendTradeData,false);
                                         }
 
                                     } else if ("REJECTED".equals(order.status) && !trendTradeData.isErrored && order.orderId.equals(trendTradeData.getSlOrderId())) {
@@ -686,7 +686,7 @@ public class NiftyOptionBuy1035 {
         });
     }
 
-    public void mapTradeDataToSaveOpenTradeDataEntity(TradeData tradeData) {
+    public void mapTradeDataToSaveOpenTradeDataEntity(TradeData tradeData,boolean orderPlaced) {
         try {
             OpenTradeDataEntity openTradeDataEntity = new OpenTradeDataEntity();
             openTradeDataEntity.setDataKey(tradeData.getDataKey());
@@ -710,6 +710,11 @@ public class NiftyOptionBuy1035 {
             openTradeDataEntity.setEntryOrderId(tradeData.getEntryOrderId());
             openTradeDataEntity.setSlOrderId(tradeData.getSlOrderId());
             openTradeDataEntity.setStockId(tradeData.getStockId());
+            Date date = new Date();
+            if(orderPlaced) {
+                String tradeDate = format.format(date);
+                openTradeDataEntity.setTradeDate(tradeDate);
+            }
             saveTradeData(openTradeDataEntity);
             LOGGER.info("sucessfully saved trade data");
         } catch (Exception e) {

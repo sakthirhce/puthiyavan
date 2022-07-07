@@ -7,18 +7,15 @@ import com.binance.client.model.market.ExchangeInfoEntry;
 import com.google.gson.Gson;
 import com.opencsv.CSVReader;
 import com.sakthi.trade.aliceblue.AliceAccount;
-//import com.sakthi.trade.binance.BinanceAccount;
 import com.sakthi.trade.binance.*;
 import com.sakthi.trade.domain.*;
-import com.sakthi.trade.domain.Order;
-import com.sakthi.trade.domain.ExpResponse;
 import com.sakthi.trade.entity.CryptoFuturesEntity;
-import com.sakthi.trade.entity.IndexEntity;
-import com.sakthi.trade.entity.StockDataEntity;
+import com.sakthi.trade.entity.OpenTradeDataEntity;
 import com.sakthi.trade.entity.StockEntity;
+import com.sakthi.trade.entity.UserLoginEntity;
 import com.sakthi.trade.futures.banknifty.BNFFuturesTrendFollowing;
 import com.sakthi.trade.fyer.Account;
-import com.sakthi.trade.fyer.FyerTrendTest;
+//import com.sakthi.trade.fyer.FyerTrendTest;
 import com.sakthi.trade.fyer.mapper.FyerTransactionMapper;
 import com.sakthi.trade.fyer.service.TransactionService;
 import com.sakthi.trade.fyer.transactions.OrderStatusResponseDTO;
@@ -26,39 +23,30 @@ import com.sakthi.trade.fyer.transactions.PlaceOrderRequestDTO;
 import com.sakthi.trade.index.option.data.load.BankNiftyDataLoad;
 import com.sakthi.trade.options.WeeklyDataBackup;
 import com.sakthi.trade.options.banknifty.*;
-//import com.sakthi.trade.options.banknifty.BankNiftyShortStraddle;
-//import com.sakthi.trade.options.buy.banknifty.VwapRsiOiVolumeBuy;
 import com.sakthi.trade.options.banknifty.backtest.*;
 import com.sakthi.trade.options.buy.banknifty.VwapRsiOiVolumeBuyBacktest;
 import com.sakthi.trade.options.buy.banknifty.VwapRsiOiVolumeBuyBacktestTrueData;
 import com.sakthi.trade.options.nifty.NIftyStraddleLongBackTest;
-//import com.sakthi.trade.options.nifty.NiftyShortStraddle;
 import com.sakthi.trade.options.nifty.NiftyShortStraddleOI;
 import com.sakthi.trade.options.nifty.buy.NiftyVwapRsiOiVolumeBuy;
-//import com.sakthi.trade.orb.OrbScheduler;
 import com.sakthi.trade.options.nifty.buy.NiftyVwapRsiOiVolumeBuyBacktest;
-import com.sakthi.trade.repo.BankNiftyOptionRepository;
-import com.sakthi.trade.repo.CryptoRepository;
-import com.sakthi.trade.repo.IndexRepository;
-import com.sakthi.trade.repo.StockRepository;
+import com.sakthi.trade.repo.*;
 import com.sakthi.trade.telegram.SendMessage;
-//import com.sakthi.trade.trend.TrendScheduler;
-//import com.sakthi.trade.trend.ZerodhaTrendScheduler;
 import com.sakthi.trade.trend.ZerodhaTrendScheduler;
 import com.sakthi.trade.trend.ZerodhaTrendSchedulerTest;
 import com.sakthi.trade.truedata.HistoricRequestDTO;
 import com.sakthi.trade.util.MathUtils;
-//import com.sakthi.trade.websocket.truedata.HistoricWebsocket;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
+import com.sakthi.trade.zerodha.account.UserList;
 import com.sakthi.trade.zerodha.account.ZerodhaAccount;
-//import com.sakthi.trade.zerodha.instrument.InstrumentService;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
-import com.zerodhatech.models.*;
+import com.zerodhatech.models.LTPQuote;
+import com.zerodhatech.models.Position;
+import com.zerodhatech.models.Trade;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Request;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -73,14 +61,16 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.logging.Logger;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
 @Slf4j
 public class AutomationController {
+    public Session session = null;
+    public Boolean trendCompleted = false;
     @Autowired
     Account account;
     @Value("${filepath.trend}")
@@ -97,7 +87,6 @@ public class AutomationController {
     String truedataRealTimeDataPort;
     @Value("${fyers.order.place.api}")
     String orderPlaceURL;
-    public Session session = null;
     String truedataURL = null;
     @Value("${telegram.orb.bot.token}")
     String telegramToken;
@@ -107,31 +96,22 @@ public class AutomationController {
     FyerTransactionMapper fyerTransactionMapper;
     @Autowired
     ZerodhaTransactionService instrumentService;
-
-
     @Autowired
     ZerodhaTrendScheduler zerodhaTrendScheduler;
-
-
     @Autowired
     TransactionService transactionService;
     @Autowired
     SendMessage sendMessage;
-
+    /*@Autowired
+    HistoricWebsocket historicWebsocket;*/
     @Autowired
     NIftyStraddleLongBackTest nIftyStraddleLongBackTest;/*
     @Autowired
     BankNIftyStraddleLongBackTest bankNIftyStraddleLongBackTest;*/
-    /*@Autowired
-    HistoricWebsocket historicWebsocket;*/
-
     @Autowired
     ZerodhaBankNiftyShortStraddle zerodhaBankNiftyShortStraddle;
-
     @Value("${preoopen.filepath:/home/hasvanth/Downloads/PreOpen_FO_}")
     String preOpenFile;
-    @Value("${secban.filepath:/home/hasvanth/Downloads/}")
-    String secBan;
 /*
 
     @Autowired
@@ -143,9 +123,8 @@ public class AutomationController {
 
    /* @Autowired
     NiftyShortStraddle niftyShortStraddle;*/
-
-    public Boolean trendCompleted = false;
-
+    @Value("${secban.filepath:/home/hasvanth/Downloads/}")
+    String secBan;
     @Autowired
     ZerodhaAccount zerodhaAccount;
 
@@ -171,6 +150,60 @@ public class AutomationController {
 
     @Autowired
     ZerodhaTrendSchedulerTest zerodhaTrendSchedulerTest;
+    @Autowired
+    BNFFuturesTrendFollowing bnfFuturesTrendFollowing;
+    @Autowired
+    ZerodhaBankNiftyShortStraddleWithLong zerodhaBankNiftyShortStraddleWithLong;
+    @Autowired
+    WeeklyDataBackup weeklyDataBackup;
+ /*   @Autowired
+    FyerTrendTest fyerTrendTest;*/
+    @Autowired
+    StockRepository stockRepository;
+    @Autowired
+    IndexRepository indexRepository;
+    @Autowired
+    BankNiftyOiSellingBackTest bankNiftyOiSellingBackTest;
+    @Autowired
+    BankNiftyShortStraddleOIBacktest bankNiftyShortStraddleOI;
+    @Autowired
+    VwapRsiOiVolumeBuyBacktestTrueData vwapRsiOiVolumeBuyBacktestTrueData;
+    @Autowired
+    BankNiftyDataLoad bankNiftyDataLoad;
+    @Autowired
+    BankNiftyShortStraddleOIBuyBacktest bankNiftyShortStraddleOIBuyBacktest;
+    @Autowired
+    NiftyShortStraddleOI niftyShortStraddleOI;
+    @Autowired
+    BankNiftyShortStraddleOIDBBacktest bankNiftyShortStraddleOIDBBacktest;
+    @Autowired
+    BankNiftyShortStraddleOIDBBuyBacktest bankNiftyShortStraddleOIDBBuyBacktest;
+    @Autowired
+    BankNiftyOptionRepository bankNiftyOptionRepository;
+    @Autowired
+    BankNiftyOptionSelling bankNiftyOptionSelling;
+    @Autowired
+    BankNiftyOptionSelling1 bankNiftyOptionSelling1;
+    @Autowired
+    BinanceAccount binanceAccount;
+    @Autowired
+    BinanceTrendBacktest binanceTrend;
+    @Autowired
+    BinanceTrendBacktestNew binanceTrendNew;
+    @Autowired
+    UserLoginRepository userLoginRepository;
+    @Autowired
+    CryptoRepository cryptoRepository;
+    @Autowired
+    BinanceTrendLive binanceTrendlive;
+    @Autowired
+    BinanceTrendBacktest binanceTrendBacktest;
+    @Value("${binance.sathiyaseelanrhce.v11.secret}")
+    private String binanceSecretKey;
+    @Value("${binance.sathiyaseelanrhce.v11.apikey}")
+    private String binanceApiKey;
+    RestApiRequestImpl restApiRequest = new RestApiRequestImpl(binanceApiKey, binanceSecretKey, new RequestOptions());
+    SyncRequestImpl syncRequest = new SyncRequestImpl(restApiRequest);
 
     @GetMapping("/aliceTokenTest")
     public void aliceToken() throws Exception {
@@ -209,29 +242,29 @@ public class AutomationController {
         log.info("zerodhaOrders:" + new Gson().toJson(trades));
     }
 
-  /*  @GetMapping("/zerodhaOrdersAndAdd")
-    public void zerodhaOrdersAndAdd(@RequestParam String orderId, @RequestParam boolean isSLPlaced, @RequestParam String slOrderId) throws Exception, KiteException {
-        List<com.zerodhatech.models.Order> trades = zerodhaAccount.kiteSdk.getOrders(); //all orders including pending, completed
-        log.info("zerodhaOrders:" + new Gson().toJson(trades));
-        trades.stream().forEach(order -> {
-            if (orderId.equals(order.orderId) && "COMPLETE".equals(order.status)) {
-                TradeData tradeData = new TradeData();
-                tradeData.setStockName(order.tradingSymbol);
-                tradeData.setEntryOrderId(order.orderId);
-                tradeData.isOrderPlaced = true;
-                tradeData.setQty(Integer.valueOf(order.filledQuantity));
-                tradeData.setEntryType(order.transactionType);
-                if (isSLPlaced) {
-                    tradeData.isSlPlaced = isSLPlaced;
-                    tradeData.setSlOrderId(slOrderId);
-                }
-                zerodhaBankNiftyShortStraddle.straddleTradeMap.put(order.tradingSymbol, tradeData);
-            }
-        });
-        log.info("zerodhaOrders:" + new Gson().toJson(trades));
+    /*  @GetMapping("/zerodhaOrdersAndAdd")
+      public void zerodhaOrdersAndAdd(@RequestParam String orderId, @RequestParam boolean isSLPlaced, @RequestParam String slOrderId) throws Exception, KiteException {
+          List<com.zerodhatech.models.Order> trades = zerodhaAccount.kiteSdk.getOrders(); //all orders including pending, completed
+          log.info("zerodhaOrders:" + new Gson().toJson(trades));
+          trades.stream().forEach(order -> {
+              if (orderId.equals(order.orderId) && "COMPLETE".equals(order.status)) {
+                  TradeData tradeData = new TradeData();
+                  tradeData.setStockName(order.tradingSymbol);
+                  tradeData.setEntryOrderId(order.orderId);
+                  tradeData.isOrderPlaced = true;
+                  tradeData.setQty(Integer.valueOf(order.filledQuantity));
+                  tradeData.setEntryType(order.transactionType);
+                  if (isSLPlaced) {
+                      tradeData.isSlPlaced = isSLPlaced;
+                      tradeData.setSlOrderId(slOrderId);
+                  }
+                  zerodhaBankNiftyShortStraddle.straddleTradeMap.put(order.tradingSymbol, tradeData);
+              }
+          });
+          log.info("zerodhaOrders:" + new Gson().toJson(trades));
 
-    }
-*/
+      }
+  */
     @GetMapping("/zerodhaGetPositions")
     public void zerodhaGetPositions() throws Exception, KiteException {
         Map<String, List<Position>> trades = zerodhaAccount.kiteSdk.getPositions(); //all orders including pending, completed
@@ -243,22 +276,22 @@ public class AutomationController {
         List<com.zerodhatech.models.Order> trades = zerodhaAccount.kiteSdk.getOrderHistory(orderId);
         log.info("zerodhaOrdersId:" + new Gson().toJson(trades));
     }
-    @Autowired
-    BNFFuturesTrendFollowing bnfFuturesTrendFollowing;
+
     @GetMapping("/bnfFutures")
     public void bnfFutures() throws Exception, KiteException {
         bnfFuturesTrendFollowing.bnfFutures();
     }
+
     @GetMapping("/zerodhalogintest")
     public void generateAccessToken() throws Exception {
         zerodhaAccount.generateAccessToken();
     }
+
     @GetMapping("/zerodhaloginmtest")
     public void zerodhaloginmtest() throws Exception {
         zerodhaAccount.generateMultiUserAccessToken();
     }
-    @Autowired
-    ZerodhaBankNiftyShortStraddleWithLong zerodhaBankNiftyShortStraddleWithLong;
+
     @GetMapping("/zerodhaloadmtest")
     public void zerodhaloadmtest() throws Exception {
         zerodhaBankNiftyShortStraddleWithLong.loadNrmlPositions();
@@ -269,54 +302,67 @@ public class AutomationController {
         instrumentService.getInstrument();
     }
 
-    @Autowired
-    WeeklyDataBackup weeklyDataBackup;
-
-
     @GetMapping("/zerodha_backup")
     public void weeklyDataBackup() throws Exception {
         weeklyDataBackup.dataBackUp();
     }
 
     @GetMapping("/zerodhaNewTrend")
-        public void newTrend(@RequestParam int day, @RequestParam boolean isOpenPriceSL, @RequestParam String slPer, @RequestParam String gainPer, @RequestParam String margin, @RequestParam int topNumber, @RequestParam boolean isPyramid, @RequestParam boolean shortTest) throws Exception, KiteException {
+    public void newTrend(@RequestParam int day, @RequestParam boolean isOpenPriceSL, @RequestParam String slPer, @RequestParam String gainPer, @RequestParam String margin, @RequestParam int topNumber, @RequestParam boolean isPyramid, @RequestParam boolean shortTest) throws Exception, KiteException {
         zerodhaTrendSchedulerTest.trendScheduler(day, isOpenPriceSL, slPer, gainPer, margin, topNumber, isPyramid, shortTest);
 
     }
-    @Autowired
-    FyerTrendTest fyerTrendTest;
+  /*  @GetMapping("/zerodhatrend")
+    public void trendLive() throws Exception, KiteException {
+        zerodhaAccount.generateAccessToken();
+        instrumentService.getInstrument();
+        zerodhaTrendScheduler.trendLive();
+
+    }*/
+/*
+
     @GetMapping("/newFyersTrend")
     public void newFyersTrend(@RequestParam int day, @RequestParam boolean isOpenPriceSL, @RequestParam String slPer, @RequestParam String gainPer, @RequestParam String margin, @RequestParam int topNumber, @RequestParam boolean isPyramid, @RequestParam boolean shortTest) throws Exception, KiteException {
         fyerTrendTest.trendScheduler(day, isOpenPriceSL, slPer, gainPer, margin, topNumber, isPyramid, shortTest);
 
     }
+*/
 
-    @Autowired
-    StockRepository stockRepository;
     @GetMapping("/loadHistory")
     public void loadHistory(@RequestParam int day) throws Exception, KiteException {
 
-        List<StockEntity> stockEntityList=stockRepository.findMissingStockData();
+        List<StockEntity> stockEntityList = stockRepository.findMissingStockData();
 
         stockEntityList.forEach(stockEntity -> {
-            account.loadHistory(day,stockEntity.getSymbol(),stockEntity.getFyerSymbol());
+            account.loadHistory(day, stockEntity.getSymbol(), stockEntity.getFyerSymbol());
         });
 
     }
+
+   /* @GetMapping("/live")
+    public void startORBLive() throws Exception {
+        orbScheduler.ORBScheduler();
+    }
+    @GetMapping("/data15min")
+    public void startORB15min() throws Exception {
+        orbScheduler.ORB15MinDataScheduler();
+    }*/
+
     @GetMapping("/loadStockDayHistory")
     public void loadStockDayHistory(@RequestParam int day) throws Exception, KiteException {
 
-        List<StockEntity> stockEntityList=stockRepository.findAll();
+        List<StockEntity> stockEntityList = stockRepository.findAll();
 
         stockEntityList.forEach(stockEntity -> {
-            account.loadDayHistory(day,stockEntity.getSymbol(),stockEntity.getFyerSymbol());
+            account.loadDayHistory(day, stockEntity.getSymbol(), stockEntity.getFyerSymbol());
         });
 
     }
+
     @GetMapping("/loadStockWeekHistory")
     public void loadStockWeekHistory(@RequestParam int day) throws Exception, KiteException {
 
-        List<StockEntity> stockEntityList=stockRepository.findAll();
+        List<StockEntity> stockEntityList = stockRepository.findAll();
 
         stockEntityList.forEach(stockEntity -> {
             account.loadStockWeekHistory(stockEntity.getSymbol());
@@ -327,17 +373,19 @@ public class AutomationController {
     @GetMapping("/calculateBigTimeFrame")
     public void calculateBigTimeFrame(@RequestParam int day) throws Exception, KiteException {
 
-       account.calculateBigTimeFrame();
+        account.calculateBigTimeFrame();
     }
+
     @GetMapping("/populatePivots")
     public void populatePivots() throws Exception, KiteException {
 
        /* List<StockEntity> stockEntityList=stockRepository.findAll();
         stockEntityList.forEach(stockEntity -> {*/
-            account.populatePivots();
-      /*  });*/
+        account.populatePivots();
+        /*  });*/
 
     }
+
     @GetMapping("/findMax")
     public void findMax() throws Exception, KiteException {
 
@@ -347,15 +395,17 @@ public class AutomationController {
         /*  });*/
 
     }
+
     @GetMapping("/testPivots")
-    public void testPivots(@RequestParam String fromDate,@RequestParam String toDate) throws Exception, KiteException {
+    public void testPivots(@RequestParam String fromDate, @RequestParam String toDate) throws Exception, KiteException {
 
        /* List<StockEntity> stockEntityList=stockRepository.findAll();
         stockEntityList.forEach(stockEntity -> {*/
-        account.testPivots(fromDate,toDate);
+        account.testPivots(fromDate, toDate);
         /*  });*/
 
     }
+
     @GetMapping("/testPivotsHistory")
     public void testPivotsHistory(@RequestParam int day) throws Exception, KiteException {
 
@@ -366,34 +416,35 @@ public class AutomationController {
 
     }
 
-
     @GetMapping("/loadStockYearHistory")
     public void loadStockYearHistory(@RequestParam int day) throws Exception, KiteException {
-        List<StockEntity> stockEntityList=stockRepository.findAll();
+        List<StockEntity> stockEntityList = stockRepository.findAll();
         stockEntityList.forEach(stockEntity -> {
             account.loadStockYearHistory(stockEntity.getSymbol());
         });
     }
+
     @GetMapping("/loadIndicesDayHistory")
     public void loadIndicesDayHistory(@RequestParam int day) throws Exception, KiteException {
 
-        account.loadIndicesDayHistory(day,"BANKNIFTY","NSE:NIFTYBANK-INDEX");
+        account.loadIndicesDayHistory(day, "BANKNIFTY", "NSE:NIFTYBANK-INDEX");
 
     }
-    @Autowired
-    IndexRepository indexRepository;
+
     @GetMapping("/loadIndicesHistory")
     public void loadIndicesHistory(@RequestParam int day) throws Exception, KiteException {
-            account.loadIndicesHistory(day,"BANKNIFTY","NSE:NIFTYBANK-INDEX");
+        account.loadIndicesHistory(day, "BANKNIFTY", "NSE:NIFTYBANK-INDEX");
 
 
     }
+
     @GetMapping("/testPivotsIndices")
     public void testPivotsIndices(@RequestParam int day) throws Exception, KiteException {
         account.testPivotsIndices(day);
 
 
     }
+
     /*  @GetMapping("/vwapBuy")
       public void vwapBuy() throws Exception, KiteException {
           zerodhaAccount.generateAccessToken();
@@ -406,9 +457,6 @@ public class AutomationController {
         vwapRsiOiVolumeBuyBacktest.buy(day, tf, tailSL, target, slipage);
 
     }
-
-    @Autowired
-    BankNiftyOiSellingBackTest bankNiftyOiSellingBackTest;
 
     @GetMapping("/OiSelling")
     public void OiSelling(@RequestParam int day, @RequestParam String tf, @RequestParam String tailSL, @RequestParam String target, @RequestParam String slipage) throws Exception, KiteException {
@@ -458,13 +506,6 @@ public class AutomationController {
         zerodhaBankNiftyShortStraddle.zerodhaBankNifty();
 
     }
-  /*  @GetMapping("/zerodhatrend")
-    public void trendLive() throws Exception, KiteException {
-        zerodhaAccount.generateAccessToken();
-        instrumentService.getInstrument();
-        zerodhaTrendScheduler.trendLive();
-
-    }*/
 
     @GetMapping("/fundCheck")
     public void fundCheck() throws Exception {
@@ -475,16 +516,6 @@ public class AutomationController {
     public void fyersToken() throws Exception {
         account.generateToken();
     }
-
-   /* @GetMapping("/live")
-    public void startORBLive() throws Exception {
-        orbScheduler.ORBScheduler();
-    }
-    @GetMapping("/data15min")
-    public void startORB15min() throws Exception {
-        orbScheduler.ORB15MinDataScheduler();
-    }*/
-
 
     // @GetMapping("/placeOrder")
     public void placeOrder() throws Exception {
@@ -507,9 +538,6 @@ public class AutomationController {
         System.out.println("sell response: " + response);
     }
 
-    @Autowired
-    BankNiftyShortStraddleOIBacktest bankNiftyShortStraddleOI;
-
     @GetMapping("/trendTest")
     public void trendTest(@RequestParam int day, @RequestParam String[] stocks) throws Exception {
         int n = day;
@@ -521,18 +549,41 @@ public class AutomationController {
 
     }
 
-    @Autowired
-    VwapRsiOiVolumeBuyBacktestTrueData vwapRsiOiVolumeBuyBacktestTrueData;
-
     @GetMapping("/trendTestV")
     public void trendTestV(@RequestParam int day, @RequestParam String tf, @RequestParam String tailSL, @RequestParam String target, @RequestParam String slipage) throws Exception, KiteException {
         int n = day;
         vwapRsiOiVolumeBuyBacktestTrueData.buy(day, tf, tailSL, target, slipage);
 
     }
+   /* @GetMapping("/shortStraddleScheduleTest")
+    public void shortStraddleScheduleTest() throws Exception {
+        bankNiftyShortStraddle.shortStraddleTradeSchedule();
 
-    @Autowired
-    BankNiftyDataLoad bankNiftyDataLoad;
+    }
+*//*
+    //use it for stock mock based historic test
+    @GetMapping("/bankNIftyStraddleLongBackTest")
+    public void bankNIftyStraddleLongBackTest() throws Exception {
+        bankNIftyStraddleLongBackTest.bankNiftyStraddleLongTest();
+
+    }
+    @GetMapping("/summaryReport")
+    public void summaryReport() throws Exception {
+        bankNIftyStraddleLongBackTest.summaryReport();
+
+    }*/
+
+   /* @GetMapping("/eodTest")
+    public void eodTest() throws Exception {
+        System.out.println("eodTest");
+        historicWebsocket.eodData();
+
+    }*/
+  /*  @GetMapping("/preOpenTest")
+    public void preOpenTest() throws Exception {
+        System.out.println("preOpenTest");
+        historicWebsocket.preOpenSchedule();
+    }*/
 
     @GetMapping("/bankNiftyDataLoad")
     public void bankNiftyDataLoad() throws Exception, KiteException {
@@ -548,9 +599,6 @@ public class AutomationController {
 
     }
 
-    @Autowired
-    BankNiftyShortStraddleOIBuyBacktest bankNiftyShortStraddleOIBuyBacktest;
-
     @GetMapping("/trendTestBuy")
     public void trendTestBuy(@RequestParam int day, @RequestParam String[] stocks) throws Exception {
         int n = day;
@@ -561,9 +609,6 @@ public class AutomationController {
         }
 
     }
-
-    @Autowired
-    NiftyShortStraddleOI niftyShortStraddleOI;
 
     @GetMapping("/niftyStaddleTrend")
     public void niftyStaddleTrend(@RequestParam int day, @RequestParam String[] stocks) throws Exception {
@@ -576,9 +621,6 @@ public class AutomationController {
 
     }
 
-    @Autowired
-    BankNiftyShortStraddleOIDBBacktest bankNiftyShortStraddleOIDBBacktest;
-
     @GetMapping("/bankNiftyShortStraddleOIDB")
     public void bankNiftyShortStraddleOIDBBacktest(@RequestParam int day, @RequestParam String[] stocks) throws Exception {
         int n = day;
@@ -590,9 +632,6 @@ public class AutomationController {
 
     }
 
-    @Autowired
-    BankNiftyShortStraddleOIDBBuyBacktest bankNiftyShortStraddleOIDBBuyBacktest;
-
     @GetMapping("/bankNiftyShortStraddleOIDBBuyBacktest")
     public void bankNiftyShortStraddleOIDBBuyBacktest(@RequestParam int day, @RequestParam String[] stocks) throws Exception {
         int n = day;
@@ -603,9 +642,6 @@ public class AutomationController {
         }
 
     }
-
-    @Autowired
-    BankNiftyOptionRepository bankNiftyOptionRepository;
 
     @GetMapping("/optionExpDate")
     public ResponseEntity<?> optionExpDate() throws Exception {
@@ -640,14 +676,13 @@ public class AutomationController {
         return new ResponseEntity<>(new Gson().toJson(optionCandleChartData), responseHeaders, HttpStatus.OK);
     }
 
-
     @GetMapping("/getIndexData")
-    public ResponseEntity<String> getIndexData(@RequestParam String tradeDate, @RequestParam String indexName,int i) throws Exception {
+    public ResponseEntity<String> getIndexData(@RequestParam String tradeDate, @RequestParam String indexName, int i) throws Exception {
         HttpHeaders responseHeaders = new HttpHeaders();
-        DateTimeFormatter format1 =  DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        LocalDate fromDate = LocalDate.parse(tradeDate,format1).minusDays(2);
+        DateTimeFormatter format1 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate fromDate = LocalDate.parse(tradeDate, format1).minusDays(2);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        LocalDate tradeDateD = LocalDate.parse(tradeDate,format1);
+        LocalDate tradeDateD = LocalDate.parse(tradeDate, format1);
         String optionCandleChartData = account.getBarHistory(indexName, fromDate, tradeDateD);
         return new ResponseEntity<>(new Gson().toJson(optionCandleChartData), responseHeaders, HttpStatus.OK);
     }
@@ -721,35 +756,6 @@ public class AutomationController {
         nIftyStraddleLongBackTest.niftyStraddleLongTest();
 
     }
-   /* @GetMapping("/shortStraddleScheduleTest")
-    public void shortStraddleScheduleTest() throws Exception {
-        bankNiftyShortStraddle.shortStraddleTradeSchedule();
-
-    }
-*//*
-    //use it for stock mock based historic test
-    @GetMapping("/bankNIftyStraddleLongBackTest")
-    public void bankNIftyStraddleLongBackTest() throws Exception {
-        bankNIftyStraddleLongBackTest.bankNiftyStraddleLongTest();
-
-    }
-    @GetMapping("/summaryReport")
-    public void summaryReport() throws Exception {
-        bankNIftyStraddleLongBackTest.summaryReport();
-
-    }*/
-
-   /* @GetMapping("/eodTest")
-    public void eodTest() throws Exception {
-        System.out.println("eodTest");
-        historicWebsocket.eodData();
-
-    }*/
-  /*  @GetMapping("/preOpenTest")
-    public void preOpenTest() throws Exception {
-        System.out.println("preOpenTest");
-        historicWebsocket.preOpenSchedule();
-    }*/
 
     /*  @GetMapping("/preOpenPopulate")
       public void preOpenPopulate() throws Exception {
@@ -832,7 +838,6 @@ public class AutomationController {
         return new Gson().toJson(historicRequestDTO);
     }
 
-
     public Map<String, Double> getOrbStockList(String strdate) throws Exception {
         long startTime = System.nanoTime();
 
@@ -892,16 +897,10 @@ public class AutomationController {
         map.entrySet().stream().findFirst().isPresent();
     }
 
-    @Autowired
-    BankNiftyOptionSelling bankNiftyOptionSelling;
-
     @GetMapping("/testOptionSelling")
     public void testOptionSelling(@RequestParam int days, @RequestParam String trialPercent, @RequestParam boolean isPCREnabled) throws KiteException, Exception {
         bankNiftyOptionSelling.optionSelling(days, trialPercent, isPCREnabled);
     }
-
-    @Autowired
-    BankNiftyOptionSelling1 bankNiftyOptionSelling1;
 
     @GetMapping("/testOptionSelling1")
     public void testOptionSelling1(@RequestParam int days, @RequestParam String trialPercent, @RequestParam boolean isPCREnabled) throws KiteException, Exception {
@@ -913,47 +912,171 @@ public class AutomationController {
         zerodhaTrendScheduler.trendScheduler();
     }
 
-    @Autowired
-    BinanceAccount binanceAccount;
     @GetMapping("/getBinanceCandle")
     public void getBinanceCandle() throws IOException {
         binanceAccount.binanceTest();
     }
+
     @GetMapping("/getBinanceAccount")
     public void getBinanceAccount() throws BinanceApiException {
         binanceAccount.binanceAccountInfo();
     }
-    @Autowired
-    BinanceTrendBacktest binanceTrend;
+
     @GetMapping("/binanceTrend")
     public void binanceTrend() throws Exception {
         binanceTrend.binanceTrend();
     }
 
-
-    @Value("${binance.sathiyaseelanrhce.v11.secret}")
-    private String binanceSecretKey;
-    @Value("${binance.sathiyaseelanrhce.v11.apikey}")
-    private String binanceApiKey;
-    RestApiRequestImpl restApiRequest = new RestApiRequestImpl(binanceApiKey, binanceSecretKey, new RequestOptions());
-    SyncRequestImpl syncRequest = new SyncRequestImpl(restApiRequest);
-
-    @Autowired
-    BinanceTrendBacktestNew binanceTrendNew;
     @GetMapping("/binanceTrendNew")
-    public void binanceTrendNew(@RequestParam int days,@RequestParam String perGain) throws Exception {
-        binanceTrendNew.binanceTrend(days,perGain);
+    public void binanceTrendNew(@RequestParam int days, @RequestParam String perGain) throws Exception {
+        binanceTrendNew.binanceTrend(days, perGain);
+    }
+
+    @PostMapping("/authenticate")
+    public ResponseEntity<?> userAuthentication(@RequestBody UserInput payload) throws Exception {
+        String userName= payload.getUserName();
+        String password=payload.getPassword();
+        Optional<UserLoginEntity> userLoginEntity = userLoginRepository.findById(userName);
+        if (userLoginEntity.isPresent()) {
+            UserLoginEntity userLoginEntity1=userLoginEntity.get();
+            if(userName.equals(userLoginEntity1.getUserName()) && password.equals(userLoginEntity1.getPassword())){
+                com.sakthi.trade.domain.User user=new com.sakthi.trade.domain.User();
+                user.setName(userLoginEntity1.getName());
+                user.setUserId(userLoginEntity1.getUserId());
+                user.setUserName(userLoginEntity1.getUserName());
+                return new ResponseEntity<>(user,HttpStatus.OK);
+            }
+        }
+        return new ResponseEntity<>(null,HttpStatus.NOT_FOUND);
+    }
+    public static final Logger LOGGER = Logger.getLogger(AutomationController.class.getName());
+    @Autowired
+    OpenTradeDataRepo openTradeDataRepo;
+    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+    @PostMapping("/getTradeDetails")
+    public ResponseEntity<?> getTradeDetails(@RequestBody String payload) throws Exception {
+        Users users=new Gson().fromJson(payload,Users.class);
+        User user=users.getUser();
+        Date date = new Date();
+        List<OpenTradeDataEntity> orderDetails = openTradeDataRepo.getOrderDetails(user.getUserId(),format.format(date));
+        List<TradeData> tradeDataList = new ArrayList<>();
+        if (orderDetails.size() > 0){
+            tradeDataList=mapOpenTradeDataEntityToTradeData(orderDetails);
+            return new ResponseEntity<>(new Gson().toJson(tradeDataList),HttpStatus.OK);
+            }else {
+            orderDetails = openTradeDataRepo.getOpenPositionDetails(user.getUserId());
+            if (orderDetails.size() > 0){
+                tradeDataList=mapOpenTradeDataEntityToTradeData(orderDetails);
+                return new ResponseEntity<>(new Gson().toJson(tradeDataList),HttpStatus.OK);
+            }
+        }
+        return new ResponseEntity<>(null,HttpStatus.NOT_FOUND);
+    }
+    @Autowired
+    UserList userList;
+    @PostMapping("/getOpenOrderDetails")
+    public ResponseEntity<?> getOpenOrderDetails(@RequestBody String payload) throws Exception {
+        Users users = new Gson().fromJson(payload, Users.class);
+        User user = users.getUser();
+        com.sakthi.trade.zerodha.account.User zerodhaUser = userList.getUser().stream().filter(user1 -> user1.getName().equals(user.getUserId())).findFirst().get();
+
+        if (user != null) {
+            List<com.zerodhatech.models.Order> orderList = null;
+            try {
+                orderList = zerodhaUser.getKiteConnect().getOrders();
+                //   LOGGER.info("get trade response:"+new Gson().toJson(orderList));
+            } catch (KiteException | IOException e) {
+                e.printStackTrace();
+            }
+            if (orderList.size() > 0) {
+                return new ResponseEntity<>(new Gson().toJson(orderList), HttpStatus.OK);
+            }}
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+
+    }
+    @PostMapping("/getPositionDetails")
+    public ResponseEntity<?> getPositionDetails(@RequestBody String payload) throws Exception {
+        Users users = new Gson().fromJson(payload, Users.class);
+        User user = users.getUser();
+        com.sakthi.trade.zerodha.account.User zerodhaUser = userList.getUser().stream().filter(user1 -> user1.getName().equals(user.getUserId())).findFirst().get();
+
+        if (user != null) {
+            List<Position> positions = null;
+            try {
+                 positions = zerodhaUser.getKiteConnect().getPositions().get("net");
+                   LOGGER.info("get trade response:"+new Gson().toJson(positions));
+            } catch (KiteException | IOException e) {
+                e.printStackTrace();
+            }
+            if (positions.size() > 0) {
+                return new ResponseEntity<>(new Gson().toJson(positions), HttpStatus.OK);
+            }
+
+        }
+        return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+
+    }
+    /*@PostMapping("/getTOtp")
+    public String getTOtp(@RequestBody String payload) throws Exception {
+        Users users = new Gson().fromJson(payload, Users.class);
+        User user = users.getUser();
+        com.sakthi.trade.zerodha.account.User zerodhaUser = userList.getUser().stream().filter(user1 -> user1.getName().equals(user.getUserId())).findFirst().get();
+        String totp=null;
+        if (user != null) {
+             totp=zerodhaAccount.getTotp(zerodhaUser.getTotp());
+
+
+        }
+        return totp;
+
+    }*/
+    public List<TradeData> mapOpenTradeDataEntityToTradeData( List<OpenTradeDataEntity> tradeDataEntities) {
+        try {
+            List<TradeData> tradeDataList = new ArrayList<>();
+            tradeDataEntities.stream().forEach(tradeDataEntity -> {
+                try {
+                    TradeData tradeData = new TradeData();
+                    tradeData.setDataKey(tradeDataEntity.getDataKey());
+                    tradeData.setAlgoName(tradeDataEntity.getAlgoName());
+                    tradeData.setStockName(tradeDataEntity.getStockName());
+                    tradeData.setEntryType(tradeDataEntity.getEntryType());
+                    tradeData.setUserId(tradeDataEntity.getUserId());
+                    tradeData.isOrderPlaced = tradeDataEntity.isOrderPlaced;
+                    tradeData.isSlPlaced = tradeDataEntity.isSlPlaced();
+                    tradeData.isExited = tradeDataEntity.isExited();
+                    tradeData.isErrored = tradeDataEntity.isErrored;
+                    tradeData.isSLHit = tradeDataEntity.isSLHit;
+                    tradeData.setBuyTradedPrice(tradeDataEntity.getBuyTradedPrice());
+                    tradeData.setSellTradedPrice(tradeDataEntity.getSellTradedPrice());
+                    tradeData.setExitOrderId(tradeDataEntity.getExitOrderId());
+                    tradeData.setBuyPrice(tradeDataEntity.getBuyPrice());
+                    tradeData.setSellPrice(tradeDataEntity.getSellPrice());
+                    tradeData.setSlPrice(tradeDataEntity.getSlPrice());
+                    tradeData.setQty(tradeDataEntity.getQty());
+                    tradeData.setSlPercentage(tradeDataEntity.getSlPercentage());
+                    tradeData.setEntryOrderId(tradeDataEntity.getEntryOrderId());
+                    tradeData.setSlOrderId(tradeDataEntity.getSlOrderId());
+                    tradeData.setStockId(tradeDataEntity.getStockId());
+                    tradeData.setTradeDate(tradeDataEntity.getTradeDate());
+                    tradeDataList.add(tradeData);
+                } catch (Exception e) {
+                    LOGGER.info(e.getMessage());
+                }
+            });
+            return tradeDataList;
+            } catch (Exception e) {
+                LOGGER.info(e.getMessage());
+            }
+        return null;
     }
     @GetMapping("/binanceBullTrend")
-    public void binanceBullTrend(@RequestParam int days,@RequestParam String perGain) throws Exception {
-        binanceTrendNew.binanceBullTrend(days,perGain);
+    public void binanceBullTrend(@RequestParam int days, @RequestParam String perGain) throws Exception {
+        binanceTrendNew.binanceBullTrend(days, perGain);
     }
 
-    @Autowired
-    CryptoRepository cryptoRepository;
     @GetMapping("/loadBHistory")
     public void loadBHistory(@RequestParam int days) throws Exception {
-        List<CryptoFuturesEntity> cryptoFuturesEntities=cryptoRepository.findAll();
+        List<CryptoFuturesEntity> cryptoFuturesEntities = cryptoRepository.findAll();
 
         for (ExchangeInfoEntry symbol : syncRequest.getExchangeInformation().getSymbols()) {
           /*  boolean ispresent=false;
@@ -964,18 +1087,18 @@ public class AutomationController {
             }
 
             if(!ispresent) {*/
-                CryptoFuturesEntity cryptoFuturesEntity = new CryptoFuturesEntity();
-                cryptoFuturesEntity.setSymbol(symbol.getSymbol());
-                cryptoRepository.save(cryptoFuturesEntity);
-                binanceTrendNew.loadHistory(days, symbol.getSymbol());
-         //   }
+            CryptoFuturesEntity cryptoFuturesEntity = new CryptoFuturesEntity();
+            cryptoFuturesEntity.setSymbol(symbol.getSymbol());
+            cryptoRepository.save(cryptoFuturesEntity);
+            binanceTrendNew.loadHistory(days, symbol.getSymbol());
+            //   }
         }
 
     }
 
     @GetMapping("/loadDayHistory")
     public void loadDayHistory(@RequestParam int days) throws Exception {
-        List<CryptoFuturesEntity> cryptoFuturesEntities=cryptoRepository.findAll();
+        List<CryptoFuturesEntity> cryptoFuturesEntities = cryptoRepository.findAll();
 
         for (ExchangeInfoEntry symbol : syncRequest.getExchangeInformation().getSymbols()) {
           /*  boolean ispresent=false;
@@ -994,22 +1117,22 @@ public class AutomationController {
         }
 
     }
-    @Autowired
-    BinanceTrendLive binanceTrendlive;
+
     @GetMapping("/loadDayHistoryTest")
     public void loadDayHistoryTest(@RequestParam int days) throws Exception {
 
         binanceTrendlive.loadDayHistory();
-            //   }
+        //   }
 
 
     }
+
     @GetMapping("/binanceTrendTop")
     public void binanceTrendTop() throws Exception {
         binanceTrendNew.binanceTrendTop();
     }
 
-        @GetMapping("/binanceTrendSell")
+    @GetMapping("/binanceTrendSell")
     public void binanceTrendSell() throws Exception {
         binanceTrendNew.binanceTrendSell();
     }
@@ -1020,17 +1143,16 @@ public class AutomationController {
         binanceTrend.summaryReport();
     }
 
-    @Autowired
-    BinanceTrendBacktest binanceTrendBacktest;
-
     @GetMapping("/binanceVolumeTrend")
     public void binanceVolumeTrend() throws Exception {
         binanceTrend.binanceVolumeTrend();
     }
+
     @GetMapping("/binanceRSITrendBacktestShort")
     public void binanceRSITrendBacktestShort() throws Exception {
         binanceTrendBacktest.binanceRSITrendBacktestShort();
     }
+
     @GetMapping("/binanceRSITrendBacktest")
     public void binanceRSITrendBacktest() throws Exception {
         binanceTrendBacktest.binanceRSITrendBacktest();
@@ -1040,13 +1162,15 @@ public class AutomationController {
     public void closeAll() {
         binanceTrendlive.closeAll();
     }
+
     @GetMapping("/binanceRSITrigger")
     public void binanceRSITrigger() throws BinanceApiException {
         binanceTrendlive.binanceRSITrendLive();
     }
+
     @GetMapping("/sendDocumentTest")
-    public void testTelegram(){
-        File file= new File("/home/hasvanth/Downloads/BANKNIFTY/2022/Feb/2022-02-24/34500PE.json");
+    public void testTelegram() {
+        File file = new File("/home/hasvanth/Downloads/BANKNIFTY/2022/Feb/2022-02-24/34500PE.json");
 //        sendMessage.sendDocumentToTelegram(file,"1162339611:AAGTezAs6970OmLwhcBuTlef_-dsfcoQi_o","-713214125");
 
     }

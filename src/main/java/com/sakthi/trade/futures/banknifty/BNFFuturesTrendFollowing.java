@@ -118,6 +118,7 @@ public class BNFFuturesTrendFollowing {
                                 TradeData trendTradeData = new TradeData();
                                 OrderParams buyOrderParams = new OrderParams();
                                 buyOrderParams.tradingsymbol = futuresName;
+                                trendTradeData.setStockName(futuresName);
                                 buyOrderParams.exchange = "NFO";
                                 buyOrderParams.quantity = 25;
                                 buyOrderParams.orderType = "SL";
@@ -133,6 +134,8 @@ public class BNFFuturesTrendFollowing {
                                     orderResponse = user.getKiteConnect().placeOrder(buyOrderParams, "regular");
                                     trendTradeData.setEntryOrderId(orderResponse.orderId);
                                     trendTradeData.setSlPrice(slTrigger);
+                                    trendTradeData.setQty(buyOrderParams.quantity);
+                                    trendTradeData.setUserId(user.getName());
                                     trendTradeData.setBuyPrice(longTrigger);
                                     trendTradeData.isOrderPlaced = true;
                                     trendTradeData.setStockId(Integer.parseInt(futuresValue));
@@ -182,6 +185,8 @@ public class BNFFuturesTrendFollowing {
                                     orderResponse1 = user.getKiteConnect().placeOrder(sellOrderParams, "regular");
                                     trendTradeData.setEntryOrderId(orderResponse1.orderId);
                                     trendTradeData.setSlPrice(slTrigger);
+                                    trendTradeData.setUserId(user.getName());
+                                    trendTradeData.setQty(sellOrderParams.quantity);
                                     trendTradeData.setSellPrice(longTrigger);
                                     trendTradeData.isOrderPlaced = true;
                                     trendTradeData.setStockId(Integer.parseInt(futuresValue));
@@ -248,8 +253,11 @@ public class BNFFuturesTrendFollowing {
                                             try {
                                                 orderResponse = user.getKiteConnect().placeOrder(orderParams, "regular");
                                                 trendTradeData.setSlOrderId(orderResponse.orderId);
+                                                trendTradeData.setUserId(user.getName());
                                                 trendTradeData.isSlPlaced = true;
-                                                mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
+                                                String dataKey = UUID.randomUUID().toString();
+                                                trendTradeData.setDataKey(dataKey);
+                                                mapTradeDataToSaveOpenTradeDataEntity(trendTradeData,true);
                                                 sendMessage.sendToTelegram("Placed SL order for: " + trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName(), telegramToken);
                                                 LOGGER.info("SL order placed for: " + trendTradeData.getStockName() + ":" + trendTradeData.getUserId());
 
@@ -274,7 +282,7 @@ public class BNFFuturesTrendFollowing {
                                                 String message = MessageFormat.format("SL Hit for {0}" + ":" + user.getName() + ":" + getAlgoName(), trendTradeData.getStockName());
                                                 LOGGER.info(message);
                                                 sendMessage.sendToTelegram(message, telegramToken);
-                                                mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
+                                                mapTradeDataToSaveOpenTradeDataEntity(trendTradeData,false);
                                             }
                                         }
 
@@ -578,7 +586,7 @@ public class BNFFuturesTrendFollowing {
         });
     }
 
-    public void mapTradeDataToSaveOpenTradeDataEntity(TradeData tradeData) {
+    public void mapTradeDataToSaveOpenTradeDataEntity(TradeData tradeData,boolean orderPlaced) {
         try {
             OpenTradeDataEntity openTradeDataEntity = new OpenTradeDataEntity();
             openTradeDataEntity.setDataKey(tradeData.getDataKey());
@@ -602,6 +610,14 @@ public class BNFFuturesTrendFollowing {
             openTradeDataEntity.setEntryOrderId(tradeData.getEntryOrderId());
             openTradeDataEntity.setSlOrderId(tradeData.getSlOrderId());
             openTradeDataEntity.setStockId(tradeData.getStockId());
+            Date date = new Date();
+            if(orderPlaced) {
+                String tradeDate = format.format(date);
+                openTradeDataEntity.setTradeDate(tradeDate);
+                tradeData.setTradeDate(tradeDate);
+            }else{
+                openTradeDataEntity.setTradeDate(tradeData.getTradeDate());
+            }
             saveTradeData(openTradeDataEntity);
             LOGGER.info("sucessfully saved trade data");
         } catch (Exception e) {

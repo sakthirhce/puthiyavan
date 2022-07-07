@@ -35,6 +35,7 @@ public class OpenTradeDataBackupEntity {
     BigDecimal amountPerStock;
     public boolean isErrored;
     public Date createTimestamp;
+    public String tradeDate;
 }
 
 
