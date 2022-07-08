@@ -850,6 +850,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
         });
     }
 
+
     @Scheduled(cron = "${banknifty.buy.late.entry}")
     public void optionBuy325() {
         userList.getUser().stream().filter(user -> user.getStraddleConfig() != null && user.getStraddleConfig().isNrmlEnabled()).forEach(user -> {
@@ -890,7 +891,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                             String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
                                             String todayCaps = today.toUpperCase();
                                             atmStrikesStraddle.forEach((key, value) -> {
-                                                if (value.contains(presentStrike)) {
+                                                if (key.contains(presentStrike)) {
                                                     LOGGER.info("ignoring open strike type:" + value);
                                                 } else {
                                                     LOGGER.info(key + ":" + value);
