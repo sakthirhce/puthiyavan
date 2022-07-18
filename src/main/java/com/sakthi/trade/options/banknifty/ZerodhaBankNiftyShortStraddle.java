@@ -505,7 +505,8 @@ public class ZerodhaBankNiftyShortStraddle {
                                             trendTradeData.setSlOrderId(orderResponse.orderId);
                                             trendTradeData.isSlPlaced = true;
                                             mapTradeDataToSaveOpenTradeDataEntity(trendTradeData,false);
-                                            sendMessage.sendToTelegram("Placed SL order for: " + trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName(), telegramToken, botIdFinal);
+                                            BigDecimal slipage = (trendTradeData.getSellTradedPrice().subtract(trendTradeData.getSellPrice())).multiply(new BigDecimal(25)).setScale(0, BigDecimal.ROUND_UP);
+                                            sendMessage.sendToTelegram("Placed SL order for: " + trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName()+":slipage "+slipage, telegramToken, botIdFinal);
                                             LOGGER.info("SL order placed for: " + trendTradeData.getStockName() + ":" + trendTradeData.getUserId());
 
                                         } catch (KiteException e) {

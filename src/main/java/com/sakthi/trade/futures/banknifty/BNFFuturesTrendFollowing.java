@@ -228,7 +228,7 @@ public class BNFFuturesTrendFollowing {
                                     orderList.forEach(order -> {
                                         if (trendTradeData.getEntryOrderId().equals(order.orderId) && !trendTradeData.isSlPlaced && "COMPLETE".equals(order.status)) {
                                             //   trendTradeData.setSellPrice(new BigDecimal(order.averagePrice));
-                                            trendTradeData.setSellTradedPrice(new BigDecimal(order.averagePrice));
+
 
                                             OrderParams orderParams = new OrderParams();
                                             orderParams.tradingsymbol = trendTradeData.getStockName();
@@ -238,12 +238,17 @@ public class BNFFuturesTrendFollowing {
                                             orderParams.product = "NRML";
                                             orderParams.triggerPrice = trendTradeData.getSlPrice().setScale(0, RoundingMode.HALF_UP).doubleValue();
                                             BigDecimal divide = trendTradeData.getSlPrice().setScale(0, RoundingMode.HALF_UP).divide(new BigDecimal(1000)).setScale(0, RoundingMode.HALF_UP);
+                                            BigDecimal slipage=new BigDecimal(0);
                                             if ("BUY".equals(order.transactionType)) {
                                                 orderParams.transactionType = "SELL";
+                                                trendTradeData.setBuyTradedPrice(new BigDecimal(order.averagePrice));
+                                                slipage = (trendTradeData.getBuyPrice().subtract(trendTradeData.getBuyTradedPrice())).multiply(new BigDecimal(25)).setScale(0, BigDecimal.ROUND_UP);
                                                 BigDecimal price = (trendTradeData.getSlPrice().setScale(0, RoundingMode.HALF_UP)).subtract(divide).setScale(0, RoundingMode.HALF_UP);
                                                 orderParams.price = price.doubleValue();
                                             } else if ("SELL".equals(order.transactionType)) {
                                                 orderParams.transactionType = "BUY";
+                                                trendTradeData.setSellTradedPrice(new BigDecimal(order.averagePrice));
+                                                slipage = (trendTradeData.getSellPrice().subtract(trendTradeData.getSellTradedPrice())).multiply(new BigDecimal(25)).setScale(0, BigDecimal.ROUND_UP);
                                                 BigDecimal price = (trendTradeData.getSlPrice().setScale(0, RoundingMode.HALF_UP)).add(divide).setScale(0, RoundingMode.HALF_UP);
                                                 orderParams.price = price.doubleValue();
                                             }
@@ -258,7 +263,7 @@ public class BNFFuturesTrendFollowing {
                                                 String dataKey = UUID.randomUUID().toString();
                                                 trendTradeData.setDataKey(dataKey);
                                                 mapTradeDataToSaveOpenTradeDataEntity(trendTradeData,true);
-                                                sendMessage.sendToTelegram("Placed SL order for: " + trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName(), telegramToken);
+                                                sendMessage.sendToTelegram("Placed SL order for: " + trendTradeData.getStockName() +":" + trendTradeData.getEntryType() + ":" + user.getName() + ":" + getAlgoName()+": slipage:"+slipage.doubleValue(), telegramToken);
                                                 LOGGER.info("SL order placed for: " + trendTradeData.getStockName() + ":" + trendTradeData.getUserId());
 
                                             } catch (KiteException e) {
@@ -279,7 +284,15 @@ public class BNFFuturesTrendFollowing {
                                             } else if ("COMPLETE".equals(order.status)) {
                                                 trendTradeData.isSLHit = true;
                                                 trendTradeData.isExited = true;
-                                                String message = MessageFormat.format("SL Hit for {0}" + ":" + user.getName() + ":" + getAlgoName(), trendTradeData.getStockName());
+                                                BigDecimal slipage=new BigDecimal(0);
+                                                if ("BUY".equals(order.transactionType)) {
+                                                    trendTradeData.setBuyTradedPrice(new BigDecimal(order.averagePrice));
+                                                    slipage = (trendTradeData.getBuyPrice().subtract(trendTradeData.getBuyTradedPrice())).multiply(new BigDecimal(25)).setScale(0, BigDecimal.ROUND_UP);
+                                                } else if ("SELL".equals(order.transactionType)) {
+                                                    trendTradeData.setSellTradedPrice(new BigDecimal(order.averagePrice));
+                                                    slipage = (trendTradeData.getSellPrice().subtract(trendTradeData.getSellTradedPrice())).multiply(new BigDecimal(25)).setScale(0, BigDecimal.ROUND_UP);
+                                                }
+                                                String message = MessageFormat.format("SL Hit for {0}" + ":" + user.getName() + ":" + getAlgoName() +":"+ trendTradeData.getEntryType() + ":" , trendTradeData.getStockName()+": slipage:"+slipage.doubleValue());
                                                 LOGGER.info(message);
                                                 sendMessage.sendToTelegram(message, telegramToken);
                                                 mapTradeDataToSaveOpenTradeDataEntity(trendTradeData,false);
@@ -307,19 +320,19 @@ public class BNFFuturesTrendFollowing {
                                 if (!trendTradeData.isSlPlaced && !trendTradeData.isSLCancelled && !trendTradeData.isSLHit) {
                                     Order order = user.getKiteConnect().cancelOrder(trendTradeData.getEntryOrderId(), "regular");
                                     trendMap.getValue().isSLCancelled = true;
-                                    String message = MessageFormat.format("System Cancelled Entry {0}" + ":" + user.getName() + ":" + getAlgoName(), trendMap.getValue().getStockName());
-                                    LOGGER.info(message);
+                                    String message = MessageFormat.format("System Cancelled Entry {0}" + ":" + user.getName() + ":" + getAlgoName(), trendMap.getValue().getStockName()+":"+ trendTradeData.getEntryType());
+                                            LOGGER.info(message);
                                     sendMessage.sendToTelegram(message, telegramToken);
                                     // mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
                                 }
                             } catch (KiteException e) {
                                 e.printStackTrace();
-                                String message = MessageFormat.format("Error while System cancelling SL {0},{1}", trendMap.getValue().getStockName(), e.message);
+                                String message = MessageFormat.format("Error while System cancelling SL {0},{1}", trendMap.getValue().getStockName()+":"+ trendTradeData.getEntryType(), e.message);
                                 LOGGER.info(message);
                                 sendMessage.sendToTelegram(message + ":" + getAlgoName(), telegramToken);
                             } catch (IOException e) {
                                 e.printStackTrace();
-                                String message = MessageFormat.format("Error while System cancelling SL {0},{1}", trendMap.getValue().getStockName(), e.getMessage());
+                                String message = MessageFormat.format("Error while System cancelling SL {0},{1}", trendMap.getValue().getStockName()+":"+ trendTradeData.getEntryType(), e.getMessage());
                                 LOGGER.info(message);
                                 sendMessage.sendToTelegram(message + ":" + getAlgoName(), telegramToken);
                             }
@@ -356,7 +369,7 @@ public class BNFFuturesTrendFollowing {
                         openTradeDataEntity.setSlOrderId(null);
                         openTradeDataEntities.add(openTradeDataEntity);
 
-                        sendMessage.sendToTelegram("Open Position: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ":" + getAlgoName(), telegramToken);
+                        sendMessage.sendToTelegram("Open Position: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ":" + getAlgoName()+":"+openTradeDataEntity.getEntryType(), telegramToken);
 
 
                     });
@@ -556,16 +569,20 @@ public class BNFFuturesTrendFollowing {
                 if ("COMPLETE".equals(order.status) && !openTradeDataEntity.isExited) {
                     openTradeDataEntity.isExited = true;
                     openTradeDataEntity.isSLHit = true;
+                    BigDecimal slipage;
                     if ("SELL".equals(order.transactionType)) {
                         openTradeDataEntity.setSellPrice(openTradeDataEntity.getSlPrice());
                         openTradeDataEntity.setSellTradedPrice(new BigDecimal(order.averagePrice));
+                         slipage = (openTradeDataEntity.getBuyPrice().subtract(openTradeDataEntity.getBuyTradedPrice())).multiply(new BigDecimal(25)).setScale(0, BigDecimal.ROUND_UP);
                     } else {
                         openTradeDataEntity.setBuyTradedPrice(new BigDecimal(order.averagePrice));
-                        openTradeDataEntity.setBuyTradedPrice(openTradeDataEntity.getSlPrice());
+                        openTradeDataEntity.setBuyPrice(openTradeDataEntity.getSlPrice());
+                         slipage = (openTradeDataEntity.getBuyPrice().subtract(openTradeDataEntity.getBuyTradedPrice())).multiply(new BigDecimal(25)).setScale(0, BigDecimal.ROUND_UP);
+
                     }
                     saveTradeData(openTradeDataEntity);
 
-                    sendMessage.sendToTelegram("SL Hit for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ":" + getAlgoName(), telegramToken);
+                    sendMessage.sendToTelegram("SL Hit for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ":" + getAlgoName()+":"+slipage.doubleValue()+":"+openTradeDataEntity.getEntryType(), telegramToken);
 
                 }
                 if ("CANCELLED".equals(order.status) && !openTradeDataEntity.isSlCancelled) {
