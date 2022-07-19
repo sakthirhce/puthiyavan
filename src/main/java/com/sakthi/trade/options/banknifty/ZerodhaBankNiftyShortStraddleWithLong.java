@@ -897,6 +897,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                                 tradeBuy.setEntryType("BUY");
                                                                 mapTradeDataToSaveOpenTradeDataEntity(tradeBuy, true);
                                                                 sendMessage.sendToTelegram("Straddle option bought for strike: " + tradeBuy.getStockName() + ":" + user.getName() + " and placed SL" + ":" + getAlgoName(), telegramTokenGroup, "-713214125");
+                                                                System.out.println(gson.toJson(tradeBuy));
                                                                 user.getStraddleConfig().straddleTradeMap.put(tradeBuy.getStockName() + "-BUY-1535", tradeBuy);
 
                                                             } catch (KiteException | IOException e) {
@@ -959,6 +960,23 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
 
 
                                                 }
+                                                if ("COMPLETE".equals(order.status) && !trendTradeData.isExited) {
+                                                    trendTradeData.isSLHit = true;
+                                                    trendTradeData.isExited = true;
+                                                    trendTradeData.setExitOrderId(order.orderId);
+                                                    trendTradeData.setSellPrice(trendTradeData.getSlPrice());
+                                                    trendTradeData.setSellTradedPrice(new BigDecimal(order.averagePrice));
+                                                    BigDecimal slipage = (trendTradeData.getSellTradedPrice().subtract(trendTradeData.getSellPrice())).multiply(new BigDecimal(25)).setScale(0, BigDecimal.ROUND_UP);
+                                                    String message = MessageFormat.format("SL Hit for {0}" + ": sl sell slipage" + slipage.toString(), key + ":" + user.getName() + ":" + getAlgoName());
+                                                    LOGGER.info(message);
+                                                    sendMessage.sendToTelegram(message, telegramTokenGroup, "-713214125");
+                                                    mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, false);
+                                                } else if ("REJECTED".equals(order.status)) {
+                                                    String message = MessageFormat.format("SL order placement rejected for {0}", key + ":" + user.getName() + ":" + order.status + ":" + order.statusMessage + ":" + getAlgoName());
+                                                    LOGGER.info(message);
+                                                    trendTradeData.isErrored = true;
+                                                    sendMessage.sendToTelegram(message, telegramTokenGroup, "-713214125");
+                                                }
                                             }
                                             if ("COMPLETE".equals(order.status) && trendTradeData.getEntryOrderId().equals(order.orderId) && !trendTradeData.isSlPlaced) {
                                                 if ("BUY".equals(order.transactionType)) {
@@ -1012,27 +1030,6 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                 }
                                                 // }
                                             }
-                                            if ("SELL".equals(order.transactionType)) {
-                                                if (trendTradeData.getSlOrderId().equals(order.orderId) && !trendTradeData.isExited) {
-                                                    trendTradeData.isSLHit = true;
-                                                    trendTradeData.isExited = true;
-                                                    trendTradeData.setExitOrderId(order.orderId);
-                                                    trendTradeData.setSellPrice(trendTradeData.getSlPrice());
-                                                    trendTradeData.setSellTradedPrice(new BigDecimal(order.averagePrice));
-                                                    BigDecimal slipage = (trendTradeData.getSellTradedPrice().subtract(trendTradeData.getSellPrice())).multiply(new BigDecimal(25)).setScale(0, BigDecimal.ROUND_UP);
-                                                    String message = MessageFormat.format("SL Hit for {0}" + ": sl sell slipage" + slipage.toString(), key + ":" + user.getName() + ":" + getAlgoName());
-                                                    LOGGER.info(message);
-                                                    sendMessage.sendToTelegram(message, telegramTokenGroup, "-713214125");
-                                                    mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, false);
-                                                } else if ("REJECTED".equals(order.status)) {
-                                                    String message = MessageFormat.format("SL order placement rejected for {0}", key + ":" + user.getName() + ":" + order.status + ":" + order.statusMessage + ":" + getAlgoName());
-                                                    LOGGER.info(message);
-                                                    trendTradeData.isErrored = true;
-                                                    sendMessage.sendToTelegram(message, telegramTokenGroup, "-713214125");
-                                                }
-                                            }
-
-
 
                                         });
                                     }
