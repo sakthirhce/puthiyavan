@@ -895,10 +895,10 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                                 tradeBuy.setUserId(user.getName());
                                                                 tradeBuy.setSlPercentage(new BigDecimal(15));
                                                                 tradeBuy.setEntryType("BUY");
+                                                                log.info(gson.toJson(tradeBuy));
+                                                                user.getStraddleConfig().straddleTradeMap.put(tradeBuy.getStockName() + "-BUY-1535", tradeBuy);
                                                                 mapTradeDataToSaveOpenTradeDataEntity(tradeBuy, true);
                                                                 sendMessage.sendToTelegram("Straddle option bought for strike: " + tradeBuy.getStockName() + ":" + user.getName() + " and placed SL" + ":" + getAlgoName(), telegramTokenGroup, "-713214125");
-                                                                System.out.println(gson.toJson(tradeBuy));
-                                                                user.getStraddleConfig().straddleTradeMap.put(tradeBuy.getStockName() + "-BUY-1535", tradeBuy);
 
                                                             } catch (KiteException | IOException e) {
                                                                 // tradeData.isErrored = true;
@@ -940,7 +940,9 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                     BigDecimal slPercent = user.getStraddleConfig().getSl();
                     user.getStraddleConfig().straddleTradeMap
                             .forEach((key, value) -> {
+                                log.info(key+":"+gson.toJson(value));
                                 if (key.contains("-BUY-1535")) {
+                                    log.info("inside 1525 sl:"+key+":"+gson.toJson(value));
                                     if (value.isOrderPlaced && value.getEntryOrderId() != null) {
                                         TradeData trendTradeData = value;
 

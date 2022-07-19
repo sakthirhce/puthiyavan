@@ -137,6 +137,7 @@ public class BNFFuturesTrendFollowing {
                                     trendTradeData.setQty(buyOrderParams.quantity);
                                     trendTradeData.setUserId(user.getName());
                                     trendTradeData.setBuyPrice(longTrigger);
+                                    trendTradeData.setEntryType("BUY");
                                     trendTradeData.isOrderPlaced = true;
                                     trendTradeData.setStockId(Integer.parseInt(futuresValue));
                                     // mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
@@ -187,6 +188,7 @@ public class BNFFuturesTrendFollowing {
                                     trendTradeData.setSlPrice(slTrigger);
                                     trendTradeData.setUserId(user.getName());
                                     trendTradeData.setQty(sellOrderParams.quantity);
+                                    trendTradeData.setEntryType("SELL");
                                     trendTradeData.setSellPrice(longTrigger);
                                     trendTradeData.isOrderPlaced = true;
                                     trendTradeData.setStockId(Integer.parseInt(futuresValue));
@@ -581,7 +583,6 @@ public class BNFFuturesTrendFollowing {
 
                     }
                     saveTradeData(openTradeDataEntity);
-
                     sendMessage.sendToTelegram("SL Hit for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ":" + getAlgoName()+":"+slipage.doubleValue()+":"+openTradeDataEntity.getEntryType(), telegramToken);
 
                 }
