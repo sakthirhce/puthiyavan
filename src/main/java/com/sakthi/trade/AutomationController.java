@@ -28,6 +28,7 @@ import com.sakthi.trade.options.buy.banknifty.VwapRsiOiVolumeBuyBacktest;
 import com.sakthi.trade.options.buy.banknifty.VwapRsiOiVolumeBuyBacktestTrueData;
 import com.sakthi.trade.options.nifty.NIftyStraddleLongBackTest;
 import com.sakthi.trade.options.nifty.NiftyShortStraddleOI;
+import com.sakthi.trade.options.nifty.buy.NiftyOptionBuy935;
 import com.sakthi.trade.options.nifty.buy.NiftyVwapRsiOiVolumeBuy;
 import com.sakthi.trade.options.nifty.buy.NiftyVwapRsiOiVolumeBuyBacktest;
 import com.sakthi.trade.repo.*;
@@ -291,10 +292,16 @@ public class AutomationController {
     public void zerodhaloginmtest() throws Exception {
         zerodhaAccount.generateMultiUserAccessToken();
     }
+@Autowired
+NiftyOptionBuy935 niftyOptionBuy935;
 
     @GetMapping("/zerodhaloadmtest")
     public void zerodhaloadmtest() throws Exception {
         zerodhaBankNiftyShortStraddleWithLong.loadNrmlPositions();
+    }
+    @GetMapping("/niftyOptionBuy935loadmtest")
+    public void niftyOptionBuy935loadmtest() throws Exception {
+        niftyOptionBuy935.loadNrmlPositions();
     }
 
     @GetMapping("/zerodha_instrument")

@@ -1012,6 +1012,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                     orderParams.tradingsymbol = trendTradeData.getStockName();
                                                     orderParams.exchange = "NFO";
                                                     orderParams.quantity = trendTradeData.getQty();
+                                                    trendTradeData.setBuyTradedPrice(new BigDecimal(order.averagePrice));
                                                     orderParams.triggerPrice = triggerPriceTemp.doubleValue();
                                                     orderParams.price = triggerPriceTemp.subtract(new BigDecimal(5)).setScale(0, RoundingMode.HALF_UP).doubleValue();
                                                     orderParams.orderType = "SL";
@@ -1021,6 +1022,8 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                     com.zerodhatech.models.Order orderd;
                                                     try {
                                                         orderd = user.getKiteConnect().placeOrder(orderParams, "regular");
+                                                        trendTradeData.isSlPlaced=true;
+                                                        mapTradeDataToSaveOpenTradeDataEntity(trendTradeData,false);
                                                         sendMessage.sendToTelegram("Straddle option bought for strike: " + trendTradeData.getStockName() + ":" + user.getName() + " and placed SL" + ":" + getAlgoName(), telegramTokenGroup, "-713214125");
 
                                                     } catch (KiteException | IOException e) {

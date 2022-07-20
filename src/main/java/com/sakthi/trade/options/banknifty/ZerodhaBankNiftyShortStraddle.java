@@ -708,8 +708,10 @@ public class ZerodhaBankNiftyShortStraddle {
                     try {
                         orderResponse = user.getKiteConnect().placeOrder(orderParams, "regular");
                         LOGGER.info(new Gson().toJson(orderResponse));
-                        if (user.getStraddleConfigOld().straddleTradeMap.get(position.tradingSymbol) != null) {
-                            user.getStraddleConfigOld().straddleTradeMap.get(position.tradingSymbol).isExited = true;
+                        TradeData tradeData=user.getStraddleConfigOld().straddleTradeMap.get(position.tradingSymbol);
+                        if (tradeData != null) {
+                            tradeData.isExited = true;
+                            LOGGER.info("trade data 3:10: "+new Gson().toJson(tradeData));
                             mapTradeDataToSaveOpenTradeDataEntity( user.getStraddleConfigOld().straddleTradeMap.get(position.tradingSymbol),false);
                         }
 
@@ -730,6 +732,75 @@ public class ZerodhaBankNiftyShortStraddle {
 
             }});
     }
+
+
+    @Scheduled(cron = "${straddle.exit.price}")
+    public void exitPriceNrmlPositions() {
+        userList.getUser().stream().filter(user -> user.getStraddleConfigOld() !=null && user.getStraddleConfigOld().isEnabled()).forEach(user -> {
+            try {
+                List<Order> orders = user.getKiteConnect().getOrders();
+                List<Position> positions = user.getKiteConnect().getPositions().get("net");
+                LOGGER.info(new Gson().toJson(positions));
+                if (user.getStraddleConfigOld().straddleTradeMap != null) {
+                    user.getStraddleConfigOld().straddleTradeMap.entrySet().stream().filter(orbTradeDataEntity -> orbTradeDataEntity.getValue().isOrderPlaced && orbTradeDataEntity.getValue().isExited && !orbTradeDataEntity.getValue().isSLHit).forEach(trendMap -> {
+                        TradeData trendTradeData = trendMap.getValue();
+                        orders.stream().filter(order -> "COMPLETE".equals(order.status) && order.orderId.equals(trendTradeData.getExitOrderId())).findFirst().ifPresent(orderr -> {
+                            try {
+                                Date date = new Date();
+                                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+                                String currentDate = format.format(date);
+                                try {
+                                    String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:11:00";
+                                    String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
+                                    System.out.print(trendTradeData.getStockName() + " history api 3:10 response:" + response);
+                                    HistoricalData historicalData = new HistoricalData();
+                                    JSONObject json = new JSONObject(response);
+                                    String status = json.getString("status");
+                                    if (!status.equals("error")) {
+                                        historicalData.parseResponse(json);
+                                    }
+                                    if (historicalData.dataArrayList.size() > 0) {
+                                        historicalData.dataArrayList.stream().forEach(historicalData1 -> {
+                                            try {
+                                                Date openDatetime = sdf.parse(historicalData1.timeStamp);
+                                                String openDate = format.format(openDatetime);
+                                                if (sdf.format(openDatetime).equals(openDate + "T15:10:00")) {
+                                                    BigDecimal triggerPriceTemp = ((new BigDecimal(historicalData1.close).divide(new BigDecimal(5))).add(new BigDecimal(historicalData1.close))).setScale(0, RoundingMode.HALF_UP);
+                                                    if ("SELL".equals(orderr.transactionType)) {
+                                                        trendTradeData.setBuyPrice(new BigDecimal(historicalData1.close));
+                                                    } else {
+                                                        trendTradeData.setBuyPrice(new BigDecimal(orderr.averagePrice));
+                                                    }
+                                                    LOGGER.info("setting  9:34 exit :" + trendTradeData.getStockId() + ":" + historicalData1.close);
+                                                }
+                                            } catch (ParseException e) {
+                                                throw new RuntimeException(e);
+                                            }
+                                        });
+                                    }
+
+                                } catch (Exception e) {
+                                    LOGGER.info(e.getMessage());
+                                }
+                                if ("SELL".equals(orderr.transactionType)) {
+                                    trendTradeData.setSellTradedPrice(new BigDecimal(orderr.averagePrice));
+                                } else {
+                                    trendTradeData.setBuyTradedPrice(new BigDecimal(orderr.averagePrice));
+                                }
+                                mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, false);
+                            } catch (Exception e) {
+                                LOGGER.info(e.getMessage());
+                            }
+                        });
+                    });
+                }
+
+            } catch (Exception | KiteException e) {
+                LOGGER.info(e.getMessage());
+            }
+        });
+    }
+
 
     public void mapTradeDataToSaveOpenTradeDataEntity(TradeData tradeData,boolean orderPlaced) {
         try {
