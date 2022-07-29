@@ -14,5 +14,7 @@ public interface OpenTradeDataBackupRepo extends JpaRepository<OpenTradeDataBack
      List<OpenTradeDataEntity> getOrbTradeDataEntityByCreateTimestampIn(Date createtimestamp);
     @Query(value="select * from public.open_trade_data_backup",nativeQuery=true)
      List<OpenTradeDataBackupEntity> findAll();
+    @Query(value="select * from public.open_trade_data_backup where user_id=?1 AND trade_date=?2 and is_exited=true",nativeQuery=true)
+    List<OpenTradeDataBackupEntity> findByUserIdAndTradeDate(String userId,String trade_date);
 }
 

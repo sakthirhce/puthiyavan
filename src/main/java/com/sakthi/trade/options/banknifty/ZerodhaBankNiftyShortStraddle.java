@@ -311,6 +311,8 @@ public class ZerodhaBankNiftyShortStraddle {
                                             DayOfWeek dow = localDate.getDayOfWeek();
                                             String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
                                             String todayCaps = today.toUpperCase();
+                                            trendTradeData.setBuyPrice(trendTradeData.getSlPrice());
+                                            trendTradeData.setBuyPrice(new BigDecimal(order.averagePrice));
                                             String message = MessageFormat.format("SL Hit for {0}" + ":" + user.getName() + ":" + getAlgoName(), trendTradeData.getStockName());
                                             LOGGER.info(message);
                                             mapTradeDataToSaveOpenTradeDataEntity(trendTradeData,false);
@@ -711,6 +713,7 @@ public class ZerodhaBankNiftyShortStraddle {
                         TradeData tradeData=user.getStraddleConfigOld().straddleTradeMap.get(position.tradingSymbol);
                         if (tradeData != null) {
                             tradeData.isExited = true;
+                            tradeData.setExitOrderId(orderResponse.orderId);
                             LOGGER.info("trade data 3:10: "+new Gson().toJson(tradeData));
                             mapTradeDataToSaveOpenTradeDataEntity( user.getStraddleConfigOld().straddleTradeMap.get(position.tradingSymbol),false);
                         }
@@ -767,11 +770,11 @@ public class ZerodhaBankNiftyShortStraddle {
                                                 if (sdf.format(openDatetime).equals(openDate + "T15:10:00")) {
                                                     BigDecimal triggerPriceTemp = ((new BigDecimal(historicalData1.close).divide(new BigDecimal(5))).add(new BigDecimal(historicalData1.close))).setScale(0, RoundingMode.HALF_UP);
                                                     if ("SELL".equals(orderr.transactionType)) {
-                                                        trendTradeData.setBuyPrice(new BigDecimal(historicalData1.close));
+                                                        trendTradeData.setSellPrice(new BigDecimal(historicalData1.close));
                                                     } else {
-                                                        trendTradeData.setBuyPrice(new BigDecimal(orderr.averagePrice));
+                                                        trendTradeData.setBuyTradedPrice(new BigDecimal(orderr.averagePrice));
+                                                        trendTradeData.setBuyPrice(new BigDecimal(historicalData1.close));
                                                     }
-                                                    LOGGER.info("setting  9:34 exit :" + trendTradeData.getStockId() + ":" + historicalData1.close);
                                                 }
                                             } catch (ParseException e) {
                                                 throw new RuntimeException(e);

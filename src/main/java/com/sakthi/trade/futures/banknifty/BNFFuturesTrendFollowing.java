@@ -517,7 +517,7 @@ public class BNFFuturesTrendFollowing {
                                 try {
                                     orderResponse = user.getKiteConnect().placeOrder(orderParams, "regular");
                                     LOGGER.info(new Gson().toJson(orderResponse));
-                                    //  openTradeDataEntity.isExited=true;
+                                      openTradeDataEntity.isExited=true;
                                     openTradeDataEntity.setExitOrderId(orderResponse.orderId);
                                     saveTradeData(openTradeDataEntity);
                                     String message = MessageFormat.format("Closed Position {0}", orderParams.tradingsymbol);
