@@ -288,6 +288,15 @@ public class AutomationController {
         zerodhaAccount.generateAccessToken();
     }
 
+    @Autowired
+   com.sakthi.trade.report.TradeReport tradeReport;
+    @GetMapping("/tradeDataReport")
+    public ResponseEntity<String> tradeDataReport(@RequestParam String userId, @RequestParam String date) throws Exception {
+        List<TradeData> tradeData= tradeReport.tradeReport(userId,date);
+        HttpHeaders responseHeaders = new HttpHeaders();
+        return new ResponseEntity<>(new Gson().toJson(tradeData), responseHeaders, HttpStatus.OK);
+    }
+
     @GetMapping("/zerodhaloginmtest")
     public void zerodhaloginmtest() throws Exception {
         zerodhaAccount.generateMultiUserAccessToken();

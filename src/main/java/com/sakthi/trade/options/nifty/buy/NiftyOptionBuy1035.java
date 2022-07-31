@@ -165,7 +165,7 @@ public class NiftyOptionBuy1035 {
                                         user -> user.getNiftyBuy1035() != null && user.getNiftyBuy1035().isNrmlEnabled() && user.getNiftyBuy1035().getLotConfig().containsKey(todayCaps)
                                 ).forEach(user -> {
                                     AtomicInteger qty = new AtomicInteger(1);
-                                    user.getStraddleConfig().getLotConfig().entrySet().forEach(day -> {
+                                    user.getNiftyBuy1035().getLotConfig().entrySet().forEach(day -> {
                                         String lotValue = day.getKey();
                                         if (lotValue.contains(todayCaps)) {
                                             int value = Integer.parseInt(day.getValue());
