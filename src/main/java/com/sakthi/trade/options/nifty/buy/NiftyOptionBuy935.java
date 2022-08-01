@@ -6,6 +6,7 @@ import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.entity.OpenTradeDataBackupEntity;
 import com.sakthi.trade.entity.OpenTradeDataEntity;
 import com.sakthi.trade.fyer.service.TransactionService;
+import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.repo.OpenTradeDataBackupRepo;
 import com.sakthi.trade.repo.OpenTradeDataRepo;
 import com.sakthi.trade.telegram.SendMessage;
@@ -691,8 +692,10 @@ public class NiftyOptionBuy935 {
         });
     }
 
+    @Autowired
+    TradeDataMapper tradeDataMapper;
     public void mapTradeDataToSaveOpenTradeDataEntity(TradeData tradeData,boolean orderPlaced) {
-        try {
+        try {/*
             OpenTradeDataEntity openTradeDataEntity = new OpenTradeDataEntity();
             openTradeDataEntity.setDataKey(tradeData.getDataKey());
             openTradeDataEntity.setAlgoName(this.getAlgoName());
@@ -723,18 +726,20 @@ public class NiftyOptionBuy935 {
             }else{
                 openTradeDataEntity.setTradeDate(tradeData.getTradeDate());
             }
-            saveTradeData(openTradeDataEntity);
-            LOGGER.info("sucessfully saved trade data");
+            saveTradeData(openTradeDataEntity);*/
+            tradeDataMapper.mapTradeDataToSaveOpenTradeDataEntity(tradeData,orderPlaced,this.getAlgoName());
+            //LOGGER.info("sucessfully saved trade data");
         } catch (Exception e) {
             LOGGER.info(e.getMessage());
         }
-
-
 
     }
 
     public void saveTradeData(OpenTradeDataEntity openTradeDataEntity) {
         try {
+            Date date = new Date();
+            String tradeDate = format.format(date);
+            openTradeDataEntity.setModifyDate(tradeDate);
             openTradeDataRepo.save(openTradeDataEntity);
         } catch (Exception e) {
             LOGGER.info(e.getMessage());

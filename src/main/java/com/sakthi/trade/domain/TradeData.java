@@ -75,5 +75,8 @@ public class TradeData {
     BigDecimal slExecutedPrice;
     BigDecimal profitLoss;
     int rentryCount;
+    public String modifyDate;
+    public BigDecimal charges;
+    public BigDecimal plAfterCharges;
 
 }

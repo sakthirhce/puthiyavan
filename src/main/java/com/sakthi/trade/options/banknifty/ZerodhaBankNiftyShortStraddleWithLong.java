@@ -6,6 +6,7 @@ import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.entity.OpenTradeDataBackupEntity;
 import com.sakthi.trade.entity.OpenTradeDataEntity;
 import com.sakthi.trade.fyer.service.TransactionService;
+import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.repo.OpenTradeDataBackupRepo;
 import com.sakthi.trade.repo.OpenTradeDataRepo;
 import com.sakthi.trade.telegram.SendMessage;
@@ -58,6 +59,9 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
     TransactionService transactionService;
     @Autowired
     SendMessage sendMessage;
+
+    @Autowired
+    TradeDataMapper tradeDataMapper;
 
     ExecutorService executorService = java.util.concurrent.Executors.newFixedThreadPool(5);
     @Autowired
@@ -1285,37 +1289,8 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
 
     public void mapTradeDataToSaveOpenTradeDataEntity(TradeData tradeData,boolean orderPlaced) {
         try {
-            OpenTradeDataEntity openTradeDataEntity = new OpenTradeDataEntity();
-            openTradeDataEntity.setDataKey(tradeData.getDataKey());
-            openTradeDataEntity.setAlgoName(this.getAlgoName());
-            openTradeDataEntity.setStockName(tradeData.getStockName());
-            openTradeDataEntity.setEntryType(tradeData.getEntryType());
-            openTradeDataEntity.setUserId(tradeData.getUserId());
-            openTradeDataEntity.isOrderPlaced = tradeData.isOrderPlaced;
-            openTradeDataEntity.isSlPlaced = tradeData.isSlPlaced();
-            openTradeDataEntity.isExited = tradeData.isExited();
-            openTradeDataEntity.isErrored = tradeData.isErrored;
-            openTradeDataEntity.isSLHit = tradeData.isSLHit;
-            openTradeDataEntity.setBuyTradedPrice(tradeData.getBuyTradedPrice());
-            openTradeDataEntity.setSellTradedPrice(tradeData.getSellTradedPrice());
-            openTradeDataEntity.setExitOrderId(tradeData.getExitOrderId());
-            openTradeDataEntity.setBuyPrice(tradeData.getBuyPrice());
-            openTradeDataEntity.setSellPrice(tradeData.getSellPrice());
-            openTradeDataEntity.setSlPrice(tradeData.getSlPrice());
-            openTradeDataEntity.setQty(tradeData.getQty());
-            openTradeDataEntity.setSlPercentage(tradeData.getSlPercentage());
-            openTradeDataEntity.setEntryOrderId(tradeData.getEntryOrderId());
-            openTradeDataEntity.setSlOrderId(tradeData.getSlOrderId());
-            openTradeDataEntity.setStockId(tradeData.getStockId());
-            Date date = new Date();
-            if(orderPlaced) {
-                String tradeDate = format.format(date);
-                openTradeDataEntity.setTradeDate(tradeDate);
-                tradeData.setTradeDate(tradeDate);
-            }else{
-                openTradeDataEntity.setTradeDate(tradeData.getTradeDate());
-            }
-            saveTradeData(openTradeDataEntity);
+           tradeDataMapper.mapTradeDataToSaveOpenTradeDataEntity(tradeData,orderPlaced,this.getAlgoName());
+          //  saveTradeData(openTradeDataEntity);
             LOGGER.info("sucessfully saved trade data");
         } catch (Exception e) {
             LOGGER.info(e.getMessage());
@@ -1325,6 +1300,9 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
 
     public void saveTradeData(OpenTradeDataEntity openTradeDataEntity) {
         try {
+            Date date = new Date();
+            String tradeDate = format.format(date);
+            openTradeDataEntity.setModifyDate(tradeDate);
             openTradeDataRepo.save(openTradeDataEntity);
         } catch (Exception e) {
             LOGGER.info(e.getMessage());

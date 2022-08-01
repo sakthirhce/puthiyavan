@@ -3,8 +3,11 @@ package com.sakthi.trade.options.banknifty;
 import com.google.common.util.concurrent.AtomicDouble;
 import com.google.gson.Gson;
 import com.sakthi.trade.domain.*;
+import com.sakthi.trade.entity.OpenTradeDataBackupEntity;
 import com.sakthi.trade.entity.OpenTradeDataEntity;
 import com.sakthi.trade.fyer.service.TransactionService;
+import com.sakthi.trade.mapper.TradeDataMapper;
+import com.sakthi.trade.repo.OpenTradeDataBackupRepo;
 import com.sakthi.trade.repo.OpenTradeDataRepo;
 import com.sakthi.trade.telegram.SendMessage;
 import com.sakthi.trade.util.CommonUtil;
@@ -312,7 +315,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                             String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
                                             String todayCaps = today.toUpperCase();
                                             trendTradeData.setBuyPrice(trendTradeData.getSlPrice());
-                                            trendTradeData.setBuyPrice(new BigDecimal(order.averagePrice));
+                                            trendTradeData.setBuyTradedPrice(new BigDecimal(order.averagePrice));
                                             String message = MessageFormat.format("SL Hit for {0}" + ":" + user.getName() + ":" + getAlgoName(), trendTradeData.getStockName());
                                             LOGGER.info(message);
                                             mapTradeDataToSaveOpenTradeDataEntity(trendTradeData,false);
@@ -803,10 +806,26 @@ public class ZerodhaBankNiftyShortStraddle {
             }
         });
     }
+    @Autowired
+    OpenTradeDataBackupRepo openTradeDataBackupRepo;
+    @Scheduled(cron = "${banknifty.nrml.nextday.position.load.schedule}")
+    public void loadNrmlPositions() {
+        Gson gson= new Gson();
+        Iterable<OpenTradeDataEntity> openTradeDataEntities1 = openTradeDataRepo.findAll();
+        openTradeDataEntities1.forEach(openTradeDataEntity -> {
+            if (openTradeDataEntity.getAlgoName().equals(this.getAlgoName())) {
+                String openStr = gson.toJson(openTradeDataEntity);
+                OpenTradeDataBackupEntity openTradeDataBackupEntity = gson.fromJson(openStr, OpenTradeDataBackupEntity.class);
+                openTradeDataBackupRepo.save(openTradeDataBackupEntity);
+                openTradeDataRepo.deleteById(openTradeDataEntity.getDataKey());
+            }
 
-
+        });
+    }
+    @Autowired
+    TradeDataMapper tradeDataMapper;
     public void mapTradeDataToSaveOpenTradeDataEntity(TradeData tradeData,boolean orderPlaced) {
-        try {
+        try {/*
             OpenTradeDataEntity openTradeDataEntity = new OpenTradeDataEntity();
             openTradeDataEntity.setDataKey(tradeData.getDataKey());
             openTradeDataEntity.setAlgoName(this.getAlgoName());
@@ -837,8 +856,9 @@ public class ZerodhaBankNiftyShortStraddle {
             }else{
                 openTradeDataEntity.setTradeDate(tradeData.getTradeDate());
             }
-            saveTradeData(openTradeDataEntity);
-            LOGGER.info("sucessfully saved trade data");
+            saveTradeData(openTradeDataEntity);*/
+           tradeDataMapper.mapTradeDataToSaveOpenTradeDataEntity(tradeData,orderPlaced,this.getAlgoName());
+            //LOGGER.info("sucessfully saved trade data");
         } catch (Exception e) {
             LOGGER.info(e.getMessage());
         }

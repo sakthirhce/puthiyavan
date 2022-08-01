@@ -17,7 +17,7 @@ public interface OpenTradeDataRepo extends JpaRepository<OpenTradeDataEntity,Str
     @Query(value="select * from public.open_trade_data where user_id=?1 and is_exited=false",nativeQuery=true)
     List<OpenTradeDataEntity> getOpenPositionDetails(String userId);
 
-    @Query(value="select * from public.open_trade_data_backup where user_id=?1 AND trade_date=?2 and is_exited=true",nativeQuery=true)
+    @Query(value="select * from public.open_trade_data where user_id=?1 AND trade_date=?2 and is_exited=true",nativeQuery=true)
     List<OpenTradeDataEntity> findByUserIdAndTradeDate(String userId, String trade_date);
 
     @Query(value="select * from public.open_trade_data",nativeQuery=true)

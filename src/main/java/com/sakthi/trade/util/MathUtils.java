@@ -2,6 +2,7 @@ package com.sakthi.trade.util;
 
 import com.sakthi.trade.domain.Brokerage;
 import com.sakthi.trade.domain.TradeData;
+import com.sakthi.trade.mapper.TradeDataMapper;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -30,6 +31,14 @@ public class MathUtils
         return value;
     }
 
+    public static void main(String args[]){
+        TradeData tradeData=new TradeData();
+        tradeData.setStockName("abc");
+        tradeData.setBuyTradedPrice(new BigDecimal("448.96"));
+        tradeData.setSellTradedPrice(new BigDecimal("629.4"));
+        tradeData.setQty(150);
+        calculateBrokerage(tradeData,true,false,false,"0");
+    }
     public static Brokerage calculateBrokerage(TradeData tradeData, boolean isOptions, boolean isEquityIntraday, boolean isFutures, String slipage){
 
         Brokerage brokerage=new Brokerage();
@@ -38,7 +47,7 @@ public class MathUtils
             brokerC=new BigDecimal("40");
             brokerage.setBrokerCharge(brokerC);
         }else if(isEquityIntraday){
-            brokerC=MathUtils.percentageValueOfAmount(new BigDecimal("0.03"),tradeData.getSellPrice().add(tradeData.getBuyPrice())).multiply(new BigDecimal(tradeData.getQty()));
+            brokerC=MathUtils.percentageValueOfAmount(new BigDecimal("0.03"),tradeData.getSellTradedPrice().add(tradeData.getBuyTradedPrice())).multiply(new BigDecimal(tradeData.getQty()));
         }
         brokerage.setQty(tradeData.getQty());
         //STT
@@ -46,11 +55,11 @@ public class MathUtils
 
         if(isOptions){
          //   stt=tradeData.getSellPrice().multiply(new BigDecimal("0.05")).add(tradeData.getBuyPrice().multiply(new BigDecimal("0.05")));
-            stt=MathUtils.percentageValueOfAmount(new BigDecimal("0.05"),(tradeData.getSellPrice().multiply(new BigDecimal(tradeData.getQty()))).add(tradeData.getBuyPrice().multiply(new BigDecimal(tradeData.getQty()))));
+            stt=MathUtils.percentageValueOfAmount(new BigDecimal("0.05"),(tradeData.getSellTradedPrice().multiply(new BigDecimal(tradeData.getQty()))));
 
         }else if(isEquityIntraday){
            // stt=tradeData.getSellPrice().multiply(new BigDecimal("0.025")).add(tradeData.getBuyPrice().multiply(new BigDecimal("0.05")));
-            stt=MathUtils.percentageValueOfAmount(new BigDecimal("0.025"),tradeData.getSellPrice().multiply(new BigDecimal(tradeData.getQty())));
+            stt=MathUtils.percentageValueOfAmount(new BigDecimal("0.025"),tradeData.getSellTradedPrice().multiply(new BigDecimal(tradeData.getQty())));
         }
 
         brokerage.setStt(stt);
@@ -58,25 +67,26 @@ public class MathUtils
         BigDecimal transactionCharges=new BigDecimal("0");
         if(isOptions){
           //  transactionCharges=tradeData.getSellPrice().add(tradeData.getBuyPrice()).multiply(new BigDecimal("0.053"));
-            transactionCharges=MathUtils.percentageValueOfAmount(new BigDecimal("0.053"),tradeData.getSellPrice().add(tradeData.getBuyPrice()));
+            transactionCharges=MathUtils.percentageValueOfAmount(new BigDecimal("0.053"),tradeData.getSellTradedPrice().add(tradeData.getBuyTradedPrice()).multiply(new BigDecimal(tradeData.getQty())));
         }else if(isEquityIntraday){
           //  transactionCharges= tradeData.getSellPrice().add(tradeData.getBuyPrice()).multiply(new BigDecimal("0.00345"));
-            transactionCharges=MathUtils.percentageValueOfAmount(new BigDecimal("0.00345"),tradeData.getSellPrice().add(tradeData.getBuyPrice()));
+            transactionCharges=MathUtils.percentageValueOfAmount(new BigDecimal("0.00345"),tradeData.getSellTradedPrice().add(tradeData.getBuyTradedPrice()).multiply(new BigDecimal(tradeData.getQty())));
 
 
         }
      //   BigDecimal slippagePoints=new BigDecimal(slipage).divide(new BigDecimal("100"));
-        BigDecimal buyslippageCost= MathUtils.percentageValueOfAmount(new BigDecimal(slipage),tradeData.getSellPrice()).multiply(new BigDecimal(tradeData.getQty()));
-        BigDecimal sellSlippageCost= MathUtils.percentageValueOfAmount(new BigDecimal(slipage),tradeData.getBuyPrice()).multiply(new BigDecimal(tradeData.getQty()));
+        BigDecimal buyslippageCost= MathUtils.percentageValueOfAmount(new BigDecimal(slipage),tradeData.getSellTradedPrice()).multiply(new BigDecimal(tradeData.getQty()));
+        BigDecimal sellSlippageCost= MathUtils.percentageValueOfAmount(new BigDecimal(slipage),tradeData.getBuyTradedPrice()).multiply(new BigDecimal(tradeData.getQty()));
         brokerage.setSlipageCost(new BigDecimal("0"));
         brokerage.setTransactionCharges(transactionCharges);
         //GST: 18%
         BigDecimal gst=MathUtils.percentageValueOfAmount(new BigDecimal("18"),transactionCharges.add(brokerC));
         brokerage.setGst(gst);
-        BigDecimal stampDuty=new BigDecimal(.003).multiply(tradeData.getBuyPrice());
+        BigDecimal stampDuty=new BigDecimal(.003).multiply(tradeData.getBuyTradedPrice());
         brokerage.setGst(stampDuty);
         BigDecimal totalcharges=brokerC.add(stt).add(transactionCharges).add(gst).add(stampDuty);
         brokerage.setTotalCharges(totalcharges);
+        tradeData.setCharges(totalcharges.setScale(2, RoundingMode.HALF_UP));
         return brokerage;
     }
     public static class SMA

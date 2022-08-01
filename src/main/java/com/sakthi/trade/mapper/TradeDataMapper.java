@@ -6,6 +6,7 @@ import com.sakthi.trade.entity.OpenTradeDataEntity;
 import com.sakthi.trade.options.banknifty.ZerodhaBankNiftyShortStraddle;
 import com.sakthi.trade.repo.OpenTradeDataBackupRepo;
 import com.sakthi.trade.repo.OpenTradeDataRepo;
+import com.sakthi.trade.util.MathUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,7 @@ import java.util.logging.Logger;
 @Service
 public class TradeDataMapper {
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+
     public TradeData mapTradeEntityToTradeData(OpenTradeDataEntity openTradeDataEntity){
         TradeData tradeData = new TradeData();
         tradeData.setDataKey(openTradeDataEntity.getDataKey());
@@ -40,17 +42,19 @@ public class TradeDataMapper {
         tradeData.setSlPercentage(openTradeDataEntity.getSlPercentage());
         tradeData.setEntryOrderId(openTradeDataEntity.getEntryOrderId());
         tradeData.setSlOrderId(openTradeDataEntity.getSlOrderId());
-        tradeData.setStockId(openTradeDataEntity.getStockId());
-        if(tradeData.isExited) {
+        tradeData.setStockId(openTradeDataEntity.getStockId());if(tradeData.isExited) {
             try {
                 if (tradeData.getBuyTradedPrice() != null && tradeData.getBuyPrice() != null) {
                     BigDecimal slipagge= tradeData.getBuyPrice().subtract(tradeData.getBuyTradedPrice()).setScale(2, RoundingMode.HALF_UP).multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
                     if (openTradeDataEntity.getEntryType().equals("BUY")) {
                         tradeData.setEntrySlipage(slipagge);
+                        openTradeDataEntity.setEntrySlipage(slipagge);
                     }else {
                         tradeData.setExitSlipage(slipagge);
+                        openTradeDataEntity.setExitSlipage(slipagge);
                         if(tradeData.isSLHit){
                             tradeData.setSlSlipage(slipagge);
+                            openTradeDataEntity.setSlSlipage(slipagge);
                         }
                     }
                 }
@@ -58,25 +62,42 @@ public class TradeDataMapper {
                     BigDecimal slipagge= tradeData.getSellTradedPrice().subtract(tradeData.getSellPrice()).setScale(2, RoundingMode.HALF_UP).multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
                     if (openTradeDataEntity.getEntryType().equals("BUY")) {
                         tradeData.setExitSlipage(slipagge);
+                        openTradeDataEntity.setExitSlipage(slipagge);
                     }else {
                         tradeData.setEntrySlipage(slipagge);
                         if(tradeData.isSLHit){
                             tradeData.setSlSlipage(slipagge);
+                            openTradeDataEntity.setSlSlipage(slipagge);
                         }
                     }
                 }
                 if (tradeData.getBuyTradedPrice() != null && tradeData.getSellTradedPrice() != null) {
-                    BigDecimal pl= tradeData.getSellTradedPrice().subtract(tradeData.getBuyTradedPrice()).setScale(2, RoundingMode.HALF_UP).multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
-                    tradeData.setProfitLoss(pl);
-                    if (tradeData.getSellPrice() != null && tradeData.getBuyPrice() !=null) {
-                        BigDecimal paperPl= tradeData.getSellPrice().subtract(tradeData.getBuyPrice()).setScale(2, RoundingMode.HALF_UP).multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
+                    try {
+                        BigDecimal pl = tradeData.getSellTradedPrice().subtract(tradeData.getBuyTradedPrice())
+                                .setScale(2, RoundingMode.HALF_UP)
+                                .multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
+                        tradeData.setProfitLoss(pl);
+                        boolean isOptions = true;
+                        boolean isFutures = false;
+                        if (tradeData.getStockName().contains("FUT")) {
+                            isOptions = false;
+                            isFutures = true;
+                        }
+                        MathUtils.calculateBrokerage(tradeData, isOptions, false, isFutures, "0");
+                        openTradeDataEntity.setCharges(tradeData.charges.setScale(2, RoundingMode.HALF_UP));
+                        BigDecimal plAfterCharges = pl.subtract(tradeData.charges).setScale(2, RoundingMode.HALF_UP);;
+                        tradeData.plAfterCharges = plAfterCharges;
+                        if (tradeData.getSellPrice() != null && tradeData.getBuyPrice() != null) {
+                            BigDecimal paperPl = tradeData.getSellPrice().subtract(tradeData.getBuyPrice()).setScale(2, RoundingMode.HALF_UP).multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
+                        }
+                    }catch (Exception e){
+                        LOGGER.info("error while calculating PL and slipage,charges");
                     }
                 }
 
             }catch (Exception e){
                 LOGGER.info("error while calculating PL and slipage");
-            }
-        }
+            }}
         return tradeData;
     }
     public TradeData mapTradeBackupEntityToTradeData(OpenTradeDataBackupEntity openTradeDataEntity){
@@ -105,39 +126,59 @@ public class TradeDataMapper {
         if(tradeData.isExited) {
             try {
                 if (tradeData.getBuyTradedPrice() != null && tradeData.getBuyPrice() != null) {
-                    BigDecimal slipagge= tradeData.getBuyPrice().subtract(tradeData.getBuyTradedPrice()).setScale(2, RoundingMode.HALF_UP);
+                    BigDecimal slipagge= tradeData.getBuyPrice().subtract(tradeData.getBuyTradedPrice()).setScale(2, RoundingMode.HALF_UP).multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
                     if (openTradeDataEntity.getEntryType().equals("BUY")) {
                         tradeData.setEntrySlipage(slipagge);
+                        openTradeDataEntity.setEntrySlipage(slipagge);
                     }else {
                         tradeData.setExitSlipage(slipagge);
+                        openTradeDataEntity.setExitSlipage(slipagge);
                         if(tradeData.isSLHit){
                             tradeData.setSlSlipage(slipagge);
+                            openTradeDataEntity.setSlSlipage(slipagge);
                         }
                     }
                 }
                 if (tradeData.getSellPrice() != null && tradeData.getSellTradedPrice() != null) {
-                    BigDecimal slipagge= tradeData.getSellTradedPrice().subtract(tradeData.getSellPrice()).setScale(2, RoundingMode.HALF_UP);
+                    BigDecimal slipagge= tradeData.getSellTradedPrice().subtract(tradeData.getSellPrice()).setScale(2, RoundingMode.HALF_UP).multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
                     if (openTradeDataEntity.getEntryType().equals("BUY")) {
                         tradeData.setExitSlipage(slipagge);
+                        openTradeDataEntity.setExitSlipage(slipagge);
                     }else {
                         tradeData.setEntrySlipage(slipagge);
                         if(tradeData.isSLHit){
                             tradeData.setSlSlipage(slipagge);
+                            openTradeDataEntity.setSlSlipage(slipagge);
                         }
                     }
                 }
                 if (tradeData.getBuyTradedPrice() != null && tradeData.getSellTradedPrice() != null) {
-                    BigDecimal pl= tradeData.getSellTradedPrice().subtract(tradeData.getBuyTradedPrice()).setScale(2, RoundingMode.HALF_UP);
-                    tradeData.setProfitLoss(pl);
-                    if (tradeData.getSellPrice() != null && tradeData.getBuyPrice() !=null) {
-                        BigDecimal paperPl= tradeData.getSellPrice().subtract(tradeData.getBuyPrice()).setScale(2, RoundingMode.HALF_UP);
+                    try {
+                        BigDecimal pl = tradeData.getSellTradedPrice().subtract(tradeData.getBuyTradedPrice())
+                                .setScale(2, RoundingMode.HALF_UP)
+                                .multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
+                        tradeData.setProfitLoss(pl);
+                        boolean isOptions = true;
+                        boolean isFutures = false;
+                        if (tradeData.getStockName().contains("FUT")) {
+                            isOptions = false;
+                            isFutures = true;
+                        }
+                        MathUtils.calculateBrokerage(tradeData, isOptions, false, isFutures, "0");
+                        openTradeDataEntity.setCharges(tradeData.charges.setScale(2, RoundingMode.HALF_UP));
+                        BigDecimal plAfterCharges = pl.subtract(tradeData.charges).setScale(2, RoundingMode.HALF_UP);
+                        tradeData.plAfterCharges = plAfterCharges;
+                        if (tradeData.getSellPrice() != null && tradeData.getBuyPrice() != null) {
+                            BigDecimal paperPl = tradeData.getSellPrice().subtract(tradeData.getBuyPrice()).setScale(2, RoundingMode.HALF_UP).multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
+                        }
+                    }catch (Exception e){
+                        LOGGER.info("error while calculating PL and slipage,charges");
                     }
                 }
 
             }catch (Exception e){
                 LOGGER.info("error while calculating PL and slipage");
-            }
-        }
+            }}
         return tradeData;
     }
     public static final Logger LOGGER = Logger.getLogger(TradeDataMapper.class.getName());
@@ -171,12 +212,71 @@ public class TradeDataMapper {
             openTradeDataEntity.setSlOrderId(tradeData.getSlOrderId());
             openTradeDataEntity.setStockId(tradeData.getStockId());
             Date date = new Date();
+            String tradeDate = format.format(date);
             if(orderPlaced) {
-                String tradeDate = format.format(date);
                 openTradeDataEntity.setTradeDate(tradeDate);
                 tradeData.setTradeDate(tradeDate);
             }else{
                 openTradeDataEntity.setTradeDate(tradeData.getTradeDate());
+                openTradeDataEntity.setModifyDate(tradeDate);
+                tradeData.setModifyDate(tradeDate);
+            }
+            if(tradeData.isExited) {
+                try {
+                    if (tradeData.getBuyTradedPrice() != null && tradeData.getBuyPrice() != null) {
+                        BigDecimal slipagge= tradeData.getBuyPrice().subtract(tradeData.getBuyTradedPrice()).setScale(2, RoundingMode.HALF_UP).multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
+                        if (openTradeDataEntity.getEntryType().equals("BUY")) {
+                            tradeData.setEntrySlipage(slipagge);
+                            openTradeDataEntity.setEntrySlipage(slipagge);
+                        }else {
+                            tradeData.setExitSlipage(slipagge);
+                            openTradeDataEntity.setExitSlipage(slipagge);
+                            if(tradeData.isSLHit){
+                                tradeData.setSlSlipage(slipagge);
+                                openTradeDataEntity.setSlSlipage(slipagge);
+                            }
+                        }
+                    }
+                    if (tradeData.getSellPrice() != null && tradeData.getSellTradedPrice() != null) {
+                        BigDecimal slipagge= tradeData.getSellTradedPrice().subtract(tradeData.getSellPrice()).setScale(2, RoundingMode.HALF_UP).multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
+                        if (openTradeDataEntity.getEntryType().equals("BUY")) {
+                            tradeData.setExitSlipage(slipagge);
+                            openTradeDataEntity.setExitSlipage(slipagge);
+                        }else {
+                            tradeData.setEntrySlipage(slipagge);
+                            if(tradeData.isSLHit){
+                                tradeData.setSlSlipage(slipagge);
+                                openTradeDataEntity.setSlSlipage(slipagge);
+                            }
+                        }
+                    }
+                    if (tradeData.getBuyTradedPrice() != null && tradeData.getSellTradedPrice() != null) {
+                        try {
+                            BigDecimal pl = tradeData.getSellTradedPrice().subtract(tradeData.getBuyTradedPrice())
+                                    .setScale(2, RoundingMode.HALF_UP)
+                                    .multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
+                            tradeData.setProfitLoss(pl);
+                            boolean isOptions = true;
+                            boolean isFutures = false;
+                            if (tradeData.getStockName().contains("FUT")) {
+                                isOptions = false;
+                                isFutures = true;
+                            }
+                            MathUtils.calculateBrokerage(tradeData, isOptions, false, isFutures, "0");
+                            openTradeDataEntity.setCharges(tradeData.charges.setScale(2, RoundingMode.HALF_UP));
+                            BigDecimal plAfterCharges = pl.subtract(tradeData.charges).setScale(2, RoundingMode.HALF_UP);;
+                            tradeData.plAfterCharges = plAfterCharges;
+                            if (tradeData.getSellPrice() != null && tradeData.getBuyPrice() != null) {
+                                BigDecimal paperPl = tradeData.getSellPrice().subtract(tradeData.getBuyPrice()).setScale(2, RoundingMode.HALF_UP).multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
+                            }
+                        }catch (Exception e){
+                            LOGGER.info("error while calculating PL and slipage,charges");
+                        }
+                    }
+
+                }catch (Exception e){
+                    LOGGER.info("error while calculating PL and slipage");
+                }
             }
             saveTradeData(openTradeDataEntity);
             LOGGER.info("sucessfully saved trade data");

@@ -287,8 +287,9 @@ entry_type varchar(60),
 amount_per_stock numeric(60,2) null,
 is_errored boolean not null default false);
 
-
-
+ALTER TABLE open_trade_data_backup ADD COLUMN charges numeric(60,2) null
+ALTER TABLE open_trade_data_backup ADD COLUMN pl_after_charges numeric(60,2) null;
+ALTER TABLE open_trade_data_backup ADD COLUMN pl_after_charges numeric(60,2) null;
 create table strangle_trade_data(
 data_key varchar(100) primary key,
 stock_name varchar(100) not null,

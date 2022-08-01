@@ -49,6 +49,9 @@ public class OpenTradeDataEntity {
     public boolean isErrored;
     public Date createTimestamp;
     public String tradeDate;
+    public String modifyDate;
+    public BigDecimal charges;
+    public BigDecimal plAfterCharges;
 }
 
 
