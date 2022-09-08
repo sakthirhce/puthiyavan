@@ -26,7 +26,28 @@ entry_type varchar(60),
 amount_per_stock numeric(60,2)not null,
 is_errored boolean not null default false);
 
+create table ALGO_TEST_DATA(
+data_key varchar(100) primary key,
+qty numeric(20) not null,
+buy_price numeric(60,2) null,
+sell_price numeric(60,2) null,
+user_id  varchar(40) not null,
+algo_name varchar(60),
+entry_type varchar(60),
+strike varchar(60),
+instrument varchar(100) not null,
+entry_date DATE,
+exit_date DATE,
+trade_date DATE,
+entry_time TIMESTAMP,
+exit_time TIMESTAMP,
+charges numeric(60,2) null,
+pl_after_charges numeric(60,2) null,
+profit_loss numeric(60,2) null,
+Entry_day varchar(60) null);
 
+CREATE UNIQUE INDEX idx_ALGO_TEST_DATA
+ON ALGO_TEST_DATA(algo_name, entry_type,strike,instrument,entry_time);
 
 CREATE table BANK_NIFTY_OPTION (
 	exp_key VARCHAR(50)  PRIMARY KEY,

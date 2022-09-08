@@ -6,13 +6,11 @@ import com.binance.client.impl.SyncRequestImpl;
 import com.binance.client.model.market.ExchangeInfoEntry;
 import com.google.gson.Gson;
 import com.opencsv.CSVReader;
+import com.sakthi.trade.algotest.backtest.data.Algotest;
 import com.sakthi.trade.aliceblue.AliceAccount;
 import com.sakthi.trade.binance.*;
 import com.sakthi.trade.domain.*;
-import com.sakthi.trade.entity.CryptoFuturesEntity;
-import com.sakthi.trade.entity.OpenTradeDataEntity;
-import com.sakthi.trade.entity.StockEntity;
-import com.sakthi.trade.entity.UserLoginEntity;
+import com.sakthi.trade.entity.*;
 import com.sakthi.trade.futures.banknifty.BNFFuturesTrendFollowing;
 import com.sakthi.trade.fyer.Account;
 //import com.sakthi.trade.fyer.FyerTrendTest;
@@ -28,6 +26,7 @@ import com.sakthi.trade.options.buy.banknifty.VwapRsiOiVolumeBuyBacktest;
 import com.sakthi.trade.options.buy.banknifty.VwapRsiOiVolumeBuyBacktestTrueData;
 import com.sakthi.trade.options.nifty.NIftyStraddleLongBackTest;
 import com.sakthi.trade.options.nifty.NiftyShortStraddleOI;
+import com.sakthi.trade.options.nifty.buy.NiftyOptionBuy1035;
 import com.sakthi.trade.options.nifty.buy.NiftyOptionBuy935;
 import com.sakthi.trade.options.nifty.buy.NiftyVwapRsiOiVolumeBuy;
 import com.sakthi.trade.options.nifty.buy.NiftyVwapRsiOiVolumeBuyBacktest;
@@ -287,12 +286,24 @@ public class AutomationController {
     public void generateAccessToken() throws Exception {
         zerodhaAccount.generateAccessToken();
     }
+    @Autowired
+    Algotest algotest;
 
+    @GetMapping("/loadAlgoTestData")
+    public void loadAlgoTestData() throws Exception {
+        algotest.loadBacktestData();
+    }
+    @GetMapping("/getAlgoTestData")
+    public ResponseEntity<String> getAlgoTestData() throws Exception {
+        SummaryDataList tradeData= algotest.getAlgoTestData();
+        HttpHeaders responseHeaders = new HttpHeaders();
+        return new ResponseEntity<>(new Gson().toJson(tradeData), responseHeaders, HttpStatus.OK);
+    }
     @Autowired
    com.sakthi.trade.report.TradeReport tradeReport;
-    @GetMapping("/tradeDataReport")
-    public ResponseEntity<String> tradeDataReport(@RequestParam String userId, @RequestParam String date) throws Exception {
-        List<TradeData> tradeData= tradeReport.tradeReport(userId,date);
+    @PostMapping("/tradeDataReport")
+    public ResponseEntity<String> tradeDataReport(@RequestBody UserInput userInput) throws Exception {
+        List<TradeData> tradeData= tradeReport.tradeReport(userInput.getUserId(),userInput.getDate());
         HttpHeaders responseHeaders = new HttpHeaders();
         return new ResponseEntity<>(new Gson().toJson(tradeData), responseHeaders, HttpStatus.OK);
     }
@@ -980,6 +991,44 @@ NiftyOptionBuy935 niftyOptionBuy935;
             tradeDataList=mapOpenTradeDataEntityToTradeData(orderDetails);
             return new ResponseEntity<>(new Gson().toJson(tradeDataList),HttpStatus.OK);
             }else {
+            orderDetails = openTradeDataRepo.getOpenPositionDetails(user.getUserId());
+            if (orderDetails.size() > 0){
+                tradeDataList=mapOpenTradeDataEntityToTradeData(orderDetails);
+                return new ResponseEntity<>(new Gson().toJson(tradeDataList),HttpStatus.OK);
+            }
+        }
+        return new ResponseEntity<>(null,HttpStatus.NOT_FOUND);
+    }
+    @Autowired
+    NiftyOptionBuy1035 niftyOptionBuy1035;
+
+    @PostMapping("/getPreviousDayTradeDetails")
+    public ResponseEntity<?> getPreviousDayTradeDetails(@RequestBody String payload) throws Exception {
+        Users users=new Gson().fromJson(payload,Users.class);
+        User user=users.getUser();
+        Date date = new Date();
+        if(niftyOptionBuy935.openTradeDataEntities1.size()>0)
+        {
+
+        }
+        if(niftyOptionBuy1035.openTradeDataEntities1.size()>0)
+        {
+
+        }
+        if(bnfFuturesTrendFollowing.openTradeDataEntities1.size()>0)
+        {
+
+        }
+      /*  if(zerodhaBankNiftyShortStraddleWithLong.openTradeDataEntities1.size()>0)
+        {
+
+        }*/
+        List<OpenTradeDataEntity> orderDetails = openTradeDataRepo.getOrderDetails(user.getUserId(),format.format(date));
+        List<TradeData> tradeDataList = new ArrayList<>();
+        if (orderDetails.size() > 0){
+            tradeDataList=mapOpenTradeDataEntityToTradeData(orderDetails);
+            return new ResponseEntity<>(new Gson().toJson(tradeDataList),HttpStatus.OK);
+        }else {
             orderDetails = openTradeDataRepo.getOpenPositionDetails(user.getUserId());
             if (orderDetails.size() > 0){
                 tradeDataList=mapOpenTradeDataEntityToTradeData(orderDetails);

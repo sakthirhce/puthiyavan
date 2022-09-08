@@ -1,10 +1,9 @@
 package com.sakthi.trade.zerodha.account;
 
 import com.google.gson.Gson;
-import com.opencsv.CSVReader;
+import com.sakthi.trade.domain.OpenPositionData;
 import com.sakthi.trade.entity.*;
 import com.sakthi.trade.fyer.AuthRequestDTO;
-import com.sakthi.trade.fyer.model.Candlestick;
 import com.sakthi.trade.fyer.model.PivotTimeFrame;
 import com.sakthi.trade.fyer.model.StandardPivot;
 import com.sakthi.trade.fyer.model.StandardPivots;
@@ -32,11 +31,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StopWatch;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -47,6 +44,7 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
 @Slf4j
@@ -373,6 +371,7 @@ public class ZerodhaAccount {
 
     }
 
+    ExecutorService executorService = java.util.concurrent.Executors.newFixedThreadPool(5);
     @Autowired
     ZerodhaAccount zerodhaAccount;
     @Autowired
@@ -585,15 +584,30 @@ public class ZerodhaAccount {
             }
         });
     }
-    //@Scheduled(cron = "${over.position.monitor.scheduler}")
+
+    @Autowired
+    OpenTradeDataRepo openTradeDataRepo;
+    private Map<String,Integer> getTradeOpenQty(){
+        Map<String,Integer> openTradeData = new HashMap<>();
+        List<OpenPositionData> openTradeDataEntities;
+        openTradeDataEntities = openTradeDataRepo.getTradeOpenData();
+        openTradeDataEntities.stream().forEach(openTradeDataEntity -> {
+            openTradeData.put(openTradeDataEntity.getStockName(),openTradeDataEntity.getQty());
+        });
+        return openTradeData;
+    }
+    @Scheduled(cron = "${over.position.monitor.scheduler}")
    public void monitorPositionSize() throws IOException, KiteException {
        List<Position> positions = zerodhaAccount.kiteSdk.getPositions().get("net");
-       positions.stream().forEach(position ->
+        Map<String,Integer> openTradeData =getTradeOpenQty();
+
+       positions.stream().filter(position -> position.netQuantity > 0).forEach(position ->
        {
-           int qty = 25 * (Integer.valueOf(12));
-           int niftyqty = 50 * (Integer.valueOf(6));
-           if( position.tradingSymbol.startsWith("BANKNIFTY")) {
-               if(position.netQuantity > qty ) {
+           executorService.submit(() -> {
+           if (openTradeData.containsKey(position.tradingSymbol)) {
+               Integer openQty = openTradeData.get(position.tradingSymbol);
+               Integer overPositionQty = position.netQuantity - openQty;
+               if (overPositionQty > 0) {
                    OrderParams orderParams = new OrderParams();
                    orderParams.tradingsymbol = position.tradingSymbol;
                    orderParams.exchange = "NFO";
@@ -620,37 +634,7 @@ public class ZerodhaAccount {
                    } catch (KiteException e) {
                        e.printStackTrace();
                    }
-               }
-           }else if( position.tradingSymbol.startsWith("NIFTY")) {
-
-               if (position.netQuantity > niftyqty) {
-                   OrderParams orderParams = new OrderParams();
-                   orderParams.tradingsymbol = position.tradingSymbol;
-                   orderParams.exchange = "NFO";
-                   orderParams.quantity = Math.abs(position.netQuantity);
-                   orderParams.orderType = "MARKET";
-                   orderParams.product = position.product;
-                   //orderParams.price=price.doubleValue();
-                   if (position.netQuantity > 0) {
-                       orderParams.transactionType = "SELL";
-                   } else {
-                       orderParams.transactionType = "BUY";
-                   }
-                   orderParams.validity = "DAY";
-                   com.zerodhatech.models.Order orderResponse = null;
-                   try {
-                       orderResponse = zerodhaAccount.kiteSdk.placeOrder(orderParams, "regular");
-
-                       String message = MessageFormat.format("Closed Over Leveraged Position {0}", orderParams.tradingsymbol);
-                       log.info(message);
-                       sendMessage.sendToTelegram(message, telegramToken);
-
-                   } catch (IOException e) {
-                       e.printStackTrace();
-                   } catch (KiteException e) {
-                       e.printStackTrace();
-                   }
-               } /*else if (position.pnl < -2500) {
+                    /*else if (position.pnl < -2500) {
                    OrderParams orderParams = new OrderParams();
                    orderParams.tradingsymbol = position.tradingSymbol;
                    orderParams.exchange = "NFO";
@@ -678,7 +662,76 @@ public class ZerodhaAccount {
                        e.printStackTrace();
                    }
                }*/
+               }
+           } else {
+               try {
+                   Thread.sleep(// minutes to sleep. for 1 min its not required.
+                           60 *    // seconds to a minute
+                                   1000);
+               } catch (InterruptedException e) {
+                   throw new RuntimeException(e);
+               }
+               Map<String, Integer> openTradeData1 = getTradeOpenQty();
+               if (openTradeData1.containsKey(position.tradingSymbol)) {
+                   Integer openQty = openTradeData1.get(position.tradingSymbol);
+                   Integer overPositionQty = position.netQuantity - openQty;
+                   if (overPositionQty > 0) {
+                       OrderParams orderParams = new OrderParams();
+                       orderParams.tradingsymbol = position.tradingSymbol;
+                       orderParams.exchange = "NFO";
+                       orderParams.quantity = Math.abs(position.netQuantity);
+                       orderParams.orderType = "MARKET";
+                       orderParams.product = position.product;
+                       //orderParams.price=price.doubleValue();
+                       if (position.netQuantity > 0) {
+                           orderParams.transactionType = "SELL";
+                       } else {
+                           orderParams.transactionType = "BUY";
+                       }
+                       orderParams.validity = "DAY";
+                       com.zerodhatech.models.Order orderResponse = null;
+                       try {
+                           orderResponse = zerodhaAccount.kiteSdk.placeOrder(orderParams, "regular");
+
+                           String message = MessageFormat.format("Closed Over Leveraged Position {0}", orderParams.tradingsymbol);
+                           log.info(message);
+                           sendMessage.sendToTelegram(message, telegramToken);
+
+                       } catch (IOException e) {
+                           e.printStackTrace();
+                       } catch (KiteException e) {
+                           e.printStackTrace();
+                       }
+                   }
+               } else {
+                   OrderParams orderParams = new OrderParams();
+                   orderParams.tradingsymbol = position.tradingSymbol;
+                   orderParams.exchange = "NFO";
+                   orderParams.quantity = Math.abs(position.netQuantity);
+                   orderParams.orderType = "MARKET";
+                   orderParams.product = position.product;
+                   //orderParams.price=price.doubleValue();
+                   if (position.netQuantity > 0) {
+                       orderParams.transactionType = "SELL";
+                   } else {
+                       orderParams.transactionType = "BUY";
+                   }
+                   orderParams.validity = "DAY";
+                   com.zerodhatech.models.Order orderResponse = null;
+                   try {
+                       orderResponse = zerodhaAccount.kiteSdk.placeOrder(orderParams, "regular");
+                       String message = MessageFormat.format("Closed Over Leveraged Position {0}", orderParams.tradingsymbol);
+                       log.info(message);
+                       sendMessage.sendToTelegram(message, telegramToken);
+
+                   } catch (IOException e) {
+                       e.printStackTrace();
+                   } catch (KiteException e) {
+                       e.printStackTrace();
+                   }
+               }
            }
+       });
        });
    }
 

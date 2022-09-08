@@ -344,10 +344,10 @@ public class NiftyOptionBuy1035 {
             }
         });
     }
-
+    public List<OpenTradeDataEntity> openTradeDataEntities1 = new ArrayList<>();
     @Scheduled(cron = "${niftyBuy1035.schedule.nextday.load}")
     public void loadNrmlPositions() {
-        Iterable<OpenTradeDataEntity> openTradeDataEntities1 = openTradeDataRepo.findAll();
+        openTradeDataEntities1 = openTradeDataRepo.findAll();
         openTradeDataEntities1.forEach(openTradeDataEntity -> {
             if (openTradeDataEntity.getAlgoName().equals(this.getAlgoName())) {
                 if (!openTradeDataEntity.isExited && !openTradeDataEntity.isErrored) {

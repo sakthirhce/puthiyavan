@@ -1,5 +1,6 @@
 package com.sakthi.trade.mapper;
 
+import com.google.gson.Gson;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.entity.OpenTradeDataBackupEntity;
 import com.sakthi.trade.entity.OpenTradeDataEntity;
@@ -42,7 +43,9 @@ public class TradeDataMapper {
         tradeData.setSlPercentage(openTradeDataEntity.getSlPercentage());
         tradeData.setEntryOrderId(openTradeDataEntity.getEntryOrderId());
         tradeData.setSlOrderId(openTradeDataEntity.getSlOrderId());
-        tradeData.setStockId(openTradeDataEntity.getStockId());if(tradeData.isExited) {
+        tradeData.setStockId(openTradeDataEntity.getStockId());
+
+        if(tradeData.isExited) {
             try {
                 if (tradeData.getBuyTradedPrice() != null && tradeData.getBuyPrice() != null) {
                     BigDecimal slipagge= tradeData.getBuyPrice().subtract(tradeData.getBuyTradedPrice()).setScale(2, RoundingMode.HALF_UP).multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
@@ -279,7 +282,7 @@ public class TradeDataMapper {
                 }
             }
             saveTradeData(openTradeDataEntity);
-            LOGGER.info("sucessfully saved trade data");
+            LOGGER.info("sucessfully saved trade data:"+new Gson().toJson(openTradeDataEntity));
         } catch (Exception e) {
             LOGGER.info(e.getMessage());
         }

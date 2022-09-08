@@ -770,7 +770,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                             try {
                                                 Date openDatetime = sdf.parse(historicalData1.timeStamp);
                                                 String openDate = format.format(openDatetime);
-                                                if (sdf.format(openDatetime).equals(openDate + "T15:10:00")) {
+                                                if (sdf.format(openDatetime).equals(openDate + "T15:09:00")) {
                                                     BigDecimal triggerPriceTemp = ((new BigDecimal(historicalData1.close).divide(new BigDecimal(5))).add(new BigDecimal(historicalData1.close))).setScale(0, RoundingMode.HALF_UP);
                                                     if ("SELL".equals(orderr.transactionType)) {
                                                         trendTradeData.setSellPrice(new BigDecimal(historicalData1.close));

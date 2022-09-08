@@ -1,5 +1,6 @@
 package com.sakthi.trade.repo;
 
+import com.sakthi.trade.domain.OpenPositionData;
 import com.sakthi.trade.entity.OpenTradeDataBackupEntity;
 import com.sakthi.trade.entity.OpenTradeDataEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,8 +18,13 @@ public interface OpenTradeDataRepo extends JpaRepository<OpenTradeDataEntity,Str
     @Query(value="select * from public.open_trade_data where user_id=?1 and is_exited=false",nativeQuery=true)
     List<OpenTradeDataEntity> getOpenPositionDetails(String userId);
 
+    @Query(value="select stock_name,sum(qty) from open_trade_data where is_exited=false and entry_type='BUY' group by stock_name",nativeQuery=true)
+    List<OpenPositionData> getTradeOpenData();
     @Query(value="select * from public.open_trade_data where user_id=?1 AND trade_date=?2 and is_exited=true",nativeQuery=true)
     List<OpenTradeDataEntity> findByUserIdAndTradeDate(String userId, String trade_date);
+
+    @Query(value="select * from public.open_trade_data where user_id=?1 AND to_date(trade_date)>=?2 AND to_date(trade_date)<?3 and is_exited=true",nativeQuery=true)
+    List<OpenTradeDataEntity> fetchCurrentMonthPL(String userId, String fromDate,String toDate);
 
     @Query(value="select * from public.open_trade_data",nativeQuery=true)
      List<OpenTradeDataEntity> findAll();
