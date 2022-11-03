@@ -1,0 +1,117 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "javaType": "com.sakthi.trade.dhan.schema.OrderResponse",
+  "type": "object",
+  "properties": {
+    "dhanClientId": {
+      "type": "string"
+    },
+    "orderId": {
+      "type": "string"
+    },
+    "correlationId": {
+      "type": "string"
+    },
+    "orderStatus": {
+      "type": "string"
+    },
+    "transactionType": {
+      "type": "string"
+    },
+    "exchangeSegment": {
+      "type": "string"
+    },
+    "productType": {
+      "type": "string"
+    },
+    "orderType": {
+      "type": "string"
+    },
+    "validity": {
+      "type": "string"
+    },
+    "tradingSymbol": {
+      "type": "string"
+    },
+    "securityId": {
+      "type": "string"
+    },
+    "quantity": {
+      "type": "integer"
+    },
+    "disclosedQuantity": {
+      "type": "integer"
+    },
+    "price": {
+      "type": "number"
+    },
+    "triggerPrice": {
+      "type": "number"
+    },
+    "afterMarketOrder": {
+      "type": "boolean"
+    },
+    "boProfitValue": {
+      "type": "number"
+    },
+    "boStopLossValue": {
+      "type": "number"
+    },
+    "legName": {
+      "type": "string"
+    },
+    "createTime": {
+      "type": "string"
+    },
+    "updateTime": {
+      "type": "string"
+    },
+    "exchangeTime": {
+      "type": "string"
+    },
+    "drvExpiryDate": {
+      "type": "null"
+    },
+    "drvOptionType": {
+      "type": "null"
+    },
+    "drvStrikePrice": {
+      "type": "number"
+    },
+    "omsErrorCode": {
+      "type": "null"
+    },
+    "omsErrorDescription": {
+      "type": "null"
+    }
+  },
+  "required": [
+    "dhanClientId",
+    "orderId",
+    "correlationId",
+    "orderStatus",
+    "transactionType",
+    "exchangeSegment",
+    "productType",
+    "orderType",
+    "validity",
+    "tradingSymbol",
+    "securityId",
+    "quantity",
+    "disclosedQuantity",
+    "price",
+    "triggerPrice",
+    "afterMarketOrder",
+    "boProfitValue",
+    "boStopLossValue",
+    "legName",
+    "createTime",
+    "updateTime",
+    "exchangeTime",
+    "drvExpiryDate",
+    "drvOptionType",
+    "drvStrikePrice",
+    "omsErrorCode",
+    "omsErrorDescription"
+  ]
+}

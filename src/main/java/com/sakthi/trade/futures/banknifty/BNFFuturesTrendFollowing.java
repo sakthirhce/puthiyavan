@@ -228,9 +228,9 @@ public class BNFFuturesTrendFollowing {
                                     } catch (KiteException | IOException e) {
                                         e.printStackTrace();
                                     }
-                                    log.info("debug log:"+new Gson().toJson(trendTradeData));
+                                   // log.info("debug log:"+new Gson().toJson(trendTradeData));
                                     orderList.forEach(order -> {
-                                        log.info("debug order log:"+new Gson().toJson(order));
+                                  //      log.info("debug order log:"+new Gson().toJson(order));
                                         try {
                                         if (trendTradeData.getEntryOrderId().equals(order.orderId) && !trendTradeData.isSlPlaced && "COMPLETE".equals(order.status)) {
                                             //   trendTradeData.setSellPrice(new BigDecimal(order.averagePrice));

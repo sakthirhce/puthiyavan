@@ -123,7 +123,7 @@ public class Account {
     OkHttpClient okHttpClient;
 
     public String token=null;
-    @Scheduled(cron="${fyer.generate.token.empty}")
+  //  @Scheduled(cron="${fyer.generate.token.empty}")
     public void emptyToken() throws IOException, InterruptedException, URISyntaxException {
         log.info("setting token to null at: "+ LocalDateTime.now().toString());
         token=null;
@@ -137,7 +137,7 @@ public class Account {
         }
     }
 
-    @Scheduled(cron="${fyer.password.validity.check}")
+   // @Scheduled(cron="${fyer.password.validity.check}")
     public void passwordValidityCheck() throws IOException, InterruptedException, URISyntaxException {
         log.info("Password validity check scheduler started");
         try {
@@ -159,7 +159,7 @@ public class Account {
         }
     }
 
-    @Scheduled(cron="${fyer.fund.check}")
+    //@Scheduled(cron="${fyer.fund.check}")
     public void availableFund() throws IOException, InterruptedException, URISyntaxException {
         log.info("Fund check scheduler started");
         try {
@@ -186,7 +186,7 @@ public class Account {
         }
     }
 
-    @Scheduled(cron="${fyer.generate.token}")
+   // @Scheduled(cron="${fyer.generate.token}")
   //  @PostConstruct
     public String generateToken() throws IOException, InterruptedException, URISyntaxException {
         try {

@@ -13,6 +13,9 @@ public class User {
     String password;
     String totp;
     String broker;
+    String clientId;
+    String clientName;
+    String accessToken;
     String appkey;
     String loginurl;
     String secret;
@@ -21,6 +24,10 @@ public class User {
     boolean enabled;
     StraddleConfig straddleConfig;
     StraddleConfig niftyBuy935;
+    StraddleConfig niftyBuy935V2;
+    StraddleConfig bniftyBuy917;
+    StraddleConfig bniftyBuy925;
+    StraddleConfig bniftyBuy935;
     StraddleConfig bnfFutures;
     StraddleConfig niftyBuy1035;
     StraddleConfig straddleConfig920;

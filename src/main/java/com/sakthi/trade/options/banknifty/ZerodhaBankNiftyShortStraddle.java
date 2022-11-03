@@ -11,6 +11,8 @@ import com.sakthi.trade.repo.OpenTradeDataBackupRepo;
 import com.sakthi.trade.repo.OpenTradeDataRepo;
 import com.sakthi.trade.telegram.SendMessage;
 import com.sakthi.trade.util.CommonUtil;
+import com.sakthi.trade.worker.BrokerWorker;
+import com.sakthi.trade.worker.BrokerWorkerFactory;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import com.sakthi.trade.zerodha.account.ReverseEntry;
 import com.sakthi.trade.zerodha.account.TelegramBot;
@@ -75,7 +77,8 @@ public class ZerodhaBankNiftyShortStraddle {
 
     @Autowired
     UserList userList;
-
+    @Autowired
+    BrokerWorkerFactory workerFactory;
     @Scheduled(cron = "${banknifty.historic.straddle.quote}")
     public void zerodhaBankNifty() {
         StopWatch stopWatch = new StopWatch();
@@ -103,7 +106,7 @@ public class ZerodhaBankNiftyShortStraddle {
                     if (sdf.format(openDatetime).equals(openDate + "T09:15:00")) {
                      //   LOGGER.info(historicalData1.close);
                         int atmStrike = commonUtil.findATM((int) historicalData1.close);
-                        LOGGER.info("Bank Nifty:" + atmStrike);
+                   //     LOGGER.info("Bank Nifty:" + atmStrike);
                         //check usuage of bankniftyFlyingLot
                      //   int qty = 25 * (Integer.valueOf(bankniftyLot));
                    /* if("Mon".equals(weekDay.format(date))){
@@ -131,6 +134,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                 userList.getUser().stream().filter(
                                         user -> user.getStraddleConfigOld() !=null  && user.getStraddleConfigOld().isEnabled() && user.getStraddleConfigOld().getLotConfig().containsKey(todayCaps)
                                 ).forEach( user -> {
+                                    BrokerWorker brokerWorker = workerFactory.getWorker(user);
                                     String botId="";
                                     TelegramBot telegramBot=user.getTelegramBot();
                                     if(telegramBot !=null){
@@ -153,7 +157,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                     tradeData.setUserId(user.getName());
                                     tradeData.setDataKey(dataKey);
                                     try {
-                                        order = user.getKiteConnect().placeOrder(orderParams, "regular");
+                                        order = brokerWorker.placeOrder(orderParams,user, tradeData);
                                         tradeData.setEntryOrderId(order.orderId);
                                         tradeData.isOrderPlaced = true;
                                         tradeData.setQty(25 * qty.get());
@@ -205,6 +209,7 @@ public class ZerodhaBankNiftyShortStraddle {
         // LOGGER.info("short straddle SLMonitor scheduler started");
 
         userList.getUser().forEach(user -> {
+            BrokerWorker brokerWorker = workerFactory.getWorker(user);
             if(user.getStraddleConfigOld() !=null &&  user.getStraddleConfigOld().isEnabled()){
             String botId = "";
             TelegramBot telegramBot = user.getTelegramBot();
@@ -220,7 +225,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                 // LOGGER.info(" trade data:"+new Gson().toJson(trendTradeData));
                                 List<com.zerodhatech.models.Order> orderList = null;
                                 try {
-                                    orderList = user.getKiteConnect().getOrders();
+                                    orderList = brokerWorker.getOrders(user);
                                     //   LOGGER.info("get trade response:"+new Gson().toJson(orderList));
                                 } catch (KiteException | IOException e) {
                                     e.printStackTrace();
@@ -284,7 +289,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                         orderParams.validity = "DAY";
                                         com.zerodhatech.models.Order orderResponse = null;
                                         try {
-                                            orderResponse = user.getKiteConnect().placeOrder(orderParams, "regular");
+                                            orderResponse = brokerWorker.placeOrder(orderParams,user, trendTradeData);
                                             trendTradeData.setSlOrderId(orderResponse.orderId);
                                             trendTradeData.isSlPlaced = true;
                                             mapTradeDataToSaveOpenTradeDataEntity(trendTradeData,false);
@@ -382,7 +387,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                                     reverseTrade.setStockName(trendTradeData.getStockName());
                                                     String retryKey = trendTradeData.getStockName() + "_REENTRY_" + retryCountN;
                                                     try {
-                                                        orderd = user.getKiteConnect().placeOrder(orderParams, "regular");
+                                                        orderd = brokerWorker.placeOrder(orderParams,user, trendTradeData);
                                                         reverseTrade.setEntryOrderId(orderd.orderId);
                                                         reverseTrade.setSellPrice(new BigDecimal(triggerPrice));
                                                         reverseTrade.isOrderPlaced = true;
@@ -426,6 +431,7 @@ public class ZerodhaBankNiftyShortStraddle {
         // LOGGER.info("short straddle SLMonitor scheduler started");
 
         userList.getUser().forEach(user -> {
+            BrokerWorker brokerWorker = workerFactory.getWorker(user);
             if(user.getStraddleConfigOld() !=null &&  user.getStraddleConfigOld().isEnabled()) {
                 String botId = "";
                 TelegramBot telegramBot = user.getTelegramBot();
@@ -440,7 +446,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                 // LOGGER.info(" trade data:"+new Gson().toJson(trendTradeData));
                                 List<com.zerodhatech.models.Order> orderList = null;
                                 try {
-                                    orderList = user.getKiteConnect().getOrders();
+                                    orderList = brokerWorker.getOrders(user);
                                     //   LOGGER.info("get trade response:"+new Gson().toJson(orderList));
                                 } catch (KiteException e) {
                                     e.printStackTrace();
@@ -506,7 +512,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                         orderParams.validity = "DAY";
                                         com.zerodhatech.models.Order orderResponse = null;
                                         try {
-                                            orderResponse = user.getKiteConnect().placeOrder(orderParams, "regular");
+                                            orderResponse = brokerWorker.placeOrder(orderParams,user, trendTradeData);
                                             trendTradeData.setSlOrderId(orderResponse.orderId);
                                             trendTradeData.isSlPlaced = true;
                                             mapTradeDataToSaveOpenTradeDataEntity(trendTradeData,false);
@@ -597,7 +603,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                                     reverseTrade.setStockName(trendTradeData.getStockName());
                                                     String retryKey = trendTradeData.getStockName() + "_REENTRY_" + retryCountN;
                                                     try {
-                                                        orderd = user.getKiteConnect().placeOrder(orderParams, "regular");
+                                                        orderd = brokerWorker.placeOrder(orderParams,user, trendTradeData);
                                                         reverseTrade.setEntryOrderId(orderd.orderId);
                                                         reverseTrade.setSellPrice(new BigDecimal(triggerPrice));
                                                         reverseTrade.isOrderPlaced = true;
@@ -638,6 +644,7 @@ public class ZerodhaBankNiftyShortStraddle {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         userList.getUser().stream().filter(user -> user.getStraddleConfigOld() !=null && user.getStraddleConfigOld().isEnabled()).forEach(user -> {
             String botId="";
+            BrokerWorker brokerWorker = workerFactory.getWorker(user);
             TelegramBot telegramBot=user.getTelegramBot();
             if(telegramBot !=null){
                 botId=telegramBot.getGroupId();
@@ -650,7 +657,7 @@ public class ZerodhaBankNiftyShortStraddle {
                         if (trendTradeData.getSlOrderId() != null && trendTradeData.getSlOrderId() != "") {
                             try {
                                 if (trendTradeData.isSlPlaced &&!trendTradeData.isSLCancelled && !trendTradeData.isSLHit) {
-                                    Order order = user.getKiteConnect().cancelOrder(trendTradeData.getSlOrderId(), "regular");
+                                    Order order = brokerWorker.cancelOrder(trendTradeData.getSlOrderId(), user);
                                     trendMap.getValue().isSLCancelled = true;
                                     String message = MessageFormat.format("System Cancelled SL {0}"+":"+user.getName()+":"+getAlgoName(), trendMap.getValue().getStockName());
                                     LOGGER.info(message);
@@ -670,7 +677,7 @@ public class ZerodhaBankNiftyShortStraddle {
                         }
                         if(!trendTradeData.isSlPlaced && !trendTradeData.isExited && trendTradeData.isOrderPlaced){
                             try {
-                                user.getKiteConnect().cancelOrder(trendTradeData.getEntryOrderId(), "regular");
+                               brokerWorker.cancelOrder(trendTradeData.getEntryOrderId(), user);
                                 String message = MessageFormat.format("System Cancelled Re-Entry Order {0}", trendTradeData.getStockName());
                                 LOGGER.info(message);
                                 sendMessage.sendToTelegram(message+":"+getAlgoName(), telegramToken,botIdFinal);
@@ -685,15 +692,9 @@ public class ZerodhaBankNiftyShortStraddle {
 
                 });
 
-                List<Position> positions = null;
-                try {
-                    positions = user.getKiteConnect().getPositions().get("net");
+                List<Position> positions  = brokerWorker.getPositions(user);
                     LOGGER.info(new Gson().toJson(positions));
-                } catch (KiteException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+
                 positions.stream().filter(position -> "MIS".equals(position.product) && (position.netQuantity != 0)).forEach(position -> {
                     //   if(straddleTradeMap.get(position.tradingSymbol)!=null) {
                     OrderParams orderParams = new OrderParams();
@@ -711,9 +712,9 @@ public class ZerodhaBankNiftyShortStraddle {
                     orderParams.validity = "DAY";
                     com.zerodhatech.models.Order orderResponse = null;
                     try {
-                        orderResponse = user.getKiteConnect().placeOrder(orderParams, "regular");
-                        LOGGER.info(new Gson().toJson(orderResponse));
                         TradeData tradeData=user.getStraddleConfigOld().straddleTradeMap.get(position.tradingSymbol);
+                        orderResponse = brokerWorker.placeOrder(orderParams, user,tradeData);
+                        LOGGER.info(new Gson().toJson(orderResponse));
                         if (tradeData != null) {
                             tradeData.isExited = true;
                             tradeData.setExitOrderId(orderResponse.orderId);
@@ -744,8 +745,9 @@ public class ZerodhaBankNiftyShortStraddle {
     public void exitPriceNrmlPositions() {
         userList.getUser().stream().filter(user -> user.getStraddleConfigOld() !=null && user.getStraddleConfigOld().isEnabled()).forEach(user -> {
             try {
-                List<Order> orders = user.getKiteConnect().getOrders();
-                List<Position> positions = user.getKiteConnect().getPositions().get("net");
+                BrokerWorker brokerWorker= workerFactory.getWorker(user);
+                List<Order> orders = brokerWorker.getOrders(user);
+                List<Position> positions = brokerWorker.getPositions(user);
                 LOGGER.info(new Gson().toJson(positions));
                 if (user.getStraddleConfigOld().straddleTradeMap != null) {
                     user.getStraddleConfigOld().straddleTradeMap.entrySet().stream().filter(orbTradeDataEntity -> orbTradeDataEntity.getValue().isOrderPlaced && orbTradeDataEntity.getValue().isExited && !orbTradeDataEntity.getValue().isSLHit).forEach(trendMap -> {

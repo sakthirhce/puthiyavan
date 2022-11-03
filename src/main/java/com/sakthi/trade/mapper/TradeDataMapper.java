@@ -282,7 +282,7 @@ public class TradeDataMapper {
                 }
             }
             saveTradeData(openTradeDataEntity);
-            LOGGER.info("sucessfully saved trade data:"+new Gson().toJson(openTradeDataEntity));
+            //LOGGER.info("sucessfully saved trade data:"+new Gson().toJson(openTradeDataEntity));
         } catch (Exception e) {
             LOGGER.info(e.getMessage());
         }

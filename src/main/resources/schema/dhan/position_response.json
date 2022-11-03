@@ -1,0 +1,117 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "javaType": "com.sakthi.trade.dhan.schema.PositionResponse",
+  "type": "object",
+  "properties": {
+    "dhanClientId": {
+      "type": "string"
+    },
+    "tradingSymbol": {
+      "type": "string"
+    },
+    "securityId": {
+      "type": "string"
+    },
+    "positionType": {
+      "type": "string"
+    },
+    "exchangeSegment": {
+      "type": "string"
+    },
+    "productType": {
+      "type": "string"
+    },
+    "buyAvg": {
+      "type": "number"
+    },
+    "buyQty": {
+      "type": "integer"
+    },
+    "sellAvg": {
+      "type": "number"
+    },
+    "sellQty": {
+      "type": "integer"
+    },
+    "netQty": {
+      "type": "integer"
+    },
+    "realizedProfit": {
+      "type": "number"
+    },
+    "unrealizedProfit": {
+      "type": "number"
+    },
+    "rbiReferenceRate": {
+      "type": "number"
+    },
+    "multiplier": {
+      "type": "integer"
+    },
+    "carryForwardBuyQty": {
+      "type": "integer"
+    },
+    "carryForwardSellQty": {
+      "type": "integer"
+    },
+    "carryForwardBuyValue": {
+      "type": "number"
+    },
+    "carryForwardSellValue": {
+      "type": "number"
+    },
+    "dayBuyQty": {
+      "type": "integer"
+    },
+    "daySellQty": {
+      "type": "integer"
+    },
+    "dayBuyValue": {
+      "type": "number"
+    },
+    "daySellValue": {
+      "type": "number"
+    },
+    "drvExpiryDate": {
+      "type": "string"
+    },
+    "drvOptionType": {
+      "type": "null"
+    },
+    "drvStrikePrice": {
+      "type": "number"
+    },
+    "crossCurrency": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "dhanClientId",
+    "tradingSymbol",
+    "securityId",
+    "positionType",
+    "exchangeSegment",
+    "productType",
+    "buyAvg",
+    "buyQty",
+    "sellAvg",
+    "sellQty",
+    "netQty",
+    "realizedProfit",
+    "unrealizedProfit",
+    "rbiReferenceRate",
+    "multiplier",
+    "carryForwardBuyQty",
+    "carryForwardSellQty",
+    "carryForwardBuyValue",
+    "carryForwardSellValue",
+    "dayBuyQty",
+    "daySellQty",
+    "dayBuyValue",
+    "daySellValue",
+    "drvExpiryDate",
+    "drvOptionType",
+    "drvStrikePrice",
+    "crossCurrency"
+  ]
+}

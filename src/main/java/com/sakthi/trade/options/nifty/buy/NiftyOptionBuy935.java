@@ -12,7 +12,10 @@ import com.sakthi.trade.repo.OpenTradeDataRepo;
 import com.sakthi.trade.telegram.SendMessage;
 import com.sakthi.trade.util.CommonUtil;
 import com.sakthi.trade.util.MathUtils;
+import com.sakthi.trade.worker.BrokerWorker;
+import com.sakthi.trade.worker.BrokerWorkerFactory;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
+import com.sakthi.trade.zerodha.account.StrikeData;
 import com.sakthi.trade.zerodha.account.User;
 import com.sakthi.trade.zerodha.account.UserList;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
@@ -66,27 +69,54 @@ public class NiftyOptionBuy935 {
     @Autowired
     OpenTradeDataBackupRepo openTradeDataBackupRepo;
     Gson gson = new Gson();
-
+    @Autowired
+    BrokerWorkerFactory workerFactory;
+    @Autowired
+    MathUtils mathUtils;
+    ExecutorService executorService1 = java.util.concurrent.Executors.newFixedThreadPool(1);
     public String getAlgoName() {
         return "NIFTY_BUY_935";
     }
     public static final Logger LOGGER = Logger.getLogger(NiftyOptionBuy935.class.getName());
     @Scheduled(cron = "${niftyBuy935.schedule.entry}")
     public void buy() throws ParseException, KiteException, IOException {
-
+        sendMessage.sendToTelegram("niftyBuy935 execution startede", telegramToken);
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         Date date = new Date();
         String currentDate = format.format(date);
         String nifty = zerodhaTransactionService.niftyIndics.get("NIFTY 50");
 
-        String historicURL = "https://api.kite.trade/instruments/historical/" + nifty + "/5minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+11:15:00";
+       /* String historicURL = "https://api.kite.trade/instruments/historical/" + nifty + "/5minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+11:15:00";
         String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
         LOGGER.info(response);
         HistoricalData historicalData = new HistoricalData();
-        JSONObject json = new JSONObject(response);
-        String status = json.getString("status");
-        if (!status.equals("error")) {
+        JSONObject json = new JSONObject(response);*/
+        Map<String, StrikeData> rangeSelected;
+        rangeSelected=mathUtils.getPriceRangeSortedWithLowRangeNifty(currentDate,200,150,"09:34:00","NF");
+     /*   executorService1.submit(() -> {
+            try {
+                Map<String,Map<String,String>> atmStrikesStraddle;
+                if (zerodhaTransactionService.expDate.equals(currentDate)) {
+                    atmStrikesStraddle = zerodhaTransactionService.niftyNextWeeklyOptions;
+                } else {
+                    atmStrikesStraddle = zerodhaTransactionService.niftyWeeklyOptions;
+                }
+
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        });*/
+        rangeSelected.forEach((key, value) -> {
+            LOGGER.info(key + ":" + value);
+            try {
+                sendMessage.sendToTelegram("RANGE STRIKE:"+key+":"+value, telegramToken);
+            }catch (Exception e){
+                log.error("error:"+e);
+            }
+        });
+       // String status = json.getString("status");
+   /*     if (!status.equals("error")) {
             historicalData.parseResponse(json);
             historicalData.dataArrayList.forEach(historicalData1 -> {
                 try {
@@ -105,13 +135,14 @@ public class NiftyOptionBuy935 {
                         atmStrikesStraddle.forEach((key, value) -> {
                             LOGGER.info(key + ":" + value);
                             atmStrikeMap.put(key, value);
-                        });
-                        atmStrikesStraddle.entrySet().stream().filter(atmStrikeStraddle -> atmStrikeStraddle.getKey().contains(String.valueOf(atmStrike))).forEach(atmNiftyStrikeMap -> {
+                        });*/
+        try {
+                    rangeSelected.entrySet().stream().forEach(atmNiftyStrikeMap -> {
 
                                 AtomicDouble triggerPriceAtomic = new AtomicDouble();
                                 AtomicDouble closePriceAtomic = new AtomicDouble();
                                 try {
-                                    String historicPriceURL = "https://api.kite.trade/instruments/historical/" + atmNiftyStrikeMap.getValue() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
+                                    String historicPriceURL = "https://api.kite.trade/instruments/historical/" + atmNiftyStrikeMap.getValue().getZerodhaId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
                                     String priceResponse = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicPriceURL));
                                     LOGGER.info("API response:"+priceResponse);
                                     HistoricalData historicalPriceData = new HistoricalData();
@@ -126,14 +157,14 @@ public class NiftyOptionBuy935 {
                                                 Date priceDatetime = sdf.parse(historicalDataPrice.timeStamp);
                                                 String priceDate = format.format(priceDatetime);
                                                 if (sdf.format(priceDatetime).equals(priceDate + "T09:34:00")) {
-                                                    LOGGER.info("DATA:"+historicalDataPrice.timeStamp+":"+atmNiftyStrikeMap.getKey()+":"+historicalDataPrice.timeStamp);
+                                                    LOGGER.info("DATA:"+historicalDataPrice.timeStamp+":"+atmNiftyStrikeMap.getValue().getZerodhaSymbol()+":"+historicalDataPrice.timeStamp);
                                                     closePriceAtomic.getAndSet(historicalDataPrice.close);
                                                     //BigDecimal triggerPriceTemp = ((new BigDecimal(historicalData1.close).divide(new BigDecimal(5))).add(new BigDecimal(historicalData1.close))).setScale(0, RoundingMode.HALF_UP);
                                                     BigDecimal triggerPriceTemp = (new BigDecimal(10).add(new BigDecimal(historicalDataPrice.close))).setScale(0, RoundingMode.HALF_UP);
                                                     triggerPriceAtomic.getAndSet(triggerPriceTemp.doubleValue());
-                                                    LOGGER.info("buy trigger price based on 9:34 close :" + atmNiftyStrikeMap.getKey() + ":" + triggerPriceTemp);
+                                                    LOGGER.info("buy trigger price based on 9:34 close :" + atmNiftyStrikeMap.getValue().getZerodhaSymbol() + ":" + triggerPriceTemp);
                                                 }else {
-                                                    LOGGER.info(atmNiftyStrikeMap.getKey()+": time "+historicalDataPrice.timeStamp);
+                                                    //LOGGER.info(atmNiftyStrikeMap.getKey()+": time "+historicalDataPrice.timeStamp);
                                                 }
                                             } catch (ParseException e) {
                                                 LOGGER.info("error:"+atmNiftyStrikeMap.getKey()+" exception :"+e.getMessage()+" element:"+gson.toJson(historicalDataPrice));
@@ -143,9 +174,9 @@ public class NiftyOptionBuy935 {
                                 } catch (Exception e) {
                                     LOGGER.info("error:"+atmNiftyStrikeMap.getKey()+":"+e.getMessage());
                                 }
-                                LOGGER.info(atmNiftyStrikeMap.getKey());
+                                LOGGER.info(atmNiftyStrikeMap.getValue().getZerodhaSymbol());
                                 OrderParams orderParams = new OrderParams();
-                                orderParams.tradingsymbol = atmNiftyStrikeMap.getKey();
+                                orderParams.tradingsymbol = atmNiftyStrikeMap.getValue().getZerodhaSymbol();
                                 orderParams.exchange = "NFO";
                                 orderParams.orderType = "SL";
                                 orderParams.product = "NRML";
@@ -162,6 +193,7 @@ public class NiftyOptionBuy935 {
                                 userList.getUser().stream().filter(
                                         user -> user.getNiftyBuy935() != null && user.getNiftyBuy935().isNrmlEnabled() && user.getNiftyBuy935().getLotConfig().containsKey(todayCaps)
                                 ).forEach(user -> {
+                                    BrokerWorker brokerWorker= workerFactory.getWorker(user);
                                     AtomicInteger qty = new AtomicInteger(1);
                                     user.getNiftyBuy935().getLotConfig().entrySet().forEach(day -> {
                                         String lotValue = day.getKey();
@@ -170,24 +202,34 @@ public class NiftyOptionBuy935 {
                                             qty.getAndSet(value);
                                         }
                                     });
+                                    if (user.getNiftyBuy935().getLotConfig() != null && user.getNiftyBuy935().buyConfig.isEnabled()) {
+                                        user.getNiftyBuy935().getBuyConfig().getLotConfig().forEach((lotValue, value1) -> {
+                                            if (lotValue.contains(todayCaps)) {
+                                                int value = (Integer.parseInt(value1));
+                                                qty.getAndAdd(value);
+                                            }
+                                        });
+                                    }
                                     Order order = null;
                                     orderParams.quantity = 50 * qty.get();
                                     TradeData tradeData = new TradeData();
                                     String dataKey = UUID.randomUUID().toString();
                                     tradeData.setDataKey(dataKey);
-                                    tradeData.setStockName(atmNiftyStrikeMap.getKey());
+                                    tradeData.setStockName(atmNiftyStrikeMap.getValue().getZerodhaSymbol());
                                     try {
                                         LOGGER.info("input:"+gson.toJson(orderParams));
-                                        order = user.getKiteConnect().placeOrder(orderParams, "regular");
+
+                                        order = brokerWorker.placeOrder(orderParams,user,tradeData);
+
                                         tradeData.setEntryOrderId(order.orderId);
                                         tradeData.isOrderPlaced = true;
                                         tradeData.setQty(50 * qty.get());
                                         tradeData.setEntryType("BUY");
                                         tradeData.setUserId(user.getName());
-                                        tradeData.setStockId(Integer.parseInt(atmNiftyStrikeMap.getValue()));
+                                        tradeData.setStockId(Integer.parseInt(atmNiftyStrikeMap.getValue().getZerodhaId()));
                                         tradeData.setBuyPrice(BigDecimal.valueOf(triggerPriceAtomic.get()));
                                         user.getNiftyBuy935().straddleTradeMap.put(atmNiftyStrikeMap.getKey(), tradeData);
-                                        //mapTradeDataToSaveOpenTradeDataEntity(tradeData);
+                                       // mapTradeDataToSaveOpenTradeDataEntity(tradeData,true);
                                         String message="option buy limit order placed for for user:" + user.getName() + " strike: " + atmNiftyStrikeMap.getKey()+":"+getAlgoName();
                                         LOGGER.info(message);
                                         try {
@@ -197,14 +239,14 @@ public class NiftyOptionBuy935 {
                                         }
                                     } catch (KiteException e) {
                                         tradeData.isErrored = true;
-                                        LOGGER.info("Error while placing nifty buy order: "+ atmNiftyStrikeMap.getKey()+":" + e.getMessage()+":"+e.code+":"+getAlgoName());
-                                        sendMessage.sendToTelegram("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + user.getName() + ",Exception:" + e.getMessage()+":"+getAlgoName(), telegramToken);
+                                        LOGGER.info("Error while placing nifty buy order: "+ atmNiftyStrikeMap.getKey()+":" + e.message+":"+e.code+":"+getAlgoName());
+                                        sendMessage.sendToTelegram("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + user.getName() + ",Exception:" + e.message+":"+getAlgoName()+" Input:"+new Gson().toJson(orderParams), telegramToken);
 
                                     } catch (IOException e) {
                                         tradeData.isErrored = true;
                                         LOGGER.info("Error while placing nifty buy order: "+ atmNiftyStrikeMap.getKey()+":" + e.getMessage());
                                         if (order != null) {
-                                            sendMessage.sendToTelegram("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + order.statusMessage + ",Exception:" + e.getMessage()+":"+getAlgoName(), telegramToken, "-713214125");
+                                            sendMessage.sendToTelegram("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + order.statusMessage + ",Exception:" + e.getMessage()+":"+getAlgoName(), telegramToken);
                                         } else {
                                             sendMessage.sendToTelegram("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + user.getName() + ",Exception:" + e.getMessage()+":"+getAlgoName(), telegramToken);
                                         }
@@ -213,20 +255,129 @@ public class NiftyOptionBuy935 {
                                 });
                             });
 
-                    }
+                  ///  }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            });
-        }
+           // });
+        //}
     }
 
+    @Scheduled(cron = "${banknifty.intraday.buy.exit.schedule}")
+    public void buyIntradayExit() {
+        log.info("nifty 15:10 exit started");
+        userList.getUser().stream().filter(user -> user.getNiftyBuy935() != null && user.getNiftyBuy935().isNrmlEnabled()).forEach(user -> {
+            try {
+                BrokerWorker brokerWorker= workerFactory.getWorker(user);
+                List<Order> orders = brokerWorker.getOrders(user);
+                List<Position> positions = brokerWorker.getPositions(user);
+                LOGGER.info(new Gson().toJson(positions));
+                if (user.getNiftyBuy935().straddleTradeMap != null) {
+                    user.getNiftyBuy935().straddleTradeMap.entrySet().stream().filter(map -> map.getValue().isOrderPlaced && map.getValue().getEntryOrderId() != null && !map.getValue().isExited).forEach(straddleTradeMap -> {
+                        TradeData tradeData = straddleTradeMap.getValue();
+                        log.info("nifty 15:10 exit started 1");
+                        if (user.getName().equals(straddleTradeMap.getValue().getUserId())) {
+                            if (user.getNiftyBuy935().getLotConfig() != null && user.getNiftyBuy935().buyConfig.isEnabled()) {
+                                log.info("nifty 15:10 exit started 2");
+                                LocalDate localDate = LocalDate.now();
+                                DayOfWeek dow = localDate.getDayOfWeek();
+                                String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
+                                String todayCaps = today.toUpperCase();
+                                AtomicInteger qty = new AtomicInteger(0);
+                                user.getNiftyBuy935().getBuyConfig().getLotConfig().forEach((lotValue, value1) -> {
+                                    if (lotValue.contains(todayCaps)) {
+                                        int value = (Integer.parseInt(value1) * 50);
+                                        qty.getAndSet(value);
+                                        log.info("nifty 15:10 exit started 3");
+                                        orders.stream().filter(order -> ("OPEN".equals(order.status) || "TRIGGER PENDING".equals(order.status)) && order.orderId.equals(tradeData.getSlOrderId())).forEach(orderr -> {
+                                            try {
+                                                // if(straddleTradeMap.getKey().contains("BUY")) {
+                                                OrderParams orderParams = new OrderParams();
+                                                log.info("nifty 15:10 exit started 4");
+                                                orderParams.quantity = Integer.parseInt(orderr.quantity) - qty.get();
+                                                tradeData.setQty(orderParams.quantity);
+                                                orderParams.tradingsymbol = tradeData.getStockName();
+                                                orderParams.exchange = "NFO";
+                                                orderParams.orderType =orderr.orderType;
+                                                orderParams.validity = "DAY";
+                                                orderParams.price = Double.parseDouble(orderr.price);
+                                                orderParams.triggerPrice = Double.parseDouble(orderr.triggerPrice);
+                                                orderParams.orderType = "SL";
+                                                orderParams.product = "NRML";
+                                                System.out.println("input for bnf sl mod: "+new Gson().toJson(orderParams));
+                                                Order order = user.getKiteConnect().modifyOrder(tradeData.getSlOrderId(), orderParams, "regular");
+                                                sendMessage.sendToTelegram("sl buy qty modified for nrml:" + tradeData.getUserId() + ": new sl qty:" + tradeData.getQty()+":"+getAlgoName(), telegramToken);
+                                                //}
+                                            } catch (KiteException e) {
+                                                LOGGER.info(e.message);
+                                            } catch (Exception e) {
+                                                LOGGER.info(e.getMessage());
+                                            }
+                                        });
+                                        positions.stream().filter(position -> "NRML".equals(position.product) && tradeData.getStockName().equals(position.tradingSymbol) && (position.netQuantity != 0)).forEach(position -> {
+                                            //   if(straddleTradeMap.get(position.tradingSymbol)!=null) {
+                                            OrderParams orderParams = new OrderParams();
+                                            orderParams.tradingsymbol = position.tradingSymbol;
+                                            orderParams.exchange = "NFO";
+                                            orderParams.quantity = qty.get();
+                                            orderParams.orderType = "MARKET";
+                                            orderParams.product = "NRML";
+                                            //orderParams.price=price.doubleValue();
+                                            if (position.netQuantity > 0) {
+                                                orderParams.transactionType = "SELL";
+                                                orderParams.validity = "DAY";
+                                                com.zerodhatech.models.Order orderResponse = null;
+                                                try {
+                                                    orderResponse = brokerWorker.placeOrder(orderParams,user,tradeData);
+                                                    LOGGER.info(new Gson().toJson(orderResponse));
+                                                    //  openTradeDataEntity.isExited=true;
+                                                    tradeData.setQty(qty.get());
+                                                    mapTradeDataToSaveOpenTradeDataEntity(tradeData,false);
+                                                    String message = MessageFormat.format("Closed Intraday Buy Position {0}", orderParams.tradingsymbol);
+                                                    LOGGER.info(message);
+                                                    TradeData tradeDataBuy=gson.fromJson(gson.toJson(tradeData),TradeData.class);
+                                                    String dataKey = UUID.randomUUID().toString();
+                                                    tradeDataBuy.setDataKey(dataKey);
+                                                    tradeDataBuy.isExited=true;
+                                                    tradeDataBuy.setExitOrderId(orderResponse.orderId);
+                                                    mapTradeDataToSaveOpenTradeDataEntity(tradeDataBuy,true);
+                                                    user.getNiftyBuy935().straddleTradeMap.put(tradeDataBuy.getStockName() + "-BUY-INTRADAY", tradeDataBuy);
+                                                    sendMessage.sendToTelegram(message + ":" + tradeData.getUserId()+":"+getAlgoName(), telegramToken);
+
+                                                } catch (KiteException e) {
+                                                    LOGGER.info("Error while exiting straddle order: " + e.message);
+                                                    sendMessage.sendToTelegram("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.message + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position)+":"+getAlgoName(), telegramToken);
+                                                    e.printStackTrace();
+                                                } catch (IOException e) {
+                                                    LOGGER.info("Error while exiting straddle order: " + e.getMessage());
+
+                                                    sendMessage.sendToTelegram("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.getMessage() + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position)+":"+getAlgoName(), telegramToken);
+                                                    e.printStackTrace();
+                                                }
+                                            }
+                                            //  }
+                                        });
+                                    }
+                                });
+
+
+                            }
+
+                        }
+                    });
+                }
+
+            } catch (Exception | KiteException e) {
+                LOGGER.info(e.getMessage());
+            }
+        });
+    }
     @Scheduled(cron = "${niftyBuy935.schedule.slMonitor}")
     public void sLMonitorScheduler() {
         //  LOGGER.info("short straddle SLMonitor scheduler started");
 
         userList.getUser().stream().filter(user -> user.getNiftyBuy935() != null && user.getNiftyBuy935().isNrmlEnabled()).forEach(user -> {
-
+            BrokerWorker brokerWorker= workerFactory.getWorker(user);
             if (user.getNiftyBuy935().straddleTradeMap != null) {
                 user.getNiftyBuy935().straddleTradeMap.entrySet().stream().filter(map -> map.getValue().isOrderPlaced && map.getValue().getEntryOrderId() != null)
                         .forEach(map -> {
@@ -234,7 +385,7 @@ public class NiftyOptionBuy935 {
                                 TradeData trendTradeData = map.getValue();
                                 List<Order> orderList = null;
                                 try {
-                                    orderList = user.getKiteConnect().getOrders();
+                                    orderList = brokerWorker.getOrders(user);
                                 } catch (KiteException | IOException e) {
                                     e.printStackTrace();
                                 }
@@ -294,11 +445,11 @@ public class NiftyOptionBuy935 {
 
                                                         try {
                                                             LOGGER.info("input:" + gson.toJson(orderParams));
-                                                            orderd = user.getKiteConnect().placeOrder(orderParams, "regular");
+                                                            orderd =brokerWorker.placeOrder(orderParams,user,null);
                                                             trendTradeData.isSlPlaced = true;
                                                             trendTradeData.setSlPrice(triggerPriceTemp);
                                                             trendTradeData.setSlOrderId(orderd.orderId);
-                                                            mapTradeDataToSaveOpenTradeDataEntity(trendTradeData,false);
+                                                            mapTradeDataToSaveOpenTradeDataEntity(trendTradeData,true);
                                                             try {
                                                                 LOGGER.info("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL");
                                                                 sendMessage.sendToTelegram("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL" + ":" + getAlgoName(), telegramToken);
@@ -359,6 +510,7 @@ public class NiftyOptionBuy935 {
             if (openTradeDataEntity.getAlgoName().equals(this.getAlgoName())) {
                 if (!openTradeDataEntity.isExited && !openTradeDataEntity.isErrored) {
                     User user = userList.getUser().stream().filter(user1 -> user1.getName().equals(openTradeDataEntity.getUserId())).findFirst().get();
+                    BrokerWorker brokerWorker= workerFactory.getWorker(user);
                     List<Position> positions = null;
                     try {
                         positions = user.getKiteConnect().getPositions().get("net");
@@ -395,7 +547,8 @@ public class NiftyOptionBuy935 {
     public void exitPriceNrmlPositions() {
         userList.getUser().stream().filter(user -> user.getStraddleConfig() != null && user.getStraddleConfig().isNrmlEnabled()).forEach(user -> {
             try {
-                List<Order> orders = user.getKiteConnect().getOrders();
+                BrokerWorker brokerWorker= workerFactory.getWorker(user);
+                List<Order> orders = brokerWorker.getOrders(user);
                 List<Position> positions = user.getKiteConnect().getPositions().get("net");
                // LOGGER.info(positions);
                 openTradeDataEntities.stream().filter(openTradeDataEntity -> !openTradeDataEntity.isExited && user.getName().equals(openTradeDataEntity.getUserId())).forEach(openTradeDataEntity -> {
@@ -486,7 +639,7 @@ public class NiftyOptionBuy935 {
                 } catch (Exception e) {
                     LOGGER.info(openTradeDataEntity.getUserId() + ":" + openTradeDataEntity.getStockName() + ":error while calling 9:16 historic api:" + e.getMessage());
                     if (openTradeDataEntity.getEntryType().equals("SELL")) {
-                        sendMessage.sendToTelegram(openTradeDataEntity.getUserId() + ":" + openTradeDataEntity.getStockName() + ":error while calling 9:16 historic api:" + e.getMessage()+":"+getAlgoName(), telegramToken, "-713214125");
+                        sendMessage.sendToTelegram(openTradeDataEntity.getUserId() + ":" + openTradeDataEntity.getStockName() + ":error while calling 9:16 historic api:" + e.getMessage()+":"+getAlgoName(), telegramToken);
                     } else {
                         sendMessage.sendToTelegram(openTradeDataEntity.getUserId() + ":" + openTradeDataEntity.getStockName() + ":error while calling 9:16 historic api:" + e.getMessage()+":"+getAlgoName(), telegramToken);
                     }
@@ -527,8 +680,9 @@ public class NiftyOptionBuy935 {
                 try {
                     LOGGER.info("inside order placement");
                     User user = userList.getUser().stream().filter(user1 -> user1.getName().equals(openTradeDataEntity.getUserId())).findFirst().get();
+                    BrokerWorker brokerWorker= workerFactory.getWorker(user);
                     LOGGER.info("order params" + new Gson().toJson(orderParams));
-                    orderd = user.getKiteConnect().placeOrder(orderParams, "regular");
+                    orderd = brokerWorker.placeOrder(orderParams,user,null);
                     LOGGER.info(openTradeDataEntity.getUserId() + ":" + openTradeDataEntity.getStockName() + ":order response:" + new Gson().toJson(orderd));
                     openTradeDataEntity.isSlPlaced = true;
                     openTradeDataEntity.setSlOrderId(orderd.orderId);
@@ -536,7 +690,7 @@ public class NiftyOptionBuy935 {
                     if (orderParams.transactionType.equals("SELL")) {
                         sendMessage.sendToTelegram("placed sl order for:" + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId()+":"+getAlgoName(), telegramToken);
                     } else {
-                        sendMessage.sendToTelegram("placed sl order for:" + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId()+":"+getAlgoName(), telegramToken, "-713214125");
+                        sendMessage.sendToTelegram("placed sl order for:" + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId()+":"+getAlgoName(), telegramToken);
                     }
                 } catch (Exception e) {
 
@@ -544,14 +698,14 @@ public class NiftyOptionBuy935 {
                     if (orderParams.transactionType.equals("SELL")) {
                         sendMessage.sendToTelegram(openTradeDataEntity.getUserId() + ":" + openTradeDataEntity.getStockName() + ":error while calling zerodha 9:16 sl order" + e.getMessage()+":"+getAlgoName(), telegramToken);
                     } else {
-                        sendMessage.sendToTelegram(openTradeDataEntity.getUserId() + ":" + openTradeDataEntity.getStockName() + ":error while calling zerodha 9:16 sl order" + e.getMessage()+":"+getAlgoName(), telegramToken, "-713214125");
+                        sendMessage.sendToTelegram(openTradeDataEntity.getUserId() + ":" + openTradeDataEntity.getStockName() + ":error while calling zerodha 9:16 sl order" + e.getMessage()+":"+getAlgoName(), telegramToken);
                     }
                 } catch (KiteException e) {
                     LOGGER.info(openTradeDataEntity.getUserId() + ":" + openTradeDataEntity.getStockName() + ":error while calling zerodha 9:16 sl order" + e.getMessage());
                     if (orderParams.transactionType.equals("SELL")) {
                         sendMessage.sendToTelegram(openTradeDataEntity.getUserId() + ":" + openTradeDataEntity.getStockName() + ":error while calling zerodha 9:16 sl order" + e.getMessage()+":"+getAlgoName(), telegramToken);
                     } else {
-                        sendMessage.sendToTelegram(openTradeDataEntity.getUserId() + ":" + openTradeDataEntity.getStockName() + ":error while calling zerodha 9:16 sl order" + e.getMessage()+":"+getAlgoName(), telegramToken, "-713214125");
+                        sendMessage.sendToTelegram(openTradeDataEntity.getUserId() + ":" + openTradeDataEntity.getStockName() + ":error while calling zerodha 9:16 sl order" + e.getMessage()+":"+getAlgoName(), telegramToken);
                     }
                     // throw new RuntimeException(e);
                 }
@@ -566,10 +720,11 @@ public class NiftyOptionBuy935 {
 
     @Scheduled(cron = "${niftyBuy935.schedule.nextday.exit}")
     public void exitNrmlPositions() {
-        userList.getUser().stream().filter(user -> user.getStraddleConfig() != null && user.getStraddleConfig().isNrmlEnabled()).forEach(user -> {
+        userList.getUser().stream().filter(user -> user.getNiftyBuy935() != null && user.getNiftyBuy935().isNrmlEnabled()).forEach(user -> {
             try {
-                List<Order> orders = user.getKiteConnect().getOrders();
-                List<Position> positions = user.getKiteConnect().getPositions().get("net");
+                BrokerWorker brokerWorker= workerFactory.getWorker(user);
+                List<Order> orders = brokerWorker.getOrders(user);
+                List<Position> positions = brokerWorker.getPositions(user);
                 //LOGGER.info(positions);
                 openTradeDataEntities.stream().filter(openTradeDataEntity -> !openTradeDataEntity.isExited && user.getName().equals(openTradeDataEntity.getUserId())).forEach(openTradeDataEntity -> {
                             orders.stream().filter(order -> ("OPEN".equals(order.status) || "TRIGGER PENDING".equals(order.status)) && order.orderId.equals(openTradeDataEntity.getSlOrderId())).forEach(orderr -> {
@@ -596,7 +751,7 @@ public class NiftyOptionBuy935 {
                                 orderParams.validity = "DAY";
                                 com.zerodhatech.models.Order orderResponse;
                                 try {
-                                    orderResponse = user.getKiteConnect().placeOrder(orderParams, "regular");
+                                    orderResponse = brokerWorker.placeOrder(orderParams,user,null);
                                     LOGGER.info(new Gson().toJson(orderResponse));
                                     //  openTradeDataEntity.isExited=true;
                                     openTradeDataEntity.setExitOrderId(orderResponse.orderId);
@@ -606,14 +761,14 @@ public class NiftyOptionBuy935 {
                                     if (orderParams.transactionType.equals("SELL")) {
                                         sendMessage.sendToTelegram(message + ":" + openTradeDataEntity.getUserId()+":"+getAlgoName(), telegramToken);
                                     } else {
-                                        sendMessage.sendToTelegram(message + ":" + openTradeDataEntity.getUserId()+":"+getAlgoName(), telegramToken, "-713214125");
+                                        sendMessage.sendToTelegram(message + ":" + openTradeDataEntity.getUserId()+":"+getAlgoName(), telegramToken);
                                     }
                                 } catch (KiteException e) {
                                     LOGGER.info("Error while exiting straddle order: " + e.message);
                                     if (orderParams.transactionType.equals("SELL")) {
                                         sendMessage.sendToTelegram("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.message + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position)+":"+getAlgoName(), telegramToken);
                                     } else {
-                                        sendMessage.sendToTelegram("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.message + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position)+":"+getAlgoName(), telegramToken, "-713214125");
+                                        sendMessage.sendToTelegram("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.message + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position)+":"+getAlgoName(), telegramToken);
                                     }
                                     e.printStackTrace();
                                 } catch (IOException e) {
@@ -621,7 +776,7 @@ public class NiftyOptionBuy935 {
                                     if (orderParams.transactionType.equals("SELL")) {
                                         sendMessage.sendToTelegram("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.getMessage() + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position)+":"+getAlgoName(), telegramToken);
                                     } else {
-                                        sendMessage.sendToTelegram("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.getMessage() + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position)+":"+getAlgoName(), telegramToken, "-713214125");
+                                        sendMessage.sendToTelegram("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.getMessage() + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position)+":"+getAlgoName(), telegramToken);
                                     }
                                     e.printStackTrace();
                                 }
@@ -642,10 +797,11 @@ public class NiftyOptionBuy935 {
     public void sLNrmlMonitorPositions() {
         openTradeDataEntities.stream().filter(openTradeDataEntity -> openTradeDataEntity.isSlPlaced && !openTradeDataEntity.isExited).forEach(openTradeDataEntity -> {
             User user = userList.getUser().stream().filter(user1 -> user1.getName().equals(openTradeDataEntity.getUserId())).findFirst().get();
+            BrokerWorker brokerWorker= workerFactory.getWorker(user);
             List<Order> orderList = null;
             List<Position> positions = null;
             try {
-                orderList = user.getKiteConnect().getOrders();
+                orderList = brokerWorker.getOrders(user);
                 //   LOGGER.info("get trade response:"+new Gson().toJson(orderList));
             } catch (KiteException | IOException e) {
                 e.printStackTrace();
@@ -666,7 +822,7 @@ public class NiftyOptionBuy935 {
                     }
                     saveTradeData(openTradeDataEntity);
                     if (openTradeDataEntity.getEntryType().equals("SELL")) {
-                        sendMessage.sendToTelegram("SL Hit for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId()+":"+getAlgoName(), telegramToken, "-713214125");
+                        sendMessage.sendToTelegram("SL Hit for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId()+":"+getAlgoName(), telegramToken);
                     } else {
                         sendMessage.sendToTelegram("SL Hit for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId()+":"+getAlgoName(), telegramToken);
                     }
@@ -675,7 +831,7 @@ public class NiftyOptionBuy935 {
                     openTradeDataEntity.isSlCancelled = true;
                     saveTradeData(openTradeDataEntity);
                     if (openTradeDataEntity.getEntryType().equals("SELL")) {
-                        sendMessage.sendToTelegram("SL Cancelled order for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId()+":"+getAlgoName(), telegramToken, "-713214125");
+                        sendMessage.sendToTelegram("SL Cancelled order for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId()+":"+getAlgoName(), telegramToken);
                     } else {
                         sendMessage.sendToTelegram("SL Cancelled order for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId()+":"+getAlgoName(), telegramToken);
                     }
@@ -684,7 +840,7 @@ public class NiftyOptionBuy935 {
                     openTradeDataEntity.isErrored = true;
                     saveTradeData(openTradeDataEntity);
                     if (openTradeDataEntity.getEntryType().equals("SELL")) {
-                        sendMessage.sendToTelegram("SL order placement rejected for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId()+":"+getAlgoName(), telegramToken, "-713214125");
+                        sendMessage.sendToTelegram("SL order placement rejected for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId()+":"+getAlgoName(), telegramToken);
                     } else {
                         sendMessage.sendToTelegram("SL order placement rejected for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId()+":"+getAlgoName(), telegramToken);
                     }

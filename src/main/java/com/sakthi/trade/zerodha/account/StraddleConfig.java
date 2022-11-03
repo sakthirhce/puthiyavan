@@ -12,6 +12,7 @@ import java.util.Map;
 public class StraddleConfig {
     boolean enabled;
     boolean nrmlEnabled;
+    int buy325Size;
     BigDecimal sl;
     public Map<String, TradeData> straddleTradeMap = new HashMap<>();
     public Map<String, String> lotConfig;

@@ -79,4 +79,6 @@ public class TradeData {
     public BigDecimal charges;
     public BigDecimal plAfterCharges;
 
+    String strikeId;
+
 }

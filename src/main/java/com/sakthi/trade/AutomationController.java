@@ -19,17 +19,16 @@ import com.sakthi.trade.fyer.service.TransactionService;
 import com.sakthi.trade.fyer.transactions.OrderStatusResponseDTO;
 import com.sakthi.trade.fyer.transactions.PlaceOrderRequestDTO;
 import com.sakthi.trade.index.option.data.load.BankNiftyDataLoad;
+import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.options.WeeklyDataBackup;
 import com.sakthi.trade.options.banknifty.*;
 import com.sakthi.trade.options.banknifty.backtest.*;
+import com.sakthi.trade.options.buy.banknifty.IndexGapBacktest;
 import com.sakthi.trade.options.buy.banknifty.VwapRsiOiVolumeBuyBacktest;
 import com.sakthi.trade.options.buy.banknifty.VwapRsiOiVolumeBuyBacktestTrueData;
 import com.sakthi.trade.options.nifty.NIftyStraddleLongBackTest;
 import com.sakthi.trade.options.nifty.NiftyShortStraddleOI;
-import com.sakthi.trade.options.nifty.buy.NiftyOptionBuy1035;
-import com.sakthi.trade.options.nifty.buy.NiftyOptionBuy935;
-import com.sakthi.trade.options.nifty.buy.NiftyVwapRsiOiVolumeBuy;
-import com.sakthi.trade.options.nifty.buy.NiftyVwapRsiOiVolumeBuyBacktest;
+import com.sakthi.trade.options.nifty.buy.*;
 import com.sakthi.trade.repo.*;
 import com.sakthi.trade.telegram.SendMessage;
 import com.sakthi.trade.trend.ZerodhaTrendScheduler;
@@ -60,8 +59,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -281,7 +282,214 @@ public class AutomationController {
     public void bnfFutures() throws Exception, KiteException {
         bnfFuturesTrendFollowing.bnfFutures();
     }
+@Autowired
+MathUtils mathUtils;
 
+    @Autowired
+    IndexGapBacktest indexGapBacktest;
+    @Autowired
+    ZerodhaTransactionService zerodhaTransactionService;
+    @GetMapping("/indexGaptest")
+    public ResponseEntity<String> indexGaptest(@RequestParam String index,String day) throws Exception, KiteException {
+        Map<String,Map<String,String>> strikeMasterMap;
+        String stockId;
+        if ("BNF".equals(index)) {
+            strikeMasterMap=zerodhaTransactionService.bankNiftyWeeklyOptions;
+            stockId="260105";
+        }else {
+            strikeMasterMap=zerodhaTransactionService.niftyWeeklyOptions;
+            stockId="256265";
+        }
+        HttpHeaders responseHeaders = new HttpHeaders();
+        indexGapBacktest.buy(Integer.parseInt(day),stockId);
+
+        return new ResponseEntity<>(new Gson().toJson("Ok"), responseHeaders, HttpStatus.OK);
+    }
+    @GetMapping("/testRange")
+    public ResponseEntity<String> testRange(@RequestParam String index,String date,int upperRange,int lowerRange) throws Exception, KiteException {
+        Map<String,Map<String,String>> strikeMasterMap;
+String stockId;
+        if ("BNF".equals(index)) {
+            strikeMasterMap=zerodhaTransactionService.bankNiftyWeeklyOptions;
+            stockId="260105";
+        }else {
+            strikeMasterMap=zerodhaTransactionService.niftyWeeklyOptions;
+            stockId="256265";
+        }
+        HttpHeaders responseHeaders = new HttpHeaders();
+        Map<String,String> strike=mathUtils.getPriceRange(date,upperRange,lowerRange,"09:34:00",index);
+        strike.entrySet().stream().forEach(map->{
+            System.out.println(date+":"+map.getKey());
+        });
+        return new ResponseEntity<>(new Gson().toJson(strike), responseHeaders, HttpStatus.OK);
+    }
+    @Autowired
+    BNiftyOptionBuy917 bNiftyOptionBuy917;
+    @GetMapping("/bNiftyOptionBuy917")
+    public void bNiftyOptionBuy917() throws Exception, KiteException {
+        bNiftyOptionBuy917.buy();
+    }
+
+    @Autowired
+    BNiftyOptionBuy935 bNiftyOptionBuy935;
+
+    @Autowired
+    NiftyOptionBuy935V2 niftyOptionBuy935V2;
+
+    @GetMapping("/bNiftyOptionBuy935")
+    public void bNiftyOptionBuy935() throws Exception, KiteException {
+        bNiftyOptionBuy935.buy();
+    }
+    @Autowired
+    UserList userList;
+    @GetMapping("/addTrades")
+    public void addTrades(@RequestBody String payload) throws Exception, KiteException {
+       // bNiftyOptionBuy935.buy();
+        LocalDate localDate = LocalDate.now();
+        DayOfWeek dow = localDate.getDayOfWeek();
+        String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
+        String todayCaps = today.toUpperCase();
+        AddTrade addTrade=new Gson().fromJson(payload,AddTrade.class);
+        userList.getUser().stream().filter(
+                user -> user.getName().equals(addTrade.getUserId())
+        ).forEach(user -> {
+            List<com.zerodhatech.models.Order> orderList= null;
+            try {
+                orderList = user.getKiteConnect().getOrders();
+                com.zerodhatech.models.Order order= orderList.stream().filter(order1 -> order1.orderId.equals(addTrade.getOrderId())).findFirst().get();
+                TradeData tradeData=new TradeData();
+                tradeData.setEntryOrderId(order.orderId);
+                tradeData.setStockName(order.tradingSymbol);
+                String dataKey = UUID.randomUUID().toString();
+                tradeData.setDataKey(dataKey);
+                tradeData.setUserId(addTrade.getUserId());
+                tradeData.setEntryType(order.transactionType);
+                tradeData.setOrderPlaced(true);
+                tradeData.setQty(Integer.parseInt(order.quantity));
+                tradeData.setStockId(Integer.parseInt(addTrade.getStockId()));
+                if("BUY".equals(order.transactionType)){
+                    if("SL".equals(order.orderType)){
+                        tradeData.setBuyPrice(new BigDecimal(order.price));
+                    }else {
+
+                    }
+                }else {
+                    if("SL".equals(order.orderType)){
+
+                    }
+                }
+
+            if("BNIFTY_BUY_935".equals(addTrade.getStrategyName())){
+            if(user.getBniftyBuy935() != null && user.getBniftyBuy935().isNrmlEnabled() && user.getBniftyBuy935().getLotConfig().containsKey(todayCaps)){
+                try {    tradeData.setAlgoName("BNIFTY_BUY_935");
+                    user.getBniftyBuy935().straddleTradeMap.put(order.symbol,tradeData);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            }
+            if("BNIFTY_BUY_917".equals(addTrade.getStrategyName())){
+                    if(user.getBniftyBuy917() != null && user.getBniftyBuy917().isNrmlEnabled() && user.getBniftyBuy917().getLotConfig().containsKey(todayCaps)){
+                        try {
+                            tradeData.setAlgoName("BNIFTY_BUY_917");
+                            user.getBniftyBuy917().straddleTradeMap.put(order.symbol,tradeData);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+
+                }
+            if("BNIFTY_BUY_925".equals(addTrade.getStrategyName())){
+                    if(user.getBniftyBuy925() != null && user.getBniftyBuy925().isNrmlEnabled() && user.getBniftyBuy925().getLotConfig().containsKey(todayCaps)){
+                        try {
+                            tradeData.setAlgoName("BNIFTY_BUY_925");
+                            user.getBniftyBuy925().straddleTradeMap.put(order.symbol,tradeData);
+
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+
+                }
+                if("NIFTY_BUY_935".equals(addTrade.getStrategyName())){
+                    if(user.getNiftyBuy935() != null && user.getNiftyBuy935().isNrmlEnabled() && user.getNiftyBuy935().getLotConfig().containsKey(todayCaps)){
+                        try {
+                            tradeData.setAlgoName("NIFTY_BUY_935");
+                            user.getNiftyBuy935().straddleTradeMap.put(order.symbol,tradeData);
+
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+
+                }
+                if("NIFTY_BUY_1035".equals(addTrade.getStrategyName())){
+                    if(user.getNiftyBuy1035() != null && user.getNiftyBuy1035().isNrmlEnabled() && user.getNiftyBuy1035().getLotConfig().containsKey(todayCaps)){
+                        try {
+                            tradeData.setAlgoName("NIFTY_BUY_1035");
+                            user.getNiftyBuy1035().straddleTradeMap.put(order.symbol,tradeData);
+
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+
+                }
+                mapTradeDataToSaveOpenTradeDataEntity(tradeData,tradeData.isOrderPlaced);
+            } catch (KiteException e) {
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+    @Autowired
+    TradeDataMapper tradeDataMapper;
+    public void mapTradeDataToSaveOpenTradeDataEntity(TradeData tradeData,boolean orderPlaced) {
+        try {/*
+            OpenTradeDataEntity openTradeDataEntity = new OpenTradeDataEntity();
+            openTradeDataEntity.setDataKey(tradeData.getDataKey());
+            openTradeDataEntity.setAlgoName(this.getAlgoName());
+            openTradeDataEntity.setStockName(tradeData.getStockName());
+            openTradeDataEntity.setEntryType(tradeData.getEntryType());
+            openTradeDataEntity.setUserId(tradeData.getUserId());
+            openTradeDataEntity.isOrderPlaced = tradeData.isOrderPlaced;
+            openTradeDataEntity.isSlPlaced = tradeData.isSlPlaced();
+            openTradeDataEntity.isExited = tradeData.isExited();
+            openTradeDataEntity.isErrored = tradeData.isErrored;
+            openTradeDataEntity.isSLHit = tradeData.isSLHit;
+            openTradeDataEntity.setBuyTradedPrice(tradeData.getBuyTradedPrice());
+            openTradeDataEntity.setSellTradedPrice(tradeData.getSellTradedPrice());
+            openTradeDataEntity.setExitOrderId(tradeData.getExitOrderId());
+            openTradeDataEntity.setBuyPrice(tradeData.getBuyPrice());
+            openTradeDataEntity.setSellPrice(tradeData.getSellPrice());
+            openTradeDataEntity.setSlPrice(tradeData.getSlPrice());
+            openTradeDataEntity.setQty(tradeData.getQty());
+            openTradeDataEntity.setSlPercentage(tradeData.getSlPercentage());
+            openTradeDataEntity.setEntryOrderId(tradeData.getEntryOrderId());
+            openTradeDataEntity.setSlOrderId(tradeData.getSlOrderId());
+            openTradeDataEntity.setStockId(tradeData.getStockId());
+            Date date = new Date();
+            if(orderPlaced) {
+                String tradeDate = format.format(date);
+                openTradeDataEntity.setTradeDate(tradeDate);
+                tradeData.setTradeDate(tradeDate);
+            }else{
+                openTradeDataEntity.setTradeDate(tradeData.getTradeDate());
+            }
+            saveTradeData(openTradeDataEntity);*/
+            tradeDataMapper.mapTradeDataToSaveOpenTradeDataEntity(tradeData,orderPlaced,tradeData.getAlgoName());
+            //LOGGER.info("sucessfully saved trade data");
+        } catch (Exception e) {
+            LOGGER.info(e.getMessage());
+        }
+
+    }
+    @GetMapping("/bNiftyOptionBuy935Test")
+    public void bNiftyOptionBuy935Test() throws Exception, KiteException {
+        bNiftyOptionBuy935.buy();
+    }
     @GetMapping("/zerodhalogintest")
     public void generateAccessToken() throws Exception {
         zerodhaAccount.generateAccessToken();
@@ -323,7 +531,10 @@ NiftyOptionBuy935 niftyOptionBuy935;
     public void niftyOptionBuy935loadmtest() throws Exception {
         niftyOptionBuy935.loadNrmlPositions();
     }
-
+    @GetMapping("/niftyOptionBuy935V2")
+    public void niftyOptionBuy935V2() throws Exception, KiteException {
+        niftyOptionBuy935V2.buy();
+    }
     @GetMapping("/zerodha_instrument")
     public void generateInstrument() throws Exception {
         instrumentService.getInstrument();
@@ -334,6 +545,10 @@ NiftyOptionBuy935 niftyOptionBuy935;
         weeklyDataBackup.dataBackUp();
     }
 
+    @GetMapping("/monitorPositionSize")
+    public void monitorPositionSize() throws Exception, KiteException {
+        zerodhaAccount.monitorPositionSize();
+    }
     @GetMapping("/zerodhaNewTrend")
     public void newTrend(@RequestParam int day, @RequestParam boolean isOpenPriceSL, @RequestParam String slPer, @RequestParam String gainPer, @RequestParam String margin, @RequestParam int topNumber, @RequestParam boolean isPyramid, @RequestParam boolean shortTest) throws Exception, KiteException {
         zerodhaTrendSchedulerTest.trendScheduler(day, isOpenPriceSL, slPer, gainPer, margin, topNumber, isPyramid, shortTest);
@@ -1037,8 +1252,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
         }
         return new ResponseEntity<>(null,HttpStatus.NOT_FOUND);
     }
-    @Autowired
-    UserList userList;
     @PostMapping("/getOpenOrderDetails")
     public ResponseEntity<?> getOpenOrderDetails(@RequestBody String payload) throws Exception {
         Users users = new Gson().fromJson(payload, Users.class);

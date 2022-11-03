@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "javaType": "com.sakthi.trade.dhan.schema.FundResponse",
+  "type": "object",
+  "properties": {
+    "dhanClientId": {
+      "type": "string"
+    },
+    "availabelBalance": {
+      "type": "number"
+    },
+    "sodLimit": {
+      "type": "integer"
+    },
+    "collateralAmount": {
+      "type": "number"
+    },
+    "receiveableAmount": {
+      "type": "number"
+    },
+    "utilizedAmount": {
+      "type": "number"
+    },
+    "blockedPayoutAmount": {
+      "type": "number"
+    },
+    "withdrawableBalance": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "dhanClientId",
+    "availabelBalance",
+    "sodLimit",
+    "collateralAmount",
+    "receiveableAmount",
+    "utilizedAmount",
+    "blockedPayoutAmount",
+    "withdrawableBalance"
+  ]
+}

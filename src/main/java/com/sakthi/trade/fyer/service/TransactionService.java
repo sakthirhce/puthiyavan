@@ -1,6 +1,9 @@
 package com.sakthi.trade.fyer.service;
 
+import com.alibaba.fastjson.JSONObject;
+import com.google.gson.Gson;
 import com.sakthi.trade.fyer.Account;
+import com.sakthi.trade.options.nifty.buy.NiftyOptionBuy935V2;
 import com.sakthi.trade.zerodha.account.User;
 import com.sakthi.trade.zerodha.account.UserList;
 import com.sakthi.trade.zerodha.account.ZerodhaAccount;
@@ -12,6 +15,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
+
+import java.util.Iterator;
+import java.util.Map;
+import java.util.logging.Logger;
 
 @Component
 @Slf4j
@@ -31,6 +38,7 @@ public class TransactionService {
         User user =userList.getUser().stream().filter(User::isAdmin).findFirst().get();
         kiteConnect = user.getKiteConnect();
     }
+    public static final Logger LOGGER = Logger.getLogger(TransactionService.class.getName());
     public Request createPostPutDeleteRequest(HttpMethod httpMethod,String uri,String payload){
         Request.Builder requestBuilder=new Request.Builder();
         requestBuilder.addHeader("Content-Type","application/json;charset=UTF-8");
@@ -51,6 +59,7 @@ public class TransactionService {
         }
         return requestBuilder.build();
     }
+
     public Request createGetRequest(String uri,String queryValue){
         Request.Builder requestBuilder=new Request.Builder();
         requestBuilder.addHeader("Content-Type","application/json;charset=UTF-8");
@@ -60,6 +69,37 @@ public class TransactionService {
         }
         requestBuilder.url(uri);
         requestBuilder.get();
+        return requestBuilder.build();
+    }
+
+    public Request createPostRequest(String url, JSONObject params, String accessToken) {
+        MediaType JSON=MediaType.parse("application/json");
+        String payload= new Gson().toJson(params);
+        LOGGER.info("dhan API Payload:" + payload);
+        RequestBody requestBody = RequestBody.create(JSON,payload);
+        Request request = (new Request.Builder()).url(url).post(requestBody).header("Content-Type","application/json").header("access-token",  accessToken).build();
+        return request;
+    }
+    public Request createGetRequests(String url, String accessToken) {
+     //   MediaType JSON=MediaType.parse("application/json");
+     //   RequestBody requestBody = RequestBody.create(JSON,new Gson().toJson(params));
+        Request request = (new Request.Builder()).url(url).header("access-token",  accessToken).build();
+        return request;
+    }
+    public Request createDeleteRequest(String url,String accessToken){
+        Request.Builder requestBuilder=new Request.Builder();
+        requestBuilder.addHeader("access-token" , accessToken);
+        requestBuilder.url(url);
+        requestBuilder.delete();
+        return requestBuilder.build();
+    }
+    public Request createPutRequest(String url,String payload,String accessToken){
+        Request.Builder requestBuilder=new Request.Builder();
+        requestBuilder.addHeader("access-token" , accessToken);
+        requestBuilder.url(url);
+        MediaType JSON=MediaType.parse("application/json");
+        RequestBody body= RequestBody.create(JSON,payload);
+        requestBuilder.put(body);
         return requestBuilder.build();
     }
     public Request createGetTrueRequest(String uri){
@@ -83,6 +123,15 @@ public class TransactionService {
             requestBuilder.url(uri);
             requestBuilder.get();
             return requestBuilder.build();
+
+    }
+    public String downloadInstrumentData(String uri){
+        log.info("uri:" + uri);
+        Request.Builder requestBuilder = new Request.Builder();
+        requestBuilder.url(uri);
+        requestBuilder.get();
+        String responseStr=callAPI(requestBuilder.build());
+        return responseStr;
 
     }
     public String callAPI(Request request){
