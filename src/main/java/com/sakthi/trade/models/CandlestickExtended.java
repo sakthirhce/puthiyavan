@@ -1,4 +1,4 @@
-package com.sakthi.trade.binance.models;
+package com.sakthi.trade.models;
 
 import lombok.Getter;
 import lombok.Setter;

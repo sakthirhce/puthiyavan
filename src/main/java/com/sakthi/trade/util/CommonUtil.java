@@ -5,14 +5,12 @@ import com.google.common.util.concurrent.AtomicDouble;
 import com.google.gson.Gson;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
-import com.sakthi.trade.binance.models.CandlestickExtended;
+import com.sakthi.trade.models.CandlestickExtended;
 import com.sakthi.trade.domain.Brokerage;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.entity.StockDataEntity;
-import com.sakthi.trade.fyer.model.Candlestick;
 import com.sakthi.trade.zerodha.models.HistoricalDataExtended;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.FileWriter;
