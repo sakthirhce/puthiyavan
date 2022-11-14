@@ -362,6 +362,7 @@ public class ZerodhaAccount {
                 String botIdFinal = botId;
                 Request request =transactionService.createGetRequests(dhanRoutes.get("funds"),user1.getAccessToken());
                 String response= transactionService.callAPI(request);
+                System.out.println(response);
                 com.sakthi.trade.dhan.schema.FundResponseDTO fundResponseDTO=new Gson().fromJson(response, FundResponseDTO.class);
                 sendMessage.sendToTelegram("Dhan client ID :" + fundResponseDTO.getDhanClientId() +":"+user1.clientName+" : Available cash: "+fundResponseDTO.getAvailabelBalance().setScale(0, RoundingMode.HALF_UP).doubleValue(), telegramToken, botIdFinal);
 
@@ -617,7 +618,7 @@ public class ZerodhaAccount {
         });
         return openTradeData;
     }
-    @Scheduled(cron = "${over.position.monitor.scheduler}")
+  //  @Scheduled(cron = "${over.position.monitor.scheduler}")
    public void monitorPositionSize() throws IOException, KiteException {
 
         Map<String,Integer> openTradeData =getTradeOpenQty();

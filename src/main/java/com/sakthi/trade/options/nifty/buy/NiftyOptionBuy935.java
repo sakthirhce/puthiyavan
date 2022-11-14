@@ -218,7 +218,7 @@ public class NiftyOptionBuy935 {
                                     tradeData.setStockName(atmNiftyStrikeMap.getValue().getZerodhaSymbol());
                                     try {
                                         LOGGER.info("input:"+gson.toJson(orderParams));
-
+                                        tradeData.setStrikeId(atmNiftyStrikeMap.getValue().getDhanId());
                                         order = brokerWorker.placeOrder(orderParams,user,tradeData);
 
                                         tradeData.setEntryOrderId(order.orderId);
@@ -228,10 +228,17 @@ public class NiftyOptionBuy935 {
                                         tradeData.setUserId(user.getName());
                                         tradeData.setStockId(Integer.parseInt(atmNiftyStrikeMap.getValue().getZerodhaId()));
                                         tradeData.setBuyPrice(BigDecimal.valueOf(triggerPriceAtomic.get()));
-                                        user.getNiftyBuy935().straddleTradeMap.put(atmNiftyStrikeMap.getKey(), tradeData);
+                                        if(user.getBroker().equals("dhan")){
+                                            tradeData.setStockName(atmNiftyStrikeMap.getValue().getDhanSymbol());
+                                            user.getNiftyBuy935().straddleTradeMap.put(tradeData.getStockName(), tradeData);
+                                        }else {
+                                            user.getNiftyBuy935().straddleTradeMap.put(tradeData.getStockName(), tradeData);
+                                        }
                                        // mapTradeDataToSaveOpenTradeDataEntity(tradeData,true);
-                                        String message="option buy limit order placed for for user:" + user.getName() + " strike: " + atmNiftyStrikeMap.getKey()+":"+getAlgoName();
+                                        String message="option buy limit order placed for for user:" + user.getName() + " strike: " + atmNiftyStrikeMap.getValue().getZerodhaSymbol()+":"+getAlgoName();
                                         LOGGER.info(message);
+                                        LOGGER.info("Trade Data:"+new Gson().toJson(tradeData));
+
                                         try {
                                             sendMessage.sendToTelegram(message, telegramToken);
                                         }catch (Exception e){
@@ -314,7 +321,7 @@ public class NiftyOptionBuy935 {
                                                 LOGGER.info(e.getMessage());
                                             }
                                         });
-                                        positions.stream().filter(position -> "NRML".equals(position.product) && tradeData.getStockName().equals(position.tradingSymbol) && (position.netQuantity != 0)).forEach(position -> {
+                                        positions.stream().filter(position -> ("NRML".equals(position.product)||"MARGIN".equals(position.product))&& tradeData.getStockName().equals(position.tradingSymbol) && (position.netQuantity != 0)).forEach(position -> {
                                             //   if(straddleTradeMap.get(position.tradingSymbol)!=null) {
                                             OrderParams orderParams = new OrderParams();
                                             orderParams.tradingsymbol = position.tradingSymbol;
@@ -407,7 +414,7 @@ public class NiftyOptionBuy935 {
                                             }
                                         }
                                         if (trendTradeData.getEntryOrderId().equals(order.orderId) && !trendTradeData.isSlPlaced) {
-                                            if ("COMPLETE".equals(order.status)) {
+                                            if (("COMPLETE".equals(order.status) || "TRADED".equals(order.status)) ) {
 
                                                 if ("BUY".equals(order.transactionType)) {
                                                     LOGGER.info("buy completed" + trendTradeData.trueDataSymbol + ":" + trendTradeData.getEntryOrderId());
@@ -423,11 +430,7 @@ public class NiftyOptionBuy935 {
                                                             e.printStackTrace();
                                                         }
                                                         mapTradeDataToSaveOpenTradeDataEntity(trendTradeData,true);
-
-                                                        LOGGER.info("inside options stop sell");
-
                                                         BigDecimal triggerPriceTemp = (trendTradeData.getBuyPrice().subtract(new BigDecimal(10))).setScale(0, RoundingMode.HALF_UP);
-                                                        //    if (qty.get() > 0 && user.getStraddleConfig().getBuyConfig() != null && user.getStraddleConfig().getBuyConfig().isEnabled()) {
                                                         LOGGER.info("buy price:" + trendTradeData.getBuyPrice().doubleValue() + " sl price: " + triggerPriceTemp.doubleValue());
                                                         OrderParams orderParams = new OrderParams();
                                                         orderParams.tradingsymbol = trendTradeData.getStockName();
@@ -456,8 +459,6 @@ public class NiftyOptionBuy935 {
                                                             } catch (Exception e) {
                                                                 LOGGER.info("error:" + e);
                                                             }
-                                                            ///sendMessage.sendToTelegram("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL", telegramToken);
-
                                                         } catch (KiteException | IOException e) {
                                                             // tradeData.isErrored = true;
                                                             LOGGER.info("Nifty option order: " + e.getMessage() + ":" + user.getName());
@@ -471,7 +472,7 @@ public class NiftyOptionBuy935 {
                                                 }
                                             }
                                         }
-                                        if ("COMPLETE".equals(order.status) && "SELL".equals(order.transactionType) && order.orderId.equals(trendTradeData.getSlOrderId()) && !trendTradeData.isExited && trendTradeData.isSlPlaced) {
+                                        if (("COMPLETE".equals(order.status) || "TRADED".equals(order.status))  && "SELL".equals(order.transactionType) && order.orderId.equals(trendTradeData.getSlOrderId()) && !trendTradeData.isExited && trendTradeData.isSlPlaced) {
                                             trendTradeData.isSLHit = true;
                                             trendTradeData.isExited = true;
                                             trendTradeData.setExitOrderId(order.orderId);
@@ -517,7 +518,7 @@ public class NiftyOptionBuy935 {
                     } catch (KiteException | IOException e) {
                         LOGGER.info("error wile calling position :" + openTradeDataEntity.getUserId());
                     }
-                    positions.stream().filter(position -> "NRML".equals(position.product) && openTradeDataEntity.getStockName().equals(position.tradingSymbol) && (position.netQuantity != 0)).findFirst().ifPresent(position -> {
+                    positions.stream().filter(position -> ("NRML".equals(position.product)||"MARGIN".equals(position.product)) && openTradeDataEntity.getStockName().equals(position.tradingSymbol) && (position.netQuantity != 0)).findFirst().ifPresent(position -> {
                         int positionQty = Math.abs(position.netQuantity);
                         if (positionQty != openTradeDataEntity.getQty()) {
                             //   openTradeDataEntity.setQty(positionQty);
@@ -552,7 +553,7 @@ public class NiftyOptionBuy935 {
                 List<Position> positions = user.getKiteConnect().getPositions().get("net");
                // LOGGER.info(positions);
                 openTradeDataEntities.stream().filter(openTradeDataEntity -> !openTradeDataEntity.isExited && user.getName().equals(openTradeDataEntity.getUserId())).forEach(openTradeDataEntity -> {
-                    orders.stream().filter(order -> "COMPLETE".equals(order.status) && order.orderId.equals(openTradeDataEntity.getExitOrderId())).findFirst().ifPresent(orderr -> {
+                    orders.stream().filter(order -> ("COMPLETE".equals(order.status) || "TRADED".equals(order.status)) && order.orderId.equals(openTradeDataEntity.getExitOrderId())).findFirst().ifPresent(orderr -> {
                         try {
                             Date date = new Date();
                             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
@@ -734,7 +735,7 @@ public class NiftyOptionBuy935 {
                                     LOGGER.info(e.getMessage());
                                 }
                             });
-                            positions.stream().filter(position -> "NRML".equals(position.product) && openTradeDataEntity.getStockName().equals(position.tradingSymbol) && (position.netQuantity != 0)).forEach(position -> {
+                            positions.stream().filter(position -> ("NRML".equals(position.product)||"MARGIN".equals(position.product)) && openTradeDataEntity.getStockName().equals(position.tradingSymbol) && (position.netQuantity != 0)).forEach(position -> {
                                 //   if(straddleTradeMap.get(position.tradingSymbol)!=null) {
                                 OrderParams orderParams = new OrderParams();
                                 orderParams.tradingsymbol = position.tradingSymbol;
@@ -810,7 +811,7 @@ public class NiftyOptionBuy935 {
             Optional<Order> sLOrder = orderList.stream().filter(order1 -> openTradeDataEntity.getSlOrderId().equals(order1.orderId)).findFirst();
             if (sLOrder.isPresent()) {
                 Order order = sLOrder.get();
-                if ("COMPLETE".equals(order.status) && !openTradeDataEntity.isExited) {
+                if (("COMPLETE".equals(order.status) || "TRADED".equals(order.status)) && !openTradeDataEntity.isExited) {
                     openTradeDataEntity.isExited = true;
                     openTradeDataEntity.isSLHit = true;
                     if ("SELL".equals(order.transactionType)) {

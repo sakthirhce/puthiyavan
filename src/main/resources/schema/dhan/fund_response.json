@@ -10,7 +10,7 @@
       "type": "number"
     },
     "sodLimit": {
-      "type": "integer"
+      "type": "number"
     },
     "collateralAmount": {
       "type": "number"

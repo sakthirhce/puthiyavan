@@ -229,11 +229,10 @@ public class NiftyOptionBuy935V2Test {
                                         {
                                             OrderPlacementRequest orderPlacementRequest=new OrderPlacementRequest();
                                             orderPlacementRequest.setQty(orderParams.quantity);
-                                            orderPlacementRequest.setOrderType(DhanOrderType.STOP_LOSS.name());
                                             orderPlacementRequest.setStrikeData(atmNiftyStrikeMap.getValue());
                                             orderPlacementRequest.setTransactionType(DhanTransactionType.BUY.name());
                                             orderPlacementRequest.setValidity(Validity.DAY.name());
-                                            orderPlacementRequest.setExchangeSegment(DhanExchangeSegment.NSE_FNO.name());
+                                        //    orderPlacementRequest.setExchangeSegment(DhanExchangeSegment.NSE_FNO.name());
                                             orderPlacementRequest.setProductType(DhanProductType.CNC.name());
                                             orderPlacementRequest.setPrice(orderParams.price);
                                             orderPlacementRequest.setTriggerPrice(orderParams.triggerPrice);
@@ -906,4 +905,6 @@ public class NiftyOptionBuy935V2Test {
             LOGGER.info(e.getMessage());
         }
     }
+
+
 }

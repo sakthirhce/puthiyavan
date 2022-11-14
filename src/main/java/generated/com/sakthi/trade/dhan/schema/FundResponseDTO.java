@@ -37,7 +37,7 @@ public class FundResponseDTO {
     @SerializedName("sodLimit")
     @Expose
     @Nonnull
-    private Integer sodLimit;
+    private BigDecimal sodLimit;
     /**
      * 
      * (Required)
@@ -102,7 +102,7 @@ public class FundResponseDTO {
      * @param dhanClientId
      * @param utilizedAmount
      */
-    public FundResponseDTO(String dhanClientId, BigDecimal availabelBalance, Integer sodLimit, BigDecimal collateralAmount, BigDecimal receiveableAmount, BigDecimal utilizedAmount, BigDecimal blockedPayoutAmount, BigDecimal withdrawableBalance) {
+    public FundResponseDTO(String dhanClientId, BigDecimal availabelBalance, BigDecimal sodLimit, BigDecimal collateralAmount, BigDecimal receiveableAmount, BigDecimal utilizedAmount, BigDecimal blockedPayoutAmount, BigDecimal withdrawableBalance) {
         super();
         this.dhanClientId = dhanClientId;
         this.availabelBalance = availabelBalance;
@@ -155,7 +155,7 @@ public class FundResponseDTO {
      * (Required)
      * 
      */
-    public Integer getSodLimit() {
+    public BigDecimal getSodLimit() {
         return sodLimit;
     }
 
@@ -164,7 +164,7 @@ public class FundResponseDTO {
      * (Required)
      * 
      */
-    public void setSodLimit(Integer sodLimit) {
+    public void setSodLimit(BigDecimal sodLimit) {
         this.sodLimit = sodLimit;
     }
 

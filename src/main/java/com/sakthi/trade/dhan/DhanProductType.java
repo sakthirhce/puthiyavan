@@ -3,11 +3,15 @@ package com.sakthi.trade.dhan;
 public enum DhanProductType {
     CNC("CNC"),
     INTRADAY("INTRADAY"),
-    MARGIN("MARGIN"),
+    NRML("MARGIN"),
     CO("CO"),
     BO("BO");
     private String productType;
-    private DhanProductType(String productType){
+    public String getProductType()
+    {
+        return this.productType;
+    }
+     DhanProductType(String productType){
         this.productType=productType;
     }
 }

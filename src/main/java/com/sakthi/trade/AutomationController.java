@@ -23,6 +23,8 @@ import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.options.WeeklyDataBackup;
 import com.sakthi.trade.options.banknifty.*;
 import com.sakthi.trade.options.banknifty.backtest.*;
+import com.sakthi.trade.options.banknifty.buy.BNiftyOptionBuy917;
+import com.sakthi.trade.options.banknifty.buy.BNiftyOptionBuy935;
 import com.sakthi.trade.options.buy.banknifty.IndexGapBacktest;
 import com.sakthi.trade.options.buy.banknifty.VwapRsiOiVolumeBuyBacktest;
 import com.sakthi.trade.options.buy.banknifty.VwapRsiOiVolumeBuyBacktestTrueData;

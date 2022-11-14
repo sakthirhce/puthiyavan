@@ -2,6 +2,9 @@ package com.sakthi.trade.worker;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
+import com.sakthi.trade.dhan.DhanExchangeSegment;
+import com.sakthi.trade.dhan.DhanOrderType;
+import com.sakthi.trade.dhan.DhanProductType;
 import com.sakthi.trade.dhan.DhanRoutes;
 import com.sakthi.trade.dhan.schema.OrderResponseDTO;
 import com.sakthi.trade.dhan.schema.PositionResponseDTO;
@@ -34,6 +37,25 @@ public class DhanWorker implements BrokerWorker {
     public Order placeOrder(OrderParams orderPlacementRequest, User user, TradeData tradeData) {
       //  Map<String, Object> params = new HashMap();
         LOGGER.info("Inside dhan place order:"+ new Gson().toJson(orderPlacementRequest));
+        /*TODO: orderParams.orderType=DhanOrderType.STOP_LOSS.name();
+                                                    //   orderPlacementRequest.setStrikeData(atmNiftyStrikeMap.getValue());
+                                                        orderParams.transactionType=DhanTransactionType.SELL.name();
+                                                        orderParams.validity=Validity.DAY.name();
+                                                        orderParams.exchange=DhanExchangeSegment.NSE_FNO.name();
+                                                        orderParams.product=DhanProductType.CNC.name();
+
+         */
+        /*TODO:  orderParams.tradingsymbol = tradeData.getStockName();
+                                                orderParams.exchange = "NFO";
+                                                orderParams.orderType =orderr.orderType;
+                                                orderParams.validity = "DAY";
+                                                orderParams.price = Double.parseDouble(orderr.price);
+                                                orderParams.triggerPrice = Double.parseDouble(orderr.triggerPrice);
+                                                orderParams.orderType = "SL";
+                                                orderParams.product = "NRML";
+
+         */
+
         JSONObject params = new JSONObject();
         if (tradeData.getStrikeId() != null) {
             params.put("securityId", tradeData.getStrikeId());
@@ -52,7 +74,7 @@ public class DhanWorker implements BrokerWorker {
         }
 
         if (orderPlacementRequest.exchange != null) {
-            params.put("exchangeSegment", orderPlacementRequest.exchange);
+            params.put("exchangeSegment", getExchangeSegment(orderPlacementRequest.exchange));
         }
 
         if (orderPlacementRequest.validity != null) {
@@ -60,11 +82,11 @@ public class DhanWorker implements BrokerWorker {
         }
 
         if (orderPlacementRequest.orderType != null) {
-            params.put("orderType", orderPlacementRequest.orderType);
+            params.put("orderType", getOrderType(orderPlacementRequest.orderType));
         }
 
         if (orderPlacementRequest.product != null) {
-            params.put("productType", orderPlacementRequest.product);
+            params.put("productType", getProductType(orderPlacementRequest.product));
         }
 
         if (orderPlacementRequest.price >0) {
@@ -96,20 +118,56 @@ public class DhanWorker implements BrokerWorker {
     public String broker() {
         return Broker.DHAN.name();
     }
+    public static String getProductType(String productType)
+    {
+        DhanProductType[] dhanProductTypes=DhanProductType.values();
+        for(int var=0; var<dhanProductTypes.length;++var){
+            DhanProductType dhanProductType= dhanProductTypes[var];
+            if(dhanProductType.name().equals(productType)){
+                return dhanProductType.getProductType();
+            }
+        }
+        return null;
+    }
 
+    public static String getExchangeSegment(String exchangeSegment)
+    {
+        DhanExchangeSegment[] dhanExchangeSegments=DhanExchangeSegment.values();
+        for(int var=0; var<dhanExchangeSegments.length;++var){
+            DhanExchangeSegment dhanExchangeSegment= dhanExchangeSegments[var];
+            if(dhanExchangeSegment.name().equals(exchangeSegment)){
+                return dhanExchangeSegment.getExchangeSegment();
+            }
+        }
+        return null;
+    }
+    public static String getOrderType(String orderType)
+    {
+        DhanOrderType[] dhanOrderTypes=DhanOrderType.values();
+        for(int var=0; var<dhanOrderTypes.length;++var){
+            DhanOrderType dhanOrderType= dhanOrderTypes[var];
+            if(dhanOrderType.name().equals(orderType)){
+                return dhanOrderType.getOrderType();
+            }
+        }
+        return null;
+    }
     Gson gson=new Gson();
     @Override
     public  List<Order> getOrders(User user) {
         Request request= transactionService.createGetRequests(routes.get("orders"),user.getAccessToken());
         String rsponse=transactionService.callAPI(request);
+        log.info("dhan order respnse:"+rsponse);
         List<OrderResponseDTO> orderResponseDTOList=Arrays.asList(gson.fromJson(rsponse,OrderResponseDTO[].class));
         List<Order> orderList = new ArrayList<>();
         orderResponseDTOList.stream().forEach(orderResponseDTO -> {
             Order order=new Order();
             order.orderId=orderResponseDTO.getOrderId();
             order.status=orderResponseDTO.getOrderStatus();
+            order.transactionType=orderResponseDTO.getTransactionType();
             orderList.add(order);
         });
+        log.info("dhan order respnse after conversion:"+new Gson().toJson(orderList));
     return orderList;
 
     }
@@ -118,6 +176,7 @@ public class DhanWorker implements BrokerWorker {
     public List<Position>  getPositions(User user) {
         Request request= transactionService.createGetRequests(routes.get("portfolio.positions"),user.getAccessToken());
         String rsponse=transactionService.callAPI(request);
+        log.info("dhan position respnse:"+rsponse);
         List<PositionResponseDTO> orderResponseDTOList=Arrays.asList(gson.fromJson(rsponse,PositionResponseDTO[].class));
         List<Position> positions=new ArrayList<>();
         orderResponseDTOList.stream().forEach(orderResponseDTO ->{
@@ -127,6 +186,7 @@ public class DhanWorker implements BrokerWorker {
             position.netQuantity=orderResponseDTO.getNetQty();
             positions.add(position);
         });
+        log.info("dhan position respnse after conversion:"+new Gson().toJson(positions));
         return positions;
     }
 

@@ -81,7 +81,7 @@ BrokerWorkerFactory workerFactory;
         return "NIFTY_BUY_935_V2";
     }
     public static final Logger LOGGER = Logger.getLogger(NiftyOptionBuy935V2.class.getName());
-    @Scheduled(cron = "${niftyBuy935.schedule.entry}")
+   // @Scheduled(cron = "${niftyBuy935.schedule.entry}")
     public void buy() throws ParseException, KiteException, IOException {
         sendMessage.sendToTelegram("niftyBuy935 execution startede", telegramToken);
         StopWatch stopWatch = new StopWatch();
@@ -227,21 +227,7 @@ BrokerWorkerFactory workerFactory;
                                     try {
                                         LOGGER.info("input:"+gson.toJson(orderParams));
 
-                                        //order = user.getKiteConnect().placeOrder(orderParams, "regular");
-
-
-                                            //LOGGER.info("input:"+gson.toJson(orderParams));
-                                        //    OrderPlacementRequest orderPlacementRequest=new OrderPlacementRequest();
-                                           // orderParams.setQty(orderParams.quantity);
                                             tradeData.setStrikeId(atmNiftyStrikeMap.getValue().getDhanId());
-                                            orderParams.orderType=DhanOrderType.STOP_LOSS.name();
-                                         //   orderPlacementRequest.setStrikeData(atmNiftyStrikeMap.getValue());
-                                            orderParams.transactionType=DhanTransactionType.BUY.name();
-                                            orderParams.validity=Validity.DAY.name();
-                                            orderParams.exchange=DhanExchangeSegment.NSE_FNO.name();
-                                            orderParams.product=DhanProductType.CNC.name();
-                                         //   orderParams.price=orderParams.price);
-                                      //      orderParams.setTriggerPrice(orderParams.triggerPrice);
                                             LOGGER.info("dhan input:"+gson.toJson(orderParams));
                                             order=brokerWorker.placeOrder(orderParams,user,tradeData);
 
@@ -283,7 +269,7 @@ BrokerWorkerFactory workerFactory;
         //}
     }
 
-    @Scheduled(cron = "${banknifty.intraday.buy.exit.schedule}")
+   // @Scheduled(cron = "${banknifty.intraday.buy.exit.schedule}")
     public void buyIntradayExit() {
         log.info("nifty 15:10 exit started");
         userList.getUser().stream().filter(user -> user.getNiftyBuy935V2() != null && user.getNiftyBuy935V2().isNrmlEnabled()).forEach(user -> {
@@ -334,17 +320,9 @@ BrokerWorkerFactory workerFactory;
                                                 orderParams.orderType = "SL";
                                                 orderParams.product = "NRML";
                                                 System.out.println("input for bnf sl mod: "+new Gson().toJson(orderParams));
-                                                if(user.getBroker().equals("zerodha")) {
-                                                    //  Order order = user.getKiteConnect().modifyOrder(tradeData.getSlOrderId(), orderParams, "regular");
-                                                }else {
-                                                        orderParams.orderType=DhanOrderType.STOP_LOSS.name();
-                                                    //   orderPlacementRequest.setStrikeData(atmNiftyStrikeMap.getValue());
-                                                        orderParams.transactionType=DhanTransactionType.SELL.name();
-                                                        orderParams.validity=Validity.DAY.name();
-                                                        orderParams.exchange=DhanExchangeSegment.NSE_FNO.name();
-                                                        orderParams.product=DhanProductType.CNC.name();
-                                                        brokerWorker.placeOrder(orderParams,user,tradeData);
-                                                }
+
+                                                         brokerWorker.placeOrder(orderParams,user,tradeData);
+
                                                 sendMessage.sendToTelegram("sl buy qty modified for nrml:" + tradeData.getUserId() + ": new sl qty:" + tradeData.getQty()+":"+getAlgoName(), telegramToken);
                                                 //}
                                             } catch (Exception e) {
@@ -353,7 +331,7 @@ BrokerWorkerFactory workerFactory;
                                                 throw new RuntimeException(e);
                                             }
                                         });
-                                        positions.stream().filter(position -> ("NRML".equals(position.product)||"CNC".equals(position.product)) && (tradeData.getStockName().equals(position.tradingSymbol)||tradeData.getStrikeId().equals(position.tradingSymbol)) && (position.netQuantity != 0)).forEach(position -> {
+                                        positions.stream().filter(position -> ("NRML".equals(position.product)||"MARGIN".equals(position.product)) && (tradeData.getStockName().equals(position.tradingSymbol)||tradeData.getStrikeId().equals(position.tradingSymbol)) && (position.netQuantity != 0)).forEach(position -> {
                                             //   if(straddleTradeMap.get(position.tradingSymbol)!=null) {
                                             OrderParams orderParams = new OrderParams();
                                             orderParams.tradingsymbol = position.tradingSymbol;
@@ -367,18 +345,9 @@ BrokerWorkerFactory workerFactory;
                                                 orderParams.validity = "DAY";
                                                 Order orderResponse = null;
                                                 try {
-                                                    if (user.getBroker().equals("zerodha")) {
-                                                        //  Order order = user.getKiteConnect().placeOrder(orderParams, "regular");
-                                                    } else {
-                                                        orderParams.orderType=DhanOrderType.MARKET.name();
-                                                        //   orderPlacementRequest.setStrikeData(atmNiftyStrikeMap.getValue());
-                                                        orderParams.transactionType=DhanTransactionType.SELL.name();
-                                                        orderParams.validity=Validity.DAY.name();
-                                                        orderParams.exchange=DhanExchangeSegment.NSE_FNO.name();
-                                                        orderParams.product=DhanProductType.CNC.name();
+
                                                         orderResponse = brokerWorker.placeOrder(orderParams,user,tradeData);
-                                                   // orderResponse = user.getKiteConnect().placeOrder(orderParams, "regular");
-                                                     }
+
                                                     LOGGER.info(new Gson().toJson(orderResponse));
                                                     //  openTradeDataEntity.isExited=true;
                                                     tradeData.setQty(qty.get());
@@ -496,17 +465,8 @@ BrokerWorkerFactory workerFactory;
 
                                                         try {
                                                             LOGGER.info("input:" + gson.toJson(orderParams));
-                                                            if(user.getBroker().equals("zerodha")) {
-                                                                // order = user.getKiteConnect().placeOrder(orderParams, "regular");
-                                                            }else {
-                                                                orderParams.orderType=DhanOrderType.STOP_LOSS.name();
-                                                                //   orderPlacementRequest.setStrikeData(atmNiftyStrikeMap.getValue());
-                                                                orderParams.transactionType=DhanTransactionType.SELL.name();
-                                                                orderParams.validity=Validity.DAY.name();
-                                                                orderParams.exchange=DhanExchangeSegment.NSE_FNO.name();
-                                                                orderParams.product=DhanProductType.CNC.name();
-                                                                orderd=brokerWorker.placeOrder(orderParams,user,trendTradeData);
-                                                            }
+                                                            orderd=brokerWorker.placeOrder(orderParams,user,trendTradeData);
+
                                                             if(orderd!=null) {
 
                                                                 trendTradeData.isSlPlaced = true;

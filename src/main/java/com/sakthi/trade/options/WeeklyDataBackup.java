@@ -91,8 +91,8 @@ public class WeeklyDataBackup {
         if(!expFolder.exists()){
             expFolder.mkdir();
         }
-
-
+        expFolder.setReadable(true); //read
+        expFolder.setWritable(true); //write
         if(currentExp.equals(format.format(currentDate))){
             log.info("Expiry export date:"+currentExp);
             zerodhaTransactionService.bankNiftyWeeklyOptions.entrySet().stream().forEach( exp->{
@@ -100,7 +100,7 @@ public class WeeklyDataBackup {
                 map.entrySet().stream().forEach(optionExp -> {
                     String strikeNo = optionExp.getValue();
                     String strikeKey = optionExp.getKey();
-                    String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentExp + "+15:30:00";
+                    String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentExp + "+15:30:00&oi=1";
                     String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                     String fileName;
                     if(strikeKey.contains("CE"))
