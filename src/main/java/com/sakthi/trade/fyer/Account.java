@@ -20,7 +20,7 @@ import com.sakthi.trade.fyer.model.StandardPivot;
 import com.sakthi.trade.fyer.model.StandardPivots;
 import com.sakthi.trade.fyer.service.TransactionService;
 import com.sakthi.trade.repo.*;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.MathUtils;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
@@ -35,7 +35,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -91,7 +90,7 @@ public class Account {
     String driverPath;
 
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
     public Map<String,String> lsFyerSymbols=new HashMap<>();
     public Map<String,String> lsFOSymbols=new HashMap<>();
     @Value("${telegram.orb.bot.token}")

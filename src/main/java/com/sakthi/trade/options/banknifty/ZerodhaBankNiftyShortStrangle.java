@@ -2,13 +2,11 @@ package com.sakthi.trade.options.banknifty;
 
 import com.google.gson.Gson;
 import com.sakthi.trade.domain.TradeData;
-import com.sakthi.trade.entity.OpenTradeDataBackupEntity;
-import com.sakthi.trade.entity.OpenTradeDataEntity;
 import com.sakthi.trade.entity.StrangleTradeDataEntity;
 import com.sakthi.trade.eventday.EventDayConfiguration;
 import com.sakthi.trade.fyer.service.TransactionService;
 import com.sakthi.trade.repo.StrangleTradeDataRepo;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.CommonUtil;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import com.sakthi.trade.zerodha.account.User;
@@ -71,7 +69,7 @@ public class ZerodhaBankNiftyShortStrangle {
     @Autowired
     TransactionService transactionService;
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
     private java.util.concurrent.Executors Executors;
 
     ExecutorService executorService = java.util.concurrent.Executors.newFixedThreadPool(5);

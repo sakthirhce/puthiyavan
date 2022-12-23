@@ -2,7 +2,6 @@ package com.sakthi.trade.options.nifty.buy;
 
 import com.google.common.util.concurrent.AtomicDouble;
 import com.google.gson.Gson;
-import com.sakthi.trade.dhan.*;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.entity.OpenTradeDataBackupEntity;
 import com.sakthi.trade.entity.OpenTradeDataEntity;
@@ -10,7 +9,7 @@ import com.sakthi.trade.fyer.service.TransactionService;
 import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.repo.OpenTradeDataBackupRepo;
 import com.sakthi.trade.repo.OpenTradeDataRepo;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.CommonUtil;
 import com.sakthi.trade.util.MathUtils;
 import com.sakthi.trade.worker.BrokerWorker;
@@ -61,7 +60,7 @@ public class NiftyOptionBuy935V2 {
     @Autowired
     ZerodhaTransactionService zerodhaTransactionService;
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
 
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");

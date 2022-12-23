@@ -9,7 +9,7 @@ import com.sakthi.trade.fyer.service.TransactionService;
 import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.repo.OpenTradeDataBackupRepo;
 import com.sakthi.trade.repo.OpenTradeDataRepo;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.CommonUtil;
 import com.sakthi.trade.util.MathUtils;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
@@ -57,7 +57,7 @@ public class BNiftyOptionBuy935Test {
     @Autowired
     ZerodhaTransactionService zerodhaTransactionService;
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
 
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");

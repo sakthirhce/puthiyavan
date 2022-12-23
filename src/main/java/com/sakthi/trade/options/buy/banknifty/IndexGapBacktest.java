@@ -9,9 +9,8 @@ import com.sakthi.trade.domain.Brokerage;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.fyer.mapper.FyerTransactionMapper;
 import com.sakthi.trade.fyer.service.TransactionService;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.CommonUtil;
-import com.sakthi.trade.util.MathUtils;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import com.sakthi.trade.zerodha.account.ZerodhaAccount;
 import com.sakthi.trade.zerodha.models.HistoricalDataExtended;
@@ -56,12 +55,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.*;
 
-import static java.time.DayOfWeek.THURSDAY;
-import static java.time.temporal.TemporalAdjusters.lastInMonth;
 import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.DAY_OF_WEEK;
 
@@ -85,7 +81,7 @@ public class IndexGapBacktest {
     ZerodhaTransactionService zerodhaTransactionService;
 
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
     @Autowired
     FyerTransactionMapper fyerTransactionMapper;
     @Value("${vwap.rsi.oi.volume.lot}")

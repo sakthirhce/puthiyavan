@@ -7,7 +7,7 @@ import com.sakthi.trade.domain.Brokerage;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.fyer.mapper.FyerTransactionMapper;
 import com.sakthi.trade.fyer.service.TransactionService;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.CommonUtil;
 import com.sakthi.trade.util.MathUtils;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
@@ -43,7 +43,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.awt.*;
 import java.io.File;
@@ -83,7 +82,7 @@ public class NiftyVwapRsiOiVolumeBuyBacktest {
     ZerodhaTransactionService zerodhaTransactionService;
 
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
     @Autowired
     FyerTransactionMapper fyerTransactionMapper;
     @Value("${vwap.rsi.oi.volume.lot}")

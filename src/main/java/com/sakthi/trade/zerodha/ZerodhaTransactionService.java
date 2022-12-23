@@ -4,12 +4,11 @@ import com.google.gson.Gson;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import com.sakthi.trade.fyer.service.TransactionService;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.zerodha.account.Expiry;
 import com.sakthi.trade.zerodha.account.StrikeData;
 import com.sakthi.trade.zerodha.account.ZerodhaAccount;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.jni.Local;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -65,6 +64,7 @@ public class ZerodhaTransactionService {
     public Map<String,Map<String,String>> finNiftyNextWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>> finNiftyWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>> dhanBankNiftyWeeklyOptions=new HashMap<>();
+    public Map<String,Map<String,String>> dhanFNiftyWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>> dhanBankNiftyNextWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>> dhanNiftyNextWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>>dhanNiftyWeeklyOptions=new HashMap<>();
@@ -72,7 +72,7 @@ public class ZerodhaTransactionService {
     public String expDate;
     public String finExpDate;
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
     @Value("${telegram.orb.bot.token}")
     String telegramToken;
     public void olhc(){
@@ -322,7 +322,7 @@ public class ZerodhaTransactionService {
    try{
        String dhanResponse=transactionService.downloadInstrumentData(dhanInstrumentURL);
        String[] dhanlines = dhanResponse.split("\\r?\\n");
-       System.out.println("dhan output:"+ dhanlines.length);
+       System.out.println("dhan output:"+ dhanResponse.length());
        for ( int j=0; j< dhanlines.length;j++){
            String[] data =dhanlines[j].split(",");
            String index = data[0].replace("\"", "");
@@ -332,9 +332,23 @@ public class ZerodhaTransactionService {
            String securityCustomSymbol = data[7].replace("\"", "");
            String[] splited = securityCustomSymbol.split("\\s+");
            String dhanCurrentWeekExpDate=formatddMMM.format(currentWeekExpDate).toUpperCase();
+           String dhanFinCurrentWeekExpDate=formatddMMM.format(currentFinWeekExpDate).toUpperCase();
            String dhanNextWeekExpDate=formatddMMM.format(nextWeekExpDateRes).toUpperCase();
            if(index.equals("NSE") && instrumentName.equals("OPTIDX")){
                String strikeExpDate=splited[1]+"-"+splited[2];
+               if(dhanFinCurrentWeekExpDate.equals(strikeExpDate)){
+                   if ("FINNIFTY".equals(splited[0])) {
+                       if(dhanFNiftyWeeklyOptions.get(splited[3])!=null){
+                           Map<String,String> map=dhanFNiftyWeeklyOptions.get(splited[3]);
+                           map.put(data[5],data[2]);
+                           dhanFNiftyWeeklyOptions.put(splited[3], map);
+                       }else {
+                           Map<String,String> map=new HashMap<>();
+                           map.put(data[5],data[2]);
+                           dhanFNiftyWeeklyOptions.put(splited[3], map);
+                       }
+                   }
+               }
                    if (dhanCurrentWeekExpDate.equals(strikeExpDate)) {
                        if ("BANKNIFTY".equals(splited[0])) {
                            if(dhanBankNiftyWeeklyOptions.get(splited[3])!=null){
@@ -388,11 +402,41 @@ public class ZerodhaTransactionService {
        // System.out.println(bankNiftyWeeklyOptions.size());
        sendMessage.sendToTelegram("Total Dhan BNF current week expiry strike count :" + dhanBankNiftyWeeklyOptions.size(), telegramToken,"-713214125");
        sendMessage.sendToTelegram("Total Dhan BNF Next Week expiry strike count :" + dhanBankNiftyNextWeeklyOptions.size(), telegramToken,"-713214125");
+       sendMessage.sendToTelegram("Total Dhan FN Week expiry strike count :" + dhanFNiftyWeeklyOptions.size(), telegramToken,"-713214125");
        //  sendMessage.sendToTelegram("Total Dhan BNF Futures strike Count for monthly exp :" +monthlyExp+":"+ currentFutures.size(), telegramToken,"-713214125");
        sendMessage.sendToTelegram("Total Dhan NF current week expiry strike count :" + dhanNiftyWeeklyOptions.size(), telegramToken,"-713214125");
        sendMessage.sendToTelegram("Total Dhan NF Next Week expiry strike count :" + dhanNiftyNextWeeklyOptions.size(), telegramToken,"-713214125");
        //   sendMessage.sendToTelegram("Total Dhan NF Futures strike Count for monthly exp :" +monthlyExp+":"+ currentFutures.size(), telegramToken,"-713214125");
+       Map<String,Map<String,StrikeData>> strikeFNLevelMap=new HashMap<>();
+
+       finNiftyWeeklyOptions.entrySet().stream().forEach(stringMapEntry -> {
+           Map<String,StrikeData> strikeTypeMap=new HashMap<>();
+           Map<String,String> dhanData=dhanFNiftyWeeklyOptions.get(stringMapEntry.getKey());
+           stringMapEntry.getValue().entrySet().forEach(stringStringEntry -> {
+               StrikeData strikeData=new StrikeData();
+               strikeData.setStrike(stringMapEntry.getKey());
+               strikeData.setZerodhaSymbol(stringStringEntry.getKey());
+               strikeData.setZerodhaId(stringStringEntry.getValue());
+               if(stringStringEntry.getKey().contains("CE")) {
+                   strikeData.setStrikeType("CE");
+                   Map.Entry<String,String> dhanCE= dhanData.entrySet().stream().filter(key-> key.getKey().contains("CE")).findFirst().get();
+                   strikeData.setDhanId(dhanCE.getValue());
+                   strikeData.setDhanSymbol(dhanCE.getKey());
+               }
+               else {
+                   strikeData.setStrikeType("PE");
+                   Map.Entry<String,String> dhanPE= dhanData.entrySet().stream().filter(key-> key.getKey().contains("PE")).findFirst().get();
+                   strikeData.setDhanId(dhanPE.getValue());
+                   strikeData.setDhanSymbol(dhanPE.getKey());
+
+               }
+               strikeTypeMap.put(strikeData.getStrikeType(),strikeData);
+           });
+           strikeFNLevelMap.put(stringMapEntry.getKey(),strikeTypeMap);
+       });
+       globalOptionsInfo.put(Expiry.FN_CURRENT.expiryName,strikeFNLevelMap);
        Map<String,Map<String,StrikeData>> strikeLevelMap=new HashMap<>();
+       globalOptionsInfo.put(Expiry.BNF_CURRENT.expiryName,strikeLevelMap);
        bankNiftyWeeklyOptions.entrySet().stream().forEach(stringMapEntry -> {
            Map<String,StrikeData> strikeTypeMap=new HashMap<>();
            Map<String,String> dhanData=dhanBankNiftyWeeklyOptions.get(stringMapEntry.getKey());

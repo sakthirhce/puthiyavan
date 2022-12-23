@@ -11,7 +11,7 @@ import com.sakthi.trade.fyer.service.TransactionService;
 import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.repo.OpenTradeDataBackupRepo;
 import com.sakthi.trade.repo.OpenTradeDataRepo;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.CommonUtil;
 import com.sakthi.trade.util.MathUtils;
 import com.sakthi.trade.worker.BrokerWorkerFactory;
@@ -60,7 +60,7 @@ public class NiftyOptionBuy935V2Test {
     @Autowired
     ZerodhaTransactionService zerodhaTransactionService;
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
 
     @Autowired
     BrokerWorkerFactory workerFactory;

@@ -24,6 +24,8 @@ public class User {
     boolean enabled;
     StraddleConfig straddleConfig;
     StraddleConfig niftyBuy935;
+
+    StraddleConfig expZeroToHero;
     StraddleConfig niftyBuy935V2;
     StraddleConfig bniftyBuy917;
     StraddleConfig bniftyBuy925;

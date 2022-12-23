@@ -1,16 +1,12 @@
 
 package com.sakthi.trade.options.buy.banknifty;
 
-import com.google.gson.Gson;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.sakthi.trade.domain.*;
 import com.sakthi.trade.fyer.mapper.FyerTransactionMapper;
 import com.sakthi.trade.fyer.service.TransactionService;
-import com.sakthi.trade.fyer.transactions.OrderResponseDTO;
-import com.sakthi.trade.fyer.transactions.OrderStatusResponseDTO;
-import com.sakthi.trade.fyer.transactions.PlaceOrderRequestDTO;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.CommonUtil;
 import com.sakthi.trade.util.MathUtils;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
@@ -19,7 +15,6 @@ import com.sakthi.trade.zerodha.models.HistoricalDataExtended;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
 import com.zerodhatech.models.HistoricalData;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Request;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
@@ -46,7 +41,6 @@ import org.jfree.data.xy.XYDataset;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
@@ -85,7 +79,7 @@ public class VwapRsiOiVolumeBuyBacktestTrueData {
     ZerodhaTransactionService zerodhaTransactionService;
 
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
     @Autowired
     FyerTransactionMapper fyerTransactionMapper;
     @Value("${vwap.rsi.oi.volume.lot}")

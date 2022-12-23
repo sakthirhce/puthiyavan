@@ -1,10 +1,8 @@
 package com.sakthi.trade.options;
 
-import com.opencsv.exceptions.CsvValidationException;
 import com.sakthi.trade.fyer.service.TransactionService;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.TelegramMessenger;
 
-import com.sakthi.trade.telegram.TelegramClient;
 import com.sakthi.trade.util.ZippingDirectory;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +35,7 @@ public class WeeklyDataBackup {
     String trendPath;
 
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
 
 
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
@@ -86,7 +84,7 @@ public class WeeklyDataBackup {
     ZippingDirectory zippingDirectory;
 
     @Autowired
-    SendMessage telegramClient;
+    TelegramMessenger telegramClient;
     @Value("${telegram.straddle.bot.token}")
     String telegramToken;
     @Value("${telegram.orb.bot.token}")

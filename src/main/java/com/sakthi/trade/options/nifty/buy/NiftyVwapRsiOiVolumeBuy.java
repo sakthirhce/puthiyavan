@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.sakthi.trade.domain.*;
 import com.sakthi.trade.fyer.mapper.FyerTransactionMapper;
 import com.sakthi.trade.fyer.service.TransactionService;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.CommonUtil;
 import com.sakthi.trade.util.MathUtils;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
@@ -17,7 +17,6 @@ import com.zerodhatech.models.Order;
 import com.zerodhatech.models.OrderParams;
 import com.zerodhatech.models.Position;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Request;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
@@ -89,7 +88,7 @@ public class NiftyVwapRsiOiVolumeBuy {
     ZerodhaTransactionService zerodhaTransactionService;
     Map<String, TradeData> tradeMap = new HashMap<>();
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
     @Autowired
     FyerTransactionMapper fyerTransactionMapper;
     @Value("${nifty.vwap.rsi.oi.volume.lot}")

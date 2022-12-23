@@ -3,7 +3,6 @@ package com.sakthi.trade;
 import com.binance.client.RequestOptions;
 import com.binance.client.impl.RestApiRequestImpl;
 import com.binance.client.impl.SyncRequestImpl;
-import com.binance.client.model.market.ExchangeInfoEntry;
 import com.google.gson.Gson;
 import com.opencsv.CSVReader;
 import com.sakthi.trade.algotest.backtest.data.Algotest;
@@ -30,7 +29,8 @@ import com.sakthi.trade.options.nifty.NIftyStraddleLongBackTest;
 import com.sakthi.trade.options.nifty.NiftyShortStraddleOI;
 import com.sakthi.trade.options.nifty.buy.*;
 import com.sakthi.trade.repo.*;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.DataBot;
+import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.truedata.HistoricRequestDTO;
 import com.sakthi.trade.util.MathUtils;
 import com.sakthi.trade.util.ZippingDirectory;
@@ -99,7 +99,10 @@ public class AutomationController {
     @Autowired
     TransactionService transactionService;
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
+
+    @Autowired
+    DataBot dataBot;
     /*@Autowired
     HistoricWebsocket historicWebsocket;*/
     @Autowired
@@ -943,7 +946,18 @@ NiftyOptionBuy935 niftyOptionBuy935;
        sendMessage.sendDocumentToTelegram("/home/hasvanth/Downloads/FINNIFTY/2022/Dec/2022-12-20/FINNIFTY_2022-12-20.zip","test");
 
     }
+    @GetMapping("/telegramMtest")
+    public void telegramMtest() throws Exception {
+        dataBot.sendMessage("hello",-713214125);
 
+    }
+    @Autowired
+    ExpBuy expBuy;
+    @GetMapping("/expBuy")
+    public void expBuy() throws Exception {
+        expBuy.buy();
+
+    }
     /*  @GetMapping("/shortStraddleTest")
       public void shortStraddleTest() throws Exception {
           bankNiftyShortStraddle.getWeeklyExpiryOptionsDetails();

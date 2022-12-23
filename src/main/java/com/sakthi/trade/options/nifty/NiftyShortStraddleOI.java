@@ -7,7 +7,7 @@ import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.eventday.EventDayConfiguration;
 import com.sakthi.trade.fyer.mapper.FyerTransactionMapper;
 import com.sakthi.trade.fyer.service.TransactionService;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.truedata.HistoricResponseDTO;
 import com.sakthi.trade.util.CommonUtil;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
@@ -81,7 +81,7 @@ public class NiftyShortStraddleOI {
     public Map<String, TradeData> tradeDataHashMap = new HashMap<>();
 
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
     private java.util.concurrent.Executors Executors;
 
     @Autowired

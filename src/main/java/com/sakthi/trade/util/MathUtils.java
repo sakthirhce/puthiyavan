@@ -304,27 +304,27 @@ public class MathUtils {
         String stockId=null;
         if("BNF".equals(index)) {
             stockId = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
-            if (zerodhaTransactionService.expDate.equals(currentDate)) {
+          //  if (zerodhaTransactionService.expDate.equals(currentDate)) {
                 strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.BNF_CURRENT.expiryName);
-            }
+         //   }
         }else if("NF".equals(index)){
             stockId = zerodhaTransactionService.niftyIndics.get("NIFTY 50");
-            if (zerodhaTransactionService.expDate.equals(currentDate)) {
+            //if (zerodhaTransactionService.expDate.equals(currentDate)) {
                 strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.NF_CURRENT.expiryName);
-            }
+          //  }
         }
         else if("FN".equals(index)){
             stockId = zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE");
-            if (zerodhaTransactionService.finExpDate.equals(currentDate)) {
-                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.NF_CURRENT.expiryName);
-            }
+          //  if (zerodhaTransactionService.finExpDate.equals(currentDate)) {
+                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.FN_CURRENT.expiryName);
+          //  }
         }
         Map<Double,Map.Entry<String, StrikeData>> ce=new HashMap<>();
         Map<Double,Map.Entry<String, StrikeData>> pe=new HashMap<>();
       //  Map<Double,Map.Entry<String, StrikeData>> cepe=new HashMap<>();
         Map<String,Map<String,StrikeData>> strikeMasterMap=strikeMasterMap1;
         //   Map<String,Map<String,String>> dhanStrikeMasterMap=dhanStrikeMasterMap1;
-        String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+11:15:00";
+        String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:30:00";
         String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
         HistoricalData historicalData = new HistoricalData();
         JSONObject json = new JSONObject(response);
@@ -538,7 +538,7 @@ public class MathUtils {
         return closePrice.get();
     }
     public double callStrikeWithName(StrikeData strikeData, String currentDate,String checkTime,String strikeName) {
-        String historicURLStrike = "https://api.kite.trade/instruments/historical/" + strikeData.getZerodhaId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
+        String historicURLStrike = "https://api.kite.trade/instruments/historical/" + strikeData.getZerodhaId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:34:00";
         String priceResponse = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURLStrike));
       //  LOGGER.info("API response:"+strikeName+":" + priceResponse);
         HistoricalData historicalPriceData = new HistoricalData();

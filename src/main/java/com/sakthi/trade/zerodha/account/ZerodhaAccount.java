@@ -11,7 +11,7 @@ import com.sakthi.trade.fyer.model.StandardPivot;
 import com.sakthi.trade.fyer.model.StandardPivots;
 import com.sakthi.trade.fyer.service.TransactionService;
 import com.sakthi.trade.repo.*;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.MathUtils;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import com.zerodhatech.kiteconnect.KiteConnect;
@@ -26,7 +26,6 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.xpath.operations.Bool;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -73,7 +72,7 @@ public class ZerodhaAccount {
     @Value("${zerodha.pin}")
     String zerodhaPin;
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
     @Value("${chromedriver.path}")
     String driverPath;
     @Value("${test.profile:false}")

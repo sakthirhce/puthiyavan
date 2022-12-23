@@ -1,6 +1,5 @@
 package com.sakthi.trade.options.banknifty;
 
-import com.google.gson.Gson;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
@@ -9,7 +8,7 @@ import com.sakthi.trade.domain.OptionOIData;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.eventday.EventDayConfiguration;
 import com.sakthi.trade.fyer.service.TransactionService;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.truedata.HistoricResponseDTO;
 import com.sakthi.trade.util.CommonUtil;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
@@ -23,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
@@ -76,7 +74,7 @@ public class BankNiftyShortStraddleOIBuy {
     String telegramToken;
 
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
 
     OptionOIData optionOIData = new OptionOIData();
 

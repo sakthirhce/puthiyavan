@@ -8,7 +8,7 @@ import com.sakthi.trade.entity.OpenTradeDataEntity;
 import com.sakthi.trade.fyer.service.TransactionService;
 import com.sakthi.trade.repo.OpenTradeDataBackupRepo;
 import com.sakthi.trade.repo.OpenTradeDataRepo;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.CommonUtil;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import com.sakthi.trade.zerodha.account.User;
@@ -22,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
@@ -58,7 +57,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong920 {
     @Autowired
     TransactionService transactionService;
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
 
     ExecutorService executorService = java.util.concurrent.Executors.newFixedThreadPool(5);
     @Autowired

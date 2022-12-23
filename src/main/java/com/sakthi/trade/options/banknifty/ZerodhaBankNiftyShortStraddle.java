@@ -9,7 +9,7 @@ import com.sakthi.trade.fyer.service.TransactionService;
 import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.repo.OpenTradeDataBackupRepo;
 import com.sakthi.trade.repo.OpenTradeDataRepo;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.CommonUtil;
 import com.sakthi.trade.worker.BrokerWorker;
 import com.sakthi.trade.worker.BrokerWorkerFactory;
@@ -63,7 +63,7 @@ public class ZerodhaBankNiftyShortStraddle {
     @Autowired
     TransactionService transactionService;
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
     private java.util.concurrent.Executors Executors;
 
     ExecutorService executorService = java.util.concurrent.Executors.newFixedThreadPool(5);

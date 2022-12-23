@@ -7,7 +7,7 @@ import com.sakthi.trade.domain.Brokerage;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.fyer.mapper.FyerTransactionMapper;
 import com.sakthi.trade.fyer.service.TransactionService;
-import com.sakthi.trade.telegram.SendMessage;
+import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.CommonUtil;
 import com.sakthi.trade.util.MathUtils;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
@@ -82,7 +82,7 @@ public class VwapRsiOiVolumeSelling {
     ZerodhaTransactionService zerodhaTransactionService;
 
     @Autowired
-    SendMessage sendMessage;
+    TelegramMessenger sendMessage;
     @Autowired
     FyerTransactionMapper fyerTransactionMapper;
     @Value("${vwap.rsi.oi.volume.lot}")
