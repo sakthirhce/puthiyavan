@@ -52,6 +52,7 @@ public class ZerodhaTransactionService {
     String dhanInstrumentURL;
     public Map<String,String> lsSymbols=new HashMap<>();
     public Map<String,String> lsHoliday=new HashMap<>();
+    public Map<String,String> lsFinHoliday=new HashMap<>();
     public Map<String,String> niftyIndics=new HashMap<>();
 
     public Map<String,Map<String,String>> currentFutures=new HashMap<>();
@@ -61,13 +62,15 @@ public class ZerodhaTransactionService {
     public Map<String,Map<String,String>> bankNiftyNextWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>> niftyNextWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>> niftyWeeklyOptions=new HashMap<>();
-
+    public Map<String,Map<String,String>> finNiftyNextWeeklyOptions=new HashMap<>();
+    public Map<String,Map<String,String>> finNiftyWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>> dhanBankNiftyWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>> dhanBankNiftyNextWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>> dhanNiftyNextWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>>dhanNiftyWeeklyOptions=new HashMap<>();
     public Map<String,Map<String, Map<String, StrikeData>>>globalOptionsInfo=new HashMap<>();
     public String expDate;
+    public String finExpDate;
     @Autowired
     SendMessage sendMessage;
     @Value("${telegram.orb.bot.token}")
@@ -118,6 +121,8 @@ public class ZerodhaTransactionService {
         }
         return currentWeekExpCal.getTime();
     }
+    @Value("${test.profile:false}")
+    Boolean testProfile;
     @Scheduled(cron="${zerodha.get.instrument}")
     public void getInstrument() throws IOException, CsvValidationException {
         CSVReader csvReader = new CSVReader(new FileReader(trendPath + "/fo_mktlots.csv"));
@@ -128,6 +133,11 @@ public class ZerodhaTransactionService {
         while ((lineHoliday = csvHolidayReader.readNext()) != null) {
             lsHoliday.put(lineHoliday[0].trim(),lineHoliday[0].trim());
         }
+        CSVReader csvHolidayFinReader = new CSVReader(new FileReader(trendPath + "/trading_tuesday_holiday_2021.csv"));
+        String[] lineFinHoliday;
+        while ((lineFinHoliday = csvHolidayFinReader.readNext()) != null) {
+            lsFinHoliday.put(lineFinHoliday[0].trim(),lineFinHoliday[0].trim());
+        }
         int i=0;
 
         while ((line = csvReader.readNext()) != null) {
@@ -137,6 +147,7 @@ public class ZerodhaTransactionService {
             i++;
         }
         Calendar calendar = Calendar.getInstance();
+        Calendar finniftycalendar = Calendar.getInstance();
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat formatMM = new SimpleDateFormat("MM-dd");
         SimpleDateFormat formatddMMM = new SimpleDateFormat("dd-MMM");
@@ -151,15 +162,23 @@ public class ZerodhaTransactionService {
         System.out.println(calendar.get(DAY_OF_WEEK));
         //TODO: add logic to determine wednesday exp date if thursday is trade holiday
         int dayadd = 5 - calendar.get(DAY_OF_WEEK);
+        int findayadd = 3 - finniftycalendar.get(DAY_OF_WEEK);
         if (dayadd > 0) {
             calendar.add(DAY_OF_MONTH, dayadd);
-        } else if (dayadd ==-2) {
-            calendar.add(DAY_OF_MONTH, 5);
         } else if (dayadd < 0) {
-            calendar.add(DAY_OF_MONTH, 6);
+            int dayadd1 =dayadd+7;
+            calendar.add(DAY_OF_MONTH, dayadd1);
+        }
+        if (findayadd > 0) {
+            finniftycalendar.add(DAY_OF_MONTH, findayadd);
+        }else if (findayadd < 0) {
+            int findayadd1 =findayadd+7;
+            finniftycalendar.add(DAY_OF_MONTH, findayadd1);
         }
         Date date = calendar.getTime();
+        Date findate = finniftycalendar.getTime();
         String weekExp=format.format(date);
+        String finWeekExp=format.format(findate);
         boolean currentWeekExpOff=false;
         if (lsHoliday.containsKey(weekExp)) {
             currentWeekExpOff=true;
@@ -170,15 +189,31 @@ public class ZerodhaTransactionService {
             weekExp=format.format(date);
             log.info("Thursday falling on holiday. recalculated weekly exp date is:"+weekExp);
         }
+        boolean currentFinWeekExpOff=false;
+        if (lsFinHoliday.containsKey(finWeekExp)) {
+            currentFinWeekExpOff=true;
+        }
+        if(currentFinWeekExpOff){
+            finniftycalendar.add(DAY_OF_MONTH, -1);
+            findate=finniftycalendar.getTime();
+            finWeekExp=format.format(findate);
+            log.info("Thursday falling on holiday. recalculated weekly exp date is:"+weekExp);
+        }
         expDate=weekExp;
+        finExpDate=finWeekExp;
         Date currentWeekExpDate=date;
+        Date currentFinWeekExpDate=findate;
         Date monthlyExpDate=getMonthExpDay();
         String monthlyExp=format.format(monthlyExpDate);
         Date nextWeekExpDateRes=nextWeekExpDate(calendar,currentWeekExpOff,lsHoliday);
         String nextWeekExpDate=format.format(nextWeekExpDateRes);
         String instrumentURI = baseURL+instrumentURL;
-        String response=transactionService.callAPI(transactionService.createZerodhaGetRequest(instrumentURI));
-
+        String response=null;
+        if(!testProfile) {
+            response = transactionService.callAPI(transactionService.createZerodhaGetRequest(instrumentURI));
+        }else {
+             response = transactionService.callAPI(transactionService.createZerodhaGetRequestTest(instrumentURI));
+        }
         String[] lines = response.split("\\r?\\n");
         System.out.println("output:"+ lines.length);
         for ( int j=0; j< lines.length;j++){
@@ -205,6 +240,28 @@ public class ZerodhaTransactionService {
                     Map<String,String> map=new HashMap<>();
                     map.put(data[2],data[0]);
                     bankNiftyWeeklyOptions.put(data[6], map);
+                }
+            }
+            if( index.equals("FINNIFTY") &&  data[5].equals(finWeekExp) &&  data[10].equals("NFO-OPT") && data[11].equals("NFO")){
+                if(finNiftyWeeklyOptions.get(data[6])!=null){
+                    Map<String,String> map=finNiftyWeeklyOptions.get(data[6]);
+                    map.put(data[2],data[0]);
+                    finNiftyWeeklyOptions.put(data[6], map);
+                }else {
+                    Map<String,String> map=new HashMap<>();
+                    map.put(data[2],data[0]);
+                    finNiftyWeeklyOptions.put(data[6], map);
+                }
+            }
+            if( index.equals("FINNIFTY") &&  data[5].equals(nextWeekExpDate) &&  data[10].equals("NFO-OPT") && data[11].equals("NFO")){
+                if(finNiftyNextWeeklyOptions.get(data[6])!=null){
+                    Map<String,String> map=finNiftyNextWeeklyOptions.get(data[6]);
+                    map.put(data[2],data[0]);
+                    finNiftyNextWeeklyOptions.put(data[6], map);
+                }else {
+                    Map<String,String> map=new HashMap<>();
+                    map.put(data[2],data[0]);
+                    finNiftyNextWeeklyOptions.put(data[6], map);
                 }
             }
             if( index.equals("BANKNIFTY") &&  data[5].equals(nextWeekExpDate) &&  data[10].equals("NFO-OPT") && data[11].equals("NFO")){
@@ -260,6 +317,7 @@ public class ZerodhaTransactionService {
         System.out.println(bankNiftyWeeklyOptions.size());
         sendMessage.sendToTelegram("Total BNF current week expiry strike count :" + bankNiftyWeeklyOptions.size(), telegramToken,"-713214125");
         sendMessage.sendToTelegram("Total BNF Next Week expiry strike count :" + bankNiftyNextWeeklyOptions.size(), telegramToken,"-713214125");
+        sendMessage.sendToTelegram("Total Fin nifty expiry strike count:" + finNiftyWeeklyOptions.size(), telegramToken,"-713214125");
         sendMessage.sendToTelegram("Total BNF Futures strike Count for monthly exp :" +monthlyExp+":"+ currentFutures.size(), telegramToken,"-713214125");
    try{
        String dhanResponse=transactionService.downloadInstrumentData(dhanInstrumentURL);

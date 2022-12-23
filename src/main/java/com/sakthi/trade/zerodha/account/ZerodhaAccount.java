@@ -26,6 +26,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.xpath.operations.Bool;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -36,8 +37,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URISyntaxException;
@@ -73,7 +76,8 @@ public class ZerodhaAccount {
     SendMessage sendMessage;
     @Value("${chromedriver.path}")
     String driverPath;
-
+    @Value("${test.profile:false}")
+    Boolean testProfile;
     @Autowired
     DhanRoutes dhanRoutes;
     @Autowired
@@ -260,114 +264,151 @@ public class ZerodhaAccount {
     @Scheduled(cron = "${zerodha.generate.token}")
     @PostConstruct
     public String generateMultiUserAccessToken() throws IOException, InterruptedException, URISyntaxException {
-        userList.getUser().stream().filter(user1 -> user1.enabled).forEach(user1->{
-            if(user1.broker.equals("zerodha")) {
-                if (user1.tokenCount < 2) {
-                    KiteConnect kiteConnect;
-                    System.setProperty("webdriver.chrome.driver", driverPath);
-                    ChromeOptions ChromeOptions = new ChromeOptions();
-                    ChromeOptions.addArguments("--headless", "window-size=1024,768", "--no-sandbox");
-                    WebDriver webDriver = new ChromeDriver(ChromeOptions);
-                    try {
-                        kiteConnect = new KiteConnect(user1.appkey);
-                        kiteConnect.setUserId(user1.name);
-                        String url = kiteConnect.getLoginURL();
+        if(!testProfile) {
+            userList.getUser().stream().filter(user1 -> user1.enabled).forEach(user1 -> {
+                if (user1.broker.equals("zerodha")) {
+                    if (user1.tokenCount < 2) {
+                        KiteConnect kiteConnect;
+                        System.setProperty("webdriver.chrome.driver", driverPath);
+                        ChromeOptions ChromeOptions = new ChromeOptions();
+                        ChromeOptions.addArguments("--headless", "window-size=1024,768", "--no-sandbox");
+                        WebDriver webDriver = new ChromeDriver(ChromeOptions);
+                        try {
+                            kiteConnect = new KiteConnect(user1.appkey);
+                            kiteConnect.setUserId(user1.name);
+                            String url = kiteConnect.getLoginURL();
 
 
-                        AuthRequestDTO authRequest = new AuthRequestDTO();
-                        webDriver.get(url);
+                            AuthRequestDTO authRequest = new AuthRequestDTO();
+                            webDriver.get(url);
 
-                        Thread.sleep(1000);
+                            Thread.sleep(1000);
 
-                        webDriver.findElements(By.xpath("//input")).get(0).sendKeys(user1.name);
-                        webDriver.findElements(By.xpath("//input")).get(1).sendKeys(user1.password);
-                        webDriver.findElements(By.xpath("//button")).get(0).click();
-                        //       takeSnapShot(webDriver, "/home/hasvanth/test3_"+user1.name+".png");
-                        Thread.sleep(1000);
-                        String totp = getTotp(user1.totp);
-                        webDriver.findElements(By.xpath("//input")).get(0).sendKeys(totp);
-                        //      takeSnapShot(webDriver, "/home/hasvanth/test2_"+user1.name+".png");
-                        webDriver.findElements(By.xpath("//button")).get(0).click();
+                            webDriver.findElements(By.xpath("//input")).get(0).sendKeys(user1.name);
+                            webDriver.findElements(By.xpath("//input")).get(1).sendKeys(user1.password);
+                            webDriver.findElements(By.xpath("//button")).get(0).click();
+                            //       takeSnapShot(webDriver, "/home/hasvanth/test3_"+user1.name+".png");
+                            Thread.sleep(1000);
+                            String totp = getTotp(user1.totp);
+                            webDriver.findElements(By.xpath("//input")).get(0).sendKeys(totp);
+                            //      takeSnapShot(webDriver, "/home/hasvanth/test2_"+user1.name+".png");
+                            webDriver.findElements(By.xpath("//button")).get(0).click();
 
-                        Thread.sleep(1000);
-                        //         takeSnapShot(webDriver, "/home/hasvanth/test1_"+user1.name+".png");
+                            Thread.sleep(1000);
+                            //         takeSnapShot(webDriver, "/home/hasvanth/test1_"+user1.name+".png");
                /* webDriver.findElements(By.xpath("//input")).get(0).sendKeys(zerodhaPin);
                 this.takeSnapShot(webDriver, "/home/hasvanth/test3.png");
                 webDriver.findElements(By.xpath("//button")).get(0).click();*/
-                        Thread.sleep(1000);
-                        System.out.println(webDriver.getCurrentUrl());
-                        List<NameValuePair> queryParams = new URIBuilder(webDriver.getCurrentUrl()).getQueryParams();
-                        String requestToken = queryParams.stream().filter(param -> param.getName().equals("request_token")).map(NameValuePair::getValue).findFirst().orElse("");
+                            Thread.sleep(1000);
+                            System.out.println(webDriver.getCurrentUrl());
+                            List<NameValuePair> queryParams = new URIBuilder(webDriver.getCurrentUrl()).getQueryParams();
+                            String requestToken = queryParams.stream().filter(param -> param.getName().equals("request_token")).map(NameValuePair::getValue).findFirst().orElse("");
 
-                        User user = kiteConnect.generateSession(requestToken, user1.secret);
-                        System.out.println(user.accessToken);
-                        kiteConnect.setAccessToken(user.accessToken);
-                        token = user.accessToken;
-                        kiteConnect.setPublicToken(user.publicToken);
-                        Margin margins = kiteConnect.getMargins("equity");
-                        LOGGER.info(margins.available.cash);
-                        LOGGER.info(margins.utilised.debits);
+                            User user = kiteConnect.generateSession(requestToken, user1.secret);
+                            System.out.println(user.accessToken);
+                            kiteConnect.setAccessToken(user.accessToken);
+                            token = user.accessToken;
+                            kiteConnect.setPublicToken(user.publicToken);
+                            Margin margins = kiteConnect.getMargins("equity");
+                            LOGGER.info(margins.available.cash);
+                            LOGGER.info(margins.utilised.debits);
+                            String botId = "";
+                            TelegramBot telegramBot = user1.getTelegramBot();
+                            if (telegramBot != null) {
+                                botId = telegramBot.getGroupId();
+                            }
+                            String botIdFinal = botId;
+
+                            user1.kiteConnect = kiteConnect;
+                            user1.tokenGenerated = true;
+                            if (user1.admin) {
+                                transactionService.setup();
+                                kiteSdk = kiteConnect;
+                                sendMessage.sendToTelegram("Token for user:" + user.userName + ":" + kiteConnect.getAccessToken(), telegramToken, botIdFinal);
+                                try {
+                                    Double amount = Double.parseDouble(margins.available.cash) - 1000000;
+                                    sendMessage.sendToTelegram("Available Cash :" + new BigDecimal(amount).setScale(0, RoundingMode.HALF_UP).doubleValue(), telegramToken, botIdFinal);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            } else {
+                                sendMessage.sendToTelegram("Token for user:" + user.userName + ":" + kiteConnect.getAccessToken(), telegramToken, botIdFinal);
+                                sendMessage.sendToTelegram("Available Cash :" + +new BigDecimal(margins.available.cash).setScale(0, RoundingMode.HALF_UP).doubleValue(), telegramToken, botIdFinal);
+                            }
+                            user1.tokenCount = user1.tokenCount + 1;
+                            webDriver.quit();
+                        } catch (URISyntaxException | IOException | KiteException | InterruptedException e) {
+                            sendMessage.sendToTelegram("Token generation failed" + e.getMessage(), telegramToken, "-713214125");
+                            try {
+                                //takeSnapShot(webDriver, "/home/ubuntu/test1_"+user1.name+".png");
+                            } catch (Exception ex) {
+                                throw new RuntimeException(ex);
+                            }
+
+                            e.printStackTrace();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            try {
+                                if (user1.getStraddleConfigOld().enabled) {
+                                    sendMessage.sendToTelegram("Token generation failed", telegramToken);
+                                } else {
+                                    sendMessage.sendToTelegram("Token generation failed", telegramToken, "-713214125");
+                                }
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                        }
+                    }
+                } else if (user1.broker.equals("dhan")) {
+                    try {
                         String botId = "";
                         TelegramBot telegramBot = user1.getTelegramBot();
                         if (telegramBot != null) {
                             botId = telegramBot.getGroupId();
                         }
                         String botIdFinal = botId;
-
-                        user1.kiteConnect = kiteConnect;
-                        user1.tokenGenerated = true;
-                        if (user1.admin) {
-                            transactionService.setup();
-                            kiteSdk = kiteConnect;
-                            sendMessage.sendToTelegram("Token for user:" + user.userName + ":" + kiteConnect.getAccessToken(), telegramToken, botIdFinal);
-                            try {
-                                Double amount = Double.parseDouble(margins.available.cash) - 1000000;
-                                sendMessage.sendToTelegram("Available Cash :" + new BigDecimal(amount).setScale(0, RoundingMode.HALF_UP).doubleValue(), telegramToken, botIdFinal);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        } else {
-                            sendMessage.sendToTelegram("Token for user:" + user.userName + ":" + kiteConnect.getAccessToken(), telegramToken, botIdFinal);
-                            sendMessage.sendToTelegram("Available Cash :" + +new BigDecimal(margins.available.cash).setScale(0, RoundingMode.HALF_UP).doubleValue(), telegramToken, botIdFinal);
-                        }
-                        user1.tokenCount = user1.tokenCount + 1;
-                        webDriver.quit();
-                    } catch (URISyntaxException | IOException | KiteException | InterruptedException e) {
-                        try {
-                            //takeSnapShot(webDriver, "/home/ubuntu/test1_"+user1.name+".png");
-                        } catch (Exception ex) {
-                            throw new RuntimeException(ex);
-                        }
-                        sendMessage.sendToTelegram("Token generation failed" + e.getMessage(), telegramToken, "-713214125");
-                        e.printStackTrace();
+                        Request request = transactionService.createGetRequests(dhanRoutes.get("funds"), user1.getAccessToken());
+                        String response = transactionService.callAPI(request);
+                        System.out.println(response);
+                        com.sakthi.trade.dhan.schema.FundResponseDTO fundResponseDTO = new Gson().fromJson(response, FundResponseDTO.class);
+                        sendMessage.sendToTelegram("Dhan client ID :" + fundResponseDTO.getDhanClientId() + ":" + user1.clientName + " : Available cash: " + fundResponseDTO.getAvailabelBalance().setScale(0, RoundingMode.HALF_UP).doubleValue(), telegramToken, botIdFinal);
                     } catch (Exception e) {
+                        sendMessage.sendToTelegram("Dhan client ID :" + user1.getClientId() + "Token generation failed" + e.getMessage(), telegramToken, "-713214125");
                         e.printStackTrace();
-                        try {
-                            if (user1.getStraddleConfigOld().enabled) {
-                                sendMessage.sendToTelegram("Token generation failed", telegramToken);
-                            } else {
-                                sendMessage.sendToTelegram("Token generation failed", telegramToken, "-713214125");
-                            }
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                        }
                     }
                 }
-            }else if(user1.broker.equals("dhan")) {
-                String botId = "";
-                TelegramBot telegramBot = user1.getTelegramBot();
-                if (telegramBot != null) {
-                    botId = telegramBot.getGroupId();
-                }
-                String botIdFinal = botId;
-                Request request =transactionService.createGetRequests(dhanRoutes.get("funds"),user1.getAccessToken());
-                String response= transactionService.callAPI(request);
-                System.out.println(response);
-                com.sakthi.trade.dhan.schema.FundResponseDTO fundResponseDTO=new Gson().fromJson(response, FundResponseDTO.class);
-                sendMessage.sendToTelegram("Dhan client ID :" + fundResponseDTO.getDhanClientId() +":"+user1.clientName+" : Available cash: "+fundResponseDTO.getAvailabelBalance().setScale(0, RoundingMode.HALF_UP).doubleValue(), telegramToken, botIdFinal);
+            });
+            try {
+                // Execute the "df" command
+                Process p = Runtime.getRuntime().exec("df -h");
+                p.waitFor();
 
+                // Read the output of the command
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String line;
+                int i=0;
+                while ((line = reader.readLine()) != null) {
+                    if(i>0) {
+
+                        // Split the output line by spaces
+                        String[] elements = line.split("\\s+");
+                        // The third element is the total disk space, and the fourth element is the used disk space
+                        if(elements[5].equals("/")) {
+                            String used = elements[2];
+                            String free = elements[3];
+                            // Calculate the free disk space
+                            String usedPerf = elements[4];
+                            String total = elements[1];
+                            sendMessage.sendToTelegram("Total: " + total + " Used:" + used + " Free:" + free + " Used Percent:" + usedPerf, telegramToken, "-713214125");
+                        }
+
+                    }
+                    i++;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-    });
+        }
         return null;
     }
 

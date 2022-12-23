@@ -228,6 +228,7 @@ public class NiftyOptionBuy935 {
                                         tradeData.setUserId(user.getName());
                                         tradeData.setStockId(Integer.parseInt(atmNiftyStrikeMap.getValue().getZerodhaId()));
                                         tradeData.setBuyPrice(BigDecimal.valueOf(triggerPriceAtomic.get()));
+                                        tradeData.setBuyTradedPrice(BigDecimal.valueOf(triggerPriceAtomic.get()));
                                         if(user.getBroker().equals("dhan")){
                                             tradeData.setStockName(atmNiftyStrikeMap.getValue().getDhanSymbol());
                                             user.getNiftyBuy935().straddleTradeMap.put(tradeData.getStockName(), tradeData);
@@ -420,9 +421,9 @@ public class NiftyOptionBuy935 {
                                                     LOGGER.info("buy completed" + trendTradeData.trueDataSymbol + ":" + trendTradeData.getEntryOrderId());
                                                     try {
                                                         //   LOGGER.info("buy completed");
-                                                        trendTradeData.setBuyTradedPrice(new BigDecimal(order.averagePrice));
+
                                                         try {
-                                                            BigDecimal slipage = (trendTradeData.getBuyPrice().subtract(trendTradeData.getBuyTradedPrice())).multiply(new BigDecimal(50)).setScale(0, RoundingMode.UP);
+                                                            //BigDecimal slipage = (trendTradeData.getBuyPrice().subtract(trendTradeData.getBuyTradedPrice())).multiply(new BigDecimal(50)).setScale(0, RoundingMode.UP);
                                                             String message = MessageFormat.format("Option Buy Triggered for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName());
                                                             LOGGER.info(message);
                                                             sendMessage.sendToTelegram(message, telegramToken);
@@ -448,7 +449,7 @@ public class NiftyOptionBuy935 {
 
                                                         try {
                                                             LOGGER.info("input:" + gson.toJson(orderParams));
-                                                            orderd =brokerWorker.placeOrder(orderParams,user,null);
+                                                            orderd =brokerWorker.placeOrder(orderParams,user,trendTradeData);
                                                             trendTradeData.isSlPlaced = true;
                                                             trendTradeData.setSlPrice(triggerPriceTemp);
                                                             trendTradeData.setSlOrderId(orderd.orderId);

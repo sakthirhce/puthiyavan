@@ -7,8 +7,6 @@ import com.binance.client.model.market.ExchangeInfoEntry;
 import com.google.gson.Gson;
 import com.opencsv.CSVReader;
 import com.sakthi.trade.algotest.backtest.data.Algotest;
-import com.sakthi.trade.aliceblue.AliceAccount;
-import com.sakthi.trade.binance.*;
 import com.sakthi.trade.domain.*;
 import com.sakthi.trade.entity.*;
 import com.sakthi.trade.futures.banknifty.BNFFuturesTrendFollowing;
@@ -18,7 +16,6 @@ import com.sakthi.trade.fyer.mapper.FyerTransactionMapper;
 import com.sakthi.trade.fyer.service.TransactionService;
 import com.sakthi.trade.fyer.transactions.OrderStatusResponseDTO;
 import com.sakthi.trade.fyer.transactions.PlaceOrderRequestDTO;
-import com.sakthi.trade.index.option.data.load.BankNiftyDataLoad;
 import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.options.WeeklyDataBackup;
 import com.sakthi.trade.options.banknifty.*;
@@ -28,15 +25,15 @@ import com.sakthi.trade.options.banknifty.buy.BNiftyOptionBuy935;
 import com.sakthi.trade.options.buy.banknifty.IndexGapBacktest;
 import com.sakthi.trade.options.buy.banknifty.VwapRsiOiVolumeBuyBacktest;
 import com.sakthi.trade.options.buy.banknifty.VwapRsiOiVolumeBuyBacktestTrueData;
+import com.sakthi.trade.options.nifty.NIftyORBBackTest;
 import com.sakthi.trade.options.nifty.NIftyStraddleLongBackTest;
 import com.sakthi.trade.options.nifty.NiftyShortStraddleOI;
 import com.sakthi.trade.options.nifty.buy.*;
 import com.sakthi.trade.repo.*;
 import com.sakthi.trade.telegram.SendMessage;
-import com.sakthi.trade.trend.ZerodhaTrendScheduler;
-import com.sakthi.trade.trend.ZerodhaTrendSchedulerTest;
 import com.sakthi.trade.truedata.HistoricRequestDTO;
 import com.sakthi.trade.util.MathUtils;
+import com.sakthi.trade.util.ZippingDirectory;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import com.sakthi.trade.zerodha.account.UserList;
 import com.sakthi.trade.zerodha.account.ZerodhaAccount;
@@ -100,8 +97,6 @@ public class AutomationController {
     @Autowired
     ZerodhaTransactionService instrumentService;
     @Autowired
-    ZerodhaTrendScheduler zerodhaTrendScheduler;
-    @Autowired
     TransactionService transactionService;
     @Autowired
     SendMessage sendMessage;
@@ -131,8 +126,6 @@ public class AutomationController {
     @Autowired
     ZerodhaAccount zerodhaAccount;
 
-    @Autowired
-    AliceAccount aliceaccount;
 
     /*@Autowired
     VwapRsiOiVolumeBuy vwapRsiOiVolumeBuy;*/
@@ -152,8 +145,6 @@ public class AutomationController {
     NiftyVwapRsiOiVolumeBuyBacktest niftyVwapRsiOiVolumeBuyBacktest;
 
     @Autowired
-    ZerodhaTrendSchedulerTest zerodhaTrendSchedulerTest;
-    @Autowired
     BNFFuturesTrendFollowing bnfFuturesTrendFollowing;
     @Autowired
     ZerodhaBankNiftyShortStraddleWithLong zerodhaBankNiftyShortStraddleWithLong;
@@ -172,8 +163,6 @@ public class AutomationController {
     @Autowired
     VwapRsiOiVolumeBuyBacktestTrueData vwapRsiOiVolumeBuyBacktestTrueData;
     @Autowired
-    BankNiftyDataLoad bankNiftyDataLoad;
-    @Autowired
     BankNiftyShortStraddleOIBuyBacktest bankNiftyShortStraddleOIBuyBacktest;
     @Autowired
     NiftyShortStraddleOI niftyShortStraddleOI;
@@ -188,19 +177,9 @@ public class AutomationController {
     @Autowired
     BankNiftyOptionSelling1 bankNiftyOptionSelling1;
     @Autowired
-    BinanceAccount binanceAccount;
-    @Autowired
-    BinanceTrendBacktest binanceTrend;
-    @Autowired
-    BinanceTrendBacktestNew binanceTrendNew;
-    @Autowired
     UserLoginRepository userLoginRepository;
     @Autowired
     CryptoRepository cryptoRepository;
-    @Autowired
-    BinanceTrendLive binanceTrendlive;
-    @Autowired
-    BinanceTrendBacktest binanceTrendBacktest;
     @Value("${binance.sathiyaseelanrhce.v11.secret}")
     private String binanceSecretKey;
     @Value("${binance.sathiyaseelanrhce.v11.apikey}")
@@ -208,16 +187,6 @@ public class AutomationController {
     RestApiRequestImpl restApiRequest = new RestApiRequestImpl(binanceApiKey, binanceSecretKey, new RequestOptions());
     SyncRequestImpl syncRequest = new SyncRequestImpl(restApiRequest);
 
-    @GetMapping("/aliceTokenTest")
-    public void aliceToken() throws Exception {
-        aliceaccount.aliceToken();
-        aliceaccount.aliceWebsocket();
-    }
-
-    @PostMapping("/postAliceData")
-    public void postAliceData(@RequestBody String body) throws Exception {
-        aliceaccount.session.getAsyncRemote().sendText(body);
-    }
 
     @GetMapping("/zerodhatest")
     public void zerodhaGenerateToken() throws Exception {
@@ -509,15 +478,6 @@ String stockId;
         HttpHeaders responseHeaders = new HttpHeaders();
         return new ResponseEntity<>(new Gson().toJson(tradeData), responseHeaders, HttpStatus.OK);
     }
-    @Autowired
-   com.sakthi.trade.report.TradeReport tradeReport;
-    @PostMapping("/tradeDataReport")
-    public ResponseEntity<String> tradeDataReport(@RequestBody UserInput userInput) throws Exception {
-        List<TradeData> tradeData= tradeReport.tradeReport(userInput.getUserId(),userInput.getDate());
-        HttpHeaders responseHeaders = new HttpHeaders();
-        return new ResponseEntity<>(new Gson().toJson(tradeData), responseHeaders, HttpStatus.OK);
-    }
-
     @GetMapping("/zerodhaloginmtest")
     public void zerodhaloginmtest() throws Exception {
         zerodhaAccount.generateMultiUserAccessToken();
@@ -541,21 +501,21 @@ NiftyOptionBuy935 niftyOptionBuy935;
     public void generateInstrument() throws Exception {
         instrumentService.getInstrument();
     }
+    @Autowired
+    ZippingDirectory zippingDirectory;
 
     @GetMapping("/zerodha_backup")
     public void weeklyDataBackup() throws Exception {
         weeklyDataBackup.dataBackUp();
+        //       zippingDirectory.test();
+
     }
 
     @GetMapping("/monitorPositionSize")
     public void monitorPositionSize() throws Exception, KiteException {
         zerodhaAccount.monitorPositionSize();
     }
-    @GetMapping("/zerodhaNewTrend")
-    public void newTrend(@RequestParam int day, @RequestParam boolean isOpenPriceSL, @RequestParam String slPer, @RequestParam String gainPer, @RequestParam String margin, @RequestParam int topNumber, @RequestParam boolean isPyramid, @RequestParam boolean shortTest) throws Exception, KiteException {
-        zerodhaTrendSchedulerTest.trendScheduler(day, isOpenPriceSL, slPer, gainPer, margin, topNumber, isPyramid, shortTest);
 
-    }
   /*  @GetMapping("/zerodhatrend")
     public void trendLive() throws Exception, KiteException {
         zerodhaAccount.generateAccessToken();
@@ -707,6 +667,13 @@ NiftyOptionBuy935 niftyOptionBuy935;
         bankNiftyOiSellingBackTest.sell(day, tf, tailSL, target, slipage);
 
     }
+    @Autowired
+    NIftyORBBackTest nIftyORBBackTest;
+    @GetMapping("/NIftyORBBackTest")
+    public void NIftyORBBackTest(@RequestParam int day) throws Exception, KiteException {
+        nIftyORBBackTest.ORB(day);
+
+    }
 
     @GetMapping("/vwapSellTest")
     public void vwapSellTest(@RequestParam int day, @RequestParam String tf, @RequestParam String tailSL, @RequestParam String target, @RequestParam String slipage) throws Exception, KiteException {
@@ -829,19 +796,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
         historicWebsocket.preOpenSchedule();
     }*/
 
-    @GetMapping("/bankNiftyDataLoad")
-    public void bankNiftyDataLoad() throws Exception, KiteException {
-
-        bankNiftyDataLoad.loadData();
-
-    }
-
-    @GetMapping("/loadDataLatest")
-    public void loadDataLatest() throws Exception, KiteException {
-
-        bankNiftyDataLoad.loadDataLatest();
-
-    }
 
     @GetMapping("/trendTestBuy")
     public void trendTestBuy(@RequestParam int day, @RequestParam String[] stocks) throws Exception {
@@ -986,7 +940,7 @@ NiftyOptionBuy935 niftyOptionBuy935;
     }*/
     @GetMapping("/telegramtest")
     public void telegramtest() throws Exception {
-        sendMessage.sendToTelegram("System Cancelled SL HEROMOTOCORP", telegramToken);
+       sendMessage.sendDocumentToTelegram("/home/hasvanth/Downloads/FINNIFTY/2022/Dec/2022-12-20/FINNIFTY_2022-12-20.zip","test");
 
     }
 
@@ -1151,30 +1105,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
         bankNiftyOptionSelling1.optionSelling(days, trialPercent, isPCREnabled);
     }
 
-    @GetMapping("/getTrend")
-    public void getTrend() throws KiteException, Exception {
-        zerodhaTrendScheduler.trendScheduler();
-    }
-
-    @GetMapping("/getBinanceCandle")
-    public void getBinanceCandle() throws IOException {
-        binanceAccount.binanceTest();
-    }
-
-    @GetMapping("/getBinanceAccount")
-    public void getBinanceAccount() throws BinanceApiException {
-        binanceAccount.binanceAccountInfo();
-    }
-
-    @GetMapping("/binanceTrend")
-    public void binanceTrend() throws Exception {
-        binanceTrend.binanceTrend();
-    }
-
-    @GetMapping("/binanceTrendNew")
-    public void binanceTrendNew(@RequestParam int days, @RequestParam String perGain) throws Exception {
-        binanceTrendNew.binanceTrend(days, perGain);
-    }
 
     @PostMapping("/authenticate")
     public ResponseEntity<?> userAuthentication(@RequestBody UserInput payload) throws Exception {
@@ -1197,6 +1127,15 @@ NiftyOptionBuy935 niftyOptionBuy935;
     @Autowired
     OpenTradeDataRepo openTradeDataRepo;
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+
+    @GetMapping("/getVixData")
+    public ResponseEntity<?> getVixData(@RequestBody String payload) throws Exception {
+        String historicURL = "https://api.kite.trade/instruments/historical/264969/day?from=2014-01-01+09:00:00&to=2017-12-31+06:15:00";
+        //     String historicURL = "https://api.kite.trade/instruments/historical/" + niftyBank + "/5minute?from=2021-01-01+09:00:00&to=2021-01-01+11:15:00";
+        String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
+        System.out.print(response);
+        return new ResponseEntity<>(null,HttpStatus.OK);
+    }
     @PostMapping("/getTradeDetails")
     public ResponseEntity<?> getTradeDetails(@RequestBody String payload) throws Exception {
         Users users=new Gson().fromJson(payload,Users.class);
@@ -1349,105 +1288,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
             }
         return null;
     }
-    @GetMapping("/binanceBullTrend")
-    public void binanceBullTrend(@RequestParam int days, @RequestParam String perGain) throws Exception {
-        binanceTrendNew.binanceBullTrend(days, perGain);
-    }
-
-    @GetMapping("/loadBHistory")
-    public void loadBHistory(@RequestParam int days) throws Exception {
-        List<CryptoFuturesEntity> cryptoFuturesEntities = cryptoRepository.findAll();
-
-        for (ExchangeInfoEntry symbol : syncRequest.getExchangeInformation().getSymbols()) {
-          /*  boolean ispresent=false;
-            for (CryptoFuturesEntity cryptoFuturesEntitie: cryptoFuturesEntities){
-               if( cryptoFuturesEntitie.getSymbol().equals(symbol.getSymbol())){
-                   ispresent=true;
-               }
-            }
-
-            if(!ispresent) {*/
-            CryptoFuturesEntity cryptoFuturesEntity = new CryptoFuturesEntity();
-            cryptoFuturesEntity.setSymbol(symbol.getSymbol());
-            cryptoRepository.save(cryptoFuturesEntity);
-            binanceTrendNew.loadHistory(days, symbol.getSymbol());
-            //   }
-        }
-
-    }
-
-    @GetMapping("/loadDayHistory")
-    public void loadDayHistory(@RequestParam int days) throws Exception {
-        List<CryptoFuturesEntity> cryptoFuturesEntities = cryptoRepository.findAll();
-
-        for (ExchangeInfoEntry symbol : syncRequest.getExchangeInformation().getSymbols()) {
-          /*  boolean ispresent=false;
-            for (CryptoFuturesEntity cryptoFuturesEntitie: cryptoFuturesEntities){
-               if( cryptoFuturesEntitie.getSymbol().equals(symbol.getSymbol())){
-                   ispresent=true;
-               }
-            }
-
-            if(!ispresent) {*/
-            CryptoFuturesEntity cryptoFuturesEntity = new CryptoFuturesEntity();
-            cryptoFuturesEntity.setSymbol(symbol.getSymbol());
-            cryptoRepository.save(cryptoFuturesEntity);
-            binanceTrendNew.loadDayHistory(days, symbol.getSymbol());
-            //   }
-        }
-
-    }
-
-    @GetMapping("/loadDayHistoryTest")
-    public void loadDayHistoryTest(@RequestParam int days) throws Exception {
-
-        binanceTrendlive.loadDayHistory();
-        //   }
-
-
-    }
-
-    @GetMapping("/binanceTrendTop")
-    public void binanceTrendTop() throws Exception {
-        binanceTrendNew.binanceTrendTop();
-    }
-
-    @GetMapping("/binanceTrendSell")
-    public void binanceTrendSell() throws Exception {
-        binanceTrendNew.binanceTrendSell();
-    }
-
-    @GetMapping("/binanceTrendRSI")
-    public void binanceTrendRSI() throws Exception {
-        binanceTrend.binanceRSITrendBacktest();
-        binanceTrend.summaryReport();
-    }
-
-    @GetMapping("/binanceVolumeTrend")
-    public void binanceVolumeTrend() throws Exception {
-        binanceTrend.binanceVolumeTrend();
-    }
-
-    @GetMapping("/binanceRSITrendBacktestShort")
-    public void binanceRSITrendBacktestShort() throws Exception {
-        binanceTrendBacktest.binanceRSITrendBacktestShort();
-    }
-
-    @GetMapping("/binanceRSITrendBacktest")
-    public void binanceRSITrendBacktest() throws Exception {
-        binanceTrendBacktest.binanceRSITrendBacktest();
-    }
-
-    @GetMapping("/binanceCloseAll")
-    public void closeAll() {
-        binanceTrendlive.closeAll();
-    }
-
-    @GetMapping("/binanceRSITrigger")
-    public void binanceRSITrigger() throws BinanceApiException {
-        binanceTrendlive.binanceRSITrendLive();
-    }
-
     @GetMapping("/sendDocumentTest")
     public void testTelegram() {
         File file = new File("/home/hasvanth/Downloads/BANKNIFTY/2022/Feb/2022-02-24/34500PE.json");

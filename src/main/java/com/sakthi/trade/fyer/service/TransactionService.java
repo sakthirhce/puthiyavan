@@ -125,6 +125,17 @@ public class TransactionService {
             return requestBuilder.build();
 
     }
+    public Request createZerodhaGetRequestTest(String uri){
+
+        Request.Builder requestBuilder = new Request.Builder();
+        requestBuilder.addHeader("X-Kite-Version", "3");
+        requestBuilder.addHeader("Authorization", "token 65moyovkhp0k27tx:USEPdzP4CxMJ200ShKBdtX6igWxsREsR");
+
+        requestBuilder.url(uri);
+        requestBuilder.get();
+        return requestBuilder.build();
+
+    }
     public String downloadInstrumentData(String uri){
         log.info("uri:" + uri);
         Request.Builder requestBuilder = new Request.Builder();
