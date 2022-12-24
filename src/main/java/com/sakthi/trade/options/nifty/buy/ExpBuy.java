@@ -66,93 +66,98 @@ public class ExpBuy implements Strategy {
         // String nifty = zerodhaTransactionService.niftyIndics.get("NIFTY 50");
         Date date = new Date();
         String currentDate = format.format(date);
-        String index;
-        int lotSize;
+        String index=null;
+        int lotSize1=0;
+        boolean expDay=false;
         if(zerodhaTransactionService.expDate.equals(currentDate)){
             index="NF";
-            lotSize=50;
-        }else {
+            lotSize1=50;
+            expDay=true;
+        }else if(zerodhaTransactionService.finExpDate.equals(currentDate)){
             index="FN";
-            lotSize=40;
+            lotSize1=40;
+            expDay=true;
         }
-        Map<Double, Map.Entry<String, StrikeData>> strikes=mathUtils.getPriceCloseToPremium(currentDate,5,"14:44:00",index);
-        try {
-            strikes.entrySet().stream().forEach(atmNiftyStrikeMap -> {
-                Map.Entry<String, StrikeData> strikeDataEntry=atmNiftyStrikeMap.getValue();
-                Double triggerPriceD = atmNiftyStrikeMap.getKey();
-                LOGGER.info(strikeDataEntry.getValue().getZerodhaSymbol());
-                OrderParams orderParams = new OrderParams();
-                orderParams.tradingsymbol = strikeDataEntry.getValue().getZerodhaSymbol();
-                orderParams.exchange = "NFO";
-                orderParams.orderType = "SL";
-                orderParams.product = "NRML";
-                orderParams.transactionType = "BUY";
-                orderParams.validity = "DAY";
-                double triggerPrice = triggerPriceD*300;
-                orderParams.triggerPrice = triggerPrice;
-                BigDecimal price = BigDecimal.valueOf(triggerPrice).setScale(0, RoundingMode.HALF_UP).add(BigDecimal.valueOf(triggerPrice).setScale(0, RoundingMode.HALF_UP).divide(new BigDecimal(100))).setScale(0, RoundingMode.HALF_UP);
-                orderParams.price = price.doubleValue();
-                userList.getUser().stream().filter(
-                        user -> user.getExpZeroToHero() != null && user.getExpZeroToHero().isNrmlEnabled()
-                ).forEach(user -> {
-                    BrokerWorker brokerWorker= workerFactory.getWorker(user);
-                    int qty = 1;
-                    qty=user.getExpZeroToHero().getLotSize();
-                    Order order = null;
-                    orderParams.quantity = lotSize * qty;
-                    TradeData tradeData = new TradeData();
-                    String dataKey = UUID.randomUUID().toString();
-                    tradeData.setDataKey(dataKey);
-                    tradeData.setStockName(strikeDataEntry.getValue().getZerodhaSymbol());
-                    try {
-                        LOGGER.info("input:"+gson.toJson(orderParams));
-                        tradeData.setStrikeId(strikeDataEntry.getValue().getDhanId());
-                        order = brokerWorker.placeOrder(orderParams,user,tradeData);
-
-                        tradeData.setEntryOrderId(order.orderId);
-                        tradeData.isOrderPlaced = true;
-                        tradeData.setQty(lotSize * qty);
-                        tradeData.setEntryType("BUY");
-                        tradeData.setUserId(user.getName());
-                        tradeData.setStockId(Integer.parseInt(strikeDataEntry.getValue().getZerodhaId()));
-                        tradeData.setBuyPrice(BigDecimal.valueOf(triggerPriceD));
-                        tradeData.setBuyTradedPrice(BigDecimal.valueOf(triggerPriceD));
-                        if(user.getBroker().equals("dhan")){
-                            tradeData.setStockName(strikeDataEntry.getValue().getDhanSymbol());
-                            user.getExpZeroToHero().straddleTradeMap.put(tradeData.getStockName(), tradeData);
-                        }else {
-                            user.getExpZeroToHero().straddleTradeMap.put(tradeData.getStockName(), tradeData);
-                        }
-                        String message="option buy limit order placed for for user:" + user.getName() + " strike: " + strikeDataEntry.getValue().getZerodhaSymbol()+":"+getAlgoName();
-                        LOGGER.info(message);
-                        LOGGER.info("Trade Data:"+new Gson().toJson(tradeData));
-
+         final int lotSize=lotSize1;
+        if (expDay && lotSize1>0) {
+            Map<Double, Map.Entry<String, StrikeData>> strikes = mathUtils.getPriceCloseToPremium(currentDate, 5, "14:44:00", index);
+            try {
+                strikes.entrySet().stream().forEach(atmNiftyStrikeMap -> {
+                    Map.Entry<String, StrikeData> strikeDataEntry = atmNiftyStrikeMap.getValue();
+                    Double triggerPriceD = atmNiftyStrikeMap.getKey();
+                    LOGGER.info(strikeDataEntry.getValue().getZerodhaSymbol());
+                    OrderParams orderParams = new OrderParams();
+                    orderParams.tradingsymbol = strikeDataEntry.getValue().getZerodhaSymbol();
+                    orderParams.exchange = "NFO";
+                    orderParams.orderType = "SL";
+                    orderParams.product = "NRML";
+                    orderParams.transactionType = "BUY";
+                    orderParams.validity = "DAY";
+                    double triggerPrice = triggerPriceD * 300;
+                    orderParams.triggerPrice = triggerPrice;
+                    BigDecimal price = BigDecimal.valueOf(triggerPrice).setScale(0, RoundingMode.HALF_UP).add(BigDecimal.valueOf(triggerPrice).setScale(0, RoundingMode.HALF_UP).divide(new BigDecimal(100))).setScale(0, RoundingMode.HALF_UP);
+                    orderParams.price = price.doubleValue();
+                    userList.getUser().stream().filter(
+                            user -> user.getExpZeroToHero() != null && user.getExpZeroToHero().isNrmlEnabled()
+                    ).forEach(user -> {
+                        BrokerWorker brokerWorker = workerFactory.getWorker(user);
+                        int qty = 1;
+                        qty = user.getExpZeroToHero().getLotSize();
+                        Order order = null;
+                        orderParams.quantity = lotSize * qty;
+                        TradeData tradeData = new TradeData();
+                        String dataKey = UUID.randomUUID().toString();
+                        tradeData.setDataKey(dataKey);
+                        tradeData.setStockName(strikeDataEntry.getValue().getZerodhaSymbol());
                         try {
-                            sendMessage.sendToTelegram(message, telegramToken);
-                        }catch (Exception e){
-                            log.error("error:"+e);
+                            LOGGER.info("input:" + gson.toJson(orderParams));
+                            tradeData.setStrikeId(strikeDataEntry.getValue().getDhanId());
+                            order = brokerWorker.placeOrder(orderParams, user, tradeData);
+
+                            tradeData.setEntryOrderId(order.orderId);
+                            tradeData.isOrderPlaced = true;
+                            tradeData.setQty(lotSize * qty);
+                            tradeData.setEntryType("BUY");
+                            tradeData.setUserId(user.getName());
+                            tradeData.setStockId(Integer.parseInt(strikeDataEntry.getValue().getZerodhaId()));
+                            tradeData.setBuyPrice(BigDecimal.valueOf(triggerPriceD));
+                            tradeData.setBuyTradedPrice(BigDecimal.valueOf(triggerPriceD));
+                            if (user.getBroker().equals("dhan")) {
+                                tradeData.setStockName(strikeDataEntry.getValue().getDhanSymbol());
+                                user.getExpZeroToHero().straddleTradeMap.put(tradeData.getStockName(), tradeData);
+                            } else {
+                                user.getExpZeroToHero().straddleTradeMap.put(tradeData.getStockName(), tradeData);
+                            }
+                            String message = "option buy limit order placed for for user:" + user.getName() + " strike: " + strikeDataEntry.getValue().getZerodhaSymbol() + ":" + getAlgoName();
+                            LOGGER.info(message);
+                            LOGGER.info("Trade Data:" + new Gson().toJson(tradeData));
+
+                            try {
+                                sendMessage.sendToTelegram(message, telegramToken);
+                            } catch (Exception e) {
+                                log.error("error:" + e);
+                            }
+                        } catch (KiteException e) {
+                            tradeData.isErrored = true;
+                            LOGGER.info("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + e.message + ":" + e.code + ":" + getAlgoName());
+                            sendMessage.sendToTelegram("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + user.getName() + ",Exception:" + e.message + ":" + getAlgoName() + " Input:" + new Gson().toJson(orderParams), telegramToken);
+
+                        } catch (IOException e) {
+                            tradeData.isErrored = true;
+                            LOGGER.info("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + e.getMessage());
+                            sendMessage.sendToTelegram("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName(), telegramToken);
                         }
-                    } catch (KiteException e) {
-                        tradeData.isErrored = true;
-                        LOGGER.info("Error while placing nifty buy order: "+ atmNiftyStrikeMap.getKey()+":" + e.message+":"+e.code+":"+getAlgoName());
-                        sendMessage.sendToTelegram("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + user.getName() + ",Exception:" + e.message+":"+getAlgoName()+" Input:"+new Gson().toJson(orderParams), telegramToken);
-
-                    } catch (IOException e) {
-                        tradeData.isErrored = true;
-                        LOGGER.info("Error while placing nifty buy order: "+ atmNiftyStrikeMap.getKey()+":" + e.getMessage());
-                        sendMessage.sendToTelegram("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName(), telegramToken);
-                    }
-                    LOGGER.info(new Gson().toJson(user.getExpZeroToHero().straddleTradeMap));
+                        LOGGER.info(new Gson().toJson(user.getExpZeroToHero().straddleTradeMap));
+                    });
                 });
-            });
 
-            ///  }
-        } catch (Exception e) {
-            e.printStackTrace();
+                ///  }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            // });
+            //}
         }
-        // });
-        //}
-
     }
 
     @Override
