@@ -24,6 +24,7 @@ import com.zerodhatech.models.Position;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -41,7 +42,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
-
+@Service
 public class OrderUtil {
     ExecutorService executorService = java.util.concurrent.Executors.newFixedThreadPool(5);
     public static final Logger LOGGER = Logger.getLogger(OrderUtil.class.getName());
@@ -55,7 +56,7 @@ public class OrderUtil {
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
     @Autowired
     BrokerWorkerFactory workerFactory;
-    @Scheduled(cron = "${stradle.sl.scheduler}")
+    //@Scheduled(cron = "${stradle.sl.scheduler}")
     public void sLMonitorScheduler(User user, String algoName, StraddleConfig straddleConfig) {
         // LOGGER.info("short straddle SLMonitor scheduler started");
 
@@ -275,7 +276,7 @@ public class OrderUtil {
        // });
     }
 
-    @Scheduled(cron = "${straddle.exit.price}")
+    //@Scheduled(cron = "${straddle.exit.price}")
     public void exitPriceNrmlPositions(User user, String algoName, StraddleConfig straddleConfig,String exitTime) {
             try {
                 BrokerWorker brokerWorker= workerFactory.getWorker(user);

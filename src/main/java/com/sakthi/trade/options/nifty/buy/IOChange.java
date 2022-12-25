@@ -62,7 +62,7 @@ public class IOChange implements Strategy {
     @Value("${telegram.orb.bot.token}")
     String telegramTokenGroup;
     @Scheduled(cron = "${exp.oi.atm.get.time}")
-    public void getAtm(String checkTime,String index){
+    public void getAtm(){
         Date date = new Date();
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
@@ -76,10 +76,11 @@ public class IOChange implements Strategy {
         }else  if(zerodhaTransactionService.finExpDate.equals(currentDate)){
             stockIdList.add("FN");
         }
-        Map<String,Map<String, StrikeData>> strikeMasterMap1=new HashMap<>();
-        // Map<String,Map<String,String>> dhanStrikeMasterMap1=new HashMap<>();
-        String stockId=null;
 
+        stockIdList.stream().forEach(index-> {
+            Map<String,Map<String, StrikeData>> strikeMasterMap1=new HashMap<>();
+            // Map<String,Map<String,String>> dhanStrikeMasterMap1=new HashMap<>();
+            String stockId=null;
         if("BNF".equals(index)) {
             stockId = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
             //  if (zerodhaTransactionService.expDate.equals(currentDate)) {
@@ -115,7 +116,7 @@ public class IOChange implements Strategy {
                             throw new RuntimeException(e);
                         }
                         String openDate = format.format(openDatetime);
-                        if (sdf.format(openDatetime).equals(openDate + "T" +checkTime)) {/*"09:30:00"*/
+                        if (sdf.format(openDatetime).equals(openDate + "T14:45:00")) {/*"09:30:00"*/
                             int atmStrike = commonUtil.findATM((int) historicalData1.close);
                             final Map<String, StrikeData> atmStrikesStraddle = strikeMasterMap.get(String.valueOf(atmStrike));
                             atmStrikeList.put(index,atmStrikesStraddle);
@@ -125,7 +126,7 @@ public class IOChange implements Strategy {
                     }
                 });
             }
-
+        });
     }
     @Scheduled(cron = "${exp.oi.atm.monitor.time}")
     public void expOIMonitorSchedule(){

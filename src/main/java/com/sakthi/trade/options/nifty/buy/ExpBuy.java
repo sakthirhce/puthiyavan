@@ -112,7 +112,7 @@ public class ExpBuy implements Strategy {
                         try {
                             LOGGER.info("input:" + gson.toJson(orderParams));
                             tradeData.setStrikeId(strikeDataEntry.getValue().getDhanId());
-                            order = brokerWorker.placeOrder(orderParams, user, tradeData);
+                          //  order = brokerWorker.placeOrder(orderParams, user, tradeData);
 
                             tradeData.setEntryOrderId(order.orderId);
                             tradeData.isOrderPlaced = true;
@@ -137,12 +137,7 @@ public class ExpBuy implements Strategy {
                             } catch (Exception e) {
                                 log.error("error:" + e);
                             }
-                        } catch (KiteException e) {
-                            tradeData.isErrored = true;
-                            LOGGER.info("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + e.message + ":" + e.code + ":" + getAlgoName());
-                            sendMessage.sendToTelegram("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + user.getName() + ",Exception:" + e.message + ":" + getAlgoName() + " Input:" + new Gson().toJson(orderParams), telegramToken);
-
-                        } catch (IOException e) {
+                        } catch (Exception e) {
                             tradeData.isErrored = true;
                             LOGGER.info("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + e.getMessage());
                             sendMessage.sendToTelegram("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName(), telegramToken);
@@ -161,7 +156,7 @@ public class ExpBuy implements Strategy {
     }
 
     @Override
-    @Scheduled(cron = "${exp.buy.sl.time}")
+  //  @Scheduled(cron = "${exp.buy.sl.time}")
     public void sLMonitor() {
         userList.getUser().stream().filter(
                 user -> user.getExpZeroToHero() != null && user.getExpZeroToHero().isNrmlEnabled()
@@ -171,7 +166,7 @@ public class ExpBuy implements Strategy {
     }
 
     @Override
-    @Scheduled(cron = "${exp.buy.exit.time}")
+   // @Scheduled(cron = "${exp.buy.exit.time}")
     public void exit() {
         String exitTime="15:20";
         userList.getUser().stream().filter(

@@ -955,7 +955,7 @@ NiftyOptionBuy935 niftyOptionBuy935;
     ExpBuy expBuy;
     @GetMapping("/expBuy")
     public void expBuy() throws Exception {
-        expBuy.buy();
+       // expBuy.buy();
 
     }
     /*  @GetMapping("/shortStraddleTest")
