@@ -97,7 +97,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
         String niftyBank = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
         String historicURL = "https://api.kite.trade/instruments/historical/" + niftyBank + "/5minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+11:15:00";
         //     String historicURL = "https://api.kite.trade/instruments/historical/" + niftyBank + "/5minute?from=2021-01-01+09:00:00&to=2021-01-01+11:15:00";
-        String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
+        String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
      //   System.out.print(response);
         HistoricalData historicalData = new HistoricalData();
         JSONObject json = new JSONObject(response);
@@ -254,7 +254,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                    // if (slPrice.get(trendTradeData.getStockId()) == null) {
                                                         try {
                                                             String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
-                                                            String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
+                                                            String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
                                                             System.out.print(response);
                                                             HistoricalData historicalData = new HistoricalData();
                                                             JSONObject json = new JSONObject(response);
@@ -391,7 +391,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                 AtomicDouble triggerPriceAtomic = new AtomicDouble();
                                                 try {
                                                     String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
-                                                    String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
+                                                    String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
                                                     System.out.print(response);
                                                     HistoricalData historicalData = new HistoricalData();
                                                     JSONObject json = new JSONObject(response);
@@ -699,7 +699,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                 BrokerWorker brokerWorker= workerFactory.getWorker(user);
                 List<Order> orders = brokerWorker.getOrders(user);
                 List<Position> positions = brokerWorker.getPositions(user);
-                LOGGER.info(new Gson().toJson(positions));
+             //   LOGGER.info(new Gson().toJson(positions));
                 openTradeDataEntities.stream().filter(openTradeDataEntity -> !openTradeDataEntity.isExited && user.getName().equals(openTradeDataEntity.getUserId())).forEach(openTradeDataEntity -> {
                     orders.stream().filter(order -> "COMPLETE".equals(order.status) && order.orderId.equals(openTradeDataEntity.getExitOrderId())).findFirst().ifPresent(orderr -> {
                         try {
@@ -711,7 +711,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
 
                                 String historicURL = "https://api.kite.trade/instruments/historical/" + openTradeDataEntity.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
                                 String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
-                                System.out.print(openTradeDataEntity.getStockName() + " history api response:" + response);
+                             //   System.out.print(openTradeDataEntity.getStockName() + " history api response:" + response);
                                 HistoricalData historicalData = new HistoricalData();
                                 JSONObject json = new JSONObject(response);
                                 String status = json.getString("status");

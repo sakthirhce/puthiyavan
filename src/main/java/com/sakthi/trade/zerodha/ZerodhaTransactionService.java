@@ -204,7 +204,20 @@ public class ZerodhaTransactionService {
         Date currentWeekExpDate=date;
         Date currentFinWeekExpDate=findate;
         Date monthlyExpDate=getMonthExpDay();
+        boolean currentMonthlyExpOff=false;
         String monthlyExp=format.format(monthlyExpDate);
+        if (lsHoliday.containsKey(monthlyExp)) {
+            currentMonthlyExpOff=true;
+        }
+        if(currentMonthlyExpOff){
+            Calendar monthlyExpCal = Calendar.getInstance();
+            monthlyExpCal.setTime(monthlyExpDate);
+            monthlyExpCal.add(DAY_OF_MONTH, -1);
+            monthlyExpDate=monthlyExpCal.getTime();
+            monthlyExp=format.format(monthlyExpDate);
+            log.info("Monthly Exp falling on holiday. recalculated weekly exp date is:"+monthlyExp);
+        }
+
         Date nextWeekExpDateRes=nextWeekExpDate(calendar,currentWeekExpOff,lsHoliday);
         String nextWeekExpDate=format.format(nextWeekExpDateRes);
         String instrumentURI = baseURL+instrumentURL;
@@ -544,7 +557,7 @@ public class ZerodhaTransactionService {
            nfStrikeNextWeekLevelMap.put(stringMapEntry.getKey(),strikeTypeMap);
        });
        globalOptionsInfo.put(Expiry.NF_NEXT.expiryName,nfStrikeNextWeekLevelMap);
-       System.out.println("global data:"+new Gson().toJson(globalOptionsInfo));
+    //   System.out.println("global data:"+new Gson().toJson(globalOptionsInfo));
    }catch (Exception e){
        e.printStackTrace();
    }

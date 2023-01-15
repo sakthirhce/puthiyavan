@@ -20,6 +20,9 @@ public class TelegramMessenger {
 
     @Autowired
     DataBot myBot;
+
+    @Autowired
+    LogBot logBot;
     private static final String BOT_TOKEN = "1162339611:AAGTezAs6970OmLwhcBuTlef_-dsfcoQi_o";
     private static final String BOT_USERNAME = "YOUR_BOT_USERNAME";
         public void sendToTelegram(String message,String token){
@@ -74,6 +77,22 @@ public class TelegramMessenger {
                   //  long chatId = -713214125; // Replace with the chat ID of the chat where you want to send the file
                  //   String filePath = "/home/hasvanth/Downloads/FINNIFTY/2022/Dec/2022-12-20/FINNIFTY_2022-12-20.zip"; // Replace with the file path of the ZIP file
                     myBot.sendZipFile(filePath,fileName,-849080155);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+    public void sendLogToTelegram(String filePath,String fileName){
+        try {
+            if (!profile) {
+                try {
+                    //botsApi.registerBot(bot);
+                    //  long chatId = -713214125; // Replace with the chat ID of the chat where you want to send the file
+                    //   String filePath = "/home/hasvanth/Downloads/FINNIFTY/2022/Dec/2022-12-20/FINNIFTY_2022-12-20.zip"; // Replace with the file path of the ZIP file
+                    logBot.sendZipFile(filePath,fileName,-848547540);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }

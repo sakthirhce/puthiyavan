@@ -85,7 +85,7 @@ public class ZerodhaAccount {
     public com.zerodhatech.models.User user;
     public String token = null;
     public KiteConnect kiteSdk;
-
+    public int spaceCheck=0;
 
 
     //  @Scheduled(cron="${zerodha.login.schedule}")
@@ -180,14 +180,16 @@ public class ZerodhaAccount {
             byte[] bytes = base32.decode(totp);
             String hexKey = Hex.encodeHexString(bytes);
             String previousKey = TOTP.getOTP(hexKey);
-
+            int i=0;
             while (previousKey.equals(TOTP.getOTP(hexKey))) {
                 Thread.sleep(1000);
+                if (i == 0) {
                 log.info("sleeping for a second to wait for next key . current is : " + TOTP.getOTP(hexKey));
+                }
+                i++;
 
             }
             System.out.println("The new key is :" + TOTP.getOTP(hexKey));
-
             return TOTP.getOTP(hexKey);
 
         } catch (Exception e) {
@@ -265,8 +267,8 @@ public class ZerodhaAccount {
     public String generateMultiUserAccessToken() throws IOException, InterruptedException, URISyntaxException {
         if(!testProfile) {
             userList.getUser().stream().filter(user1 -> user1.enabled).forEach(user1 -> {
+                if (user1.tokenCount < 2) {
                 if (user1.broker.equals("zerodha")) {
-                    if (user1.tokenCount < 2) {
                         KiteConnect kiteConnect;
                         System.setProperty("webdriver.chrome.driver", driverPath);
                         ChromeOptions ChromeOptions = new ChromeOptions();
@@ -358,7 +360,7 @@ public class ZerodhaAccount {
                             }
                         }
                     }
-                } else if (user1.broker.equals("dhan")) {
+                else if (user1.broker.equals("dhan")) {
                     try {
                         String botId = "";
                         TelegramBot telegramBot = user1.getTelegramBot();
@@ -366,6 +368,7 @@ public class ZerodhaAccount {
                             botId = telegramBot.getGroupId();
                         }
                         String botIdFinal = botId;
+                        user1.tokenCount = user1.tokenCount + 1;
                         Request request = transactionService.createGetRequests(dhanRoutes.get("funds"), user1.getAccessToken());
                         String response = transactionService.callAPI(request);
                         System.out.println(response);
@@ -376,36 +379,40 @@ public class ZerodhaAccount {
                         e.printStackTrace();
                     }
                 }
-            });
-            try {
-                // Execute the "df" command
-                Process p = Runtime.getRuntime().exec("df -h");
-                p.waitFor();
-
-                // Read the output of the command
-                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                String line;
-                int i=0;
-                while ((line = reader.readLine()) != null) {
-                    if(i>0) {
-
-                        // Split the output line by spaces
-                        String[] elements = line.split("\\s+");
-                        // The third element is the total disk space, and the fourth element is the used disk space
-                        if(elements[5].equals("/")) {
-                            String used = elements[2];
-                            String free = elements[3];
-                            // Calculate the free disk space
-                            String usedPerf = elements[4];
-                            String total = elements[1];
-                            sendMessage.sendToTelegram("Total: " + total + " Used:" + used + " Free:" + free + " Used Percent:" + usedPerf, telegramToken, "-713214125");
-                        }
-
-                    }
-                    i++;
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+            });
+            if(spaceCheck<2) {
+                try {
+                    // Execute the "df" command
+                    Process p = Runtime.getRuntime().exec("df -h");
+                    p.waitFor();
+
+                    // Read the output of the command
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                    String line;
+                    int i = 0;
+                    while ((line = reader.readLine()) != null) {
+                        if (i > 0) {
+
+                            // Split the output line by spaces
+                            String[] elements = line.split("\\s+");
+                            // The third element is the total disk space, and the fourth element is the used disk space
+                            if (elements[5].equals("/")) {
+                                String used = elements[2];
+                                String free = elements[3];
+                                // Calculate the free disk space
+                                String usedPerf = elements[4];
+                                String total = elements[1];
+                                sendMessage.sendToTelegram("Total: " + total + " Used:" + used + " Free:" + free + " Used Percent:" + usedPerf, telegramToken, "-713214125");
+                            }
+
+                        }
+                        i++;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                spaceCheck=spaceCheck+1;
             }
         }
         return null;

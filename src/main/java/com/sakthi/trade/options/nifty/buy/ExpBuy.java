@@ -90,7 +90,7 @@ public class ExpBuy implements Strategy {
                     orderParams.tradingsymbol = strikeDataEntry.getValue().getZerodhaSymbol();
                     orderParams.exchange = "NFO";
                     orderParams.orderType = "SL";
-                    orderParams.product = "NRML";
+                    orderParams.product = "MIS";
                     orderParams.transactionType = "BUY";
                     orderParams.validity = "DAY";
                     double triggerPrice = triggerPriceD * 300;
@@ -101,8 +101,7 @@ public class ExpBuy implements Strategy {
                             user -> user.getExpZeroToHero() != null && user.getExpZeroToHero().isNrmlEnabled()
                     ).forEach(user -> {
                         BrokerWorker brokerWorker = workerFactory.getWorker(user);
-                        int qty = 1;
-                        qty = user.getExpZeroToHero().getLotSize();
+                        int qty =  user.getExpZeroToHero().getLotSize();
                         Order order = null;
                         orderParams.quantity = lotSize * qty;
                         TradeData tradeData = new TradeData();
@@ -112,7 +111,7 @@ public class ExpBuy implements Strategy {
                         try {
                             LOGGER.info("input:" + gson.toJson(orderParams));
                             tradeData.setStrikeId(strikeDataEntry.getValue().getDhanId());
-                          //  order = brokerWorker.placeOrder(orderParams, user, tradeData);
+                            order = brokerWorker.placeOrder(orderParams, user, tradeData);
 
                             tradeData.setEntryOrderId(order.orderId);
                             tradeData.isOrderPlaced = true;
@@ -137,7 +136,7 @@ public class ExpBuy implements Strategy {
                             } catch (Exception e) {
                                 log.error("error:" + e);
                             }
-                        } catch (Exception e) {
+                        } catch (Exception | KiteException e) {
                             tradeData.isErrored = true;
                             LOGGER.info("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + e.getMessage());
                             sendMessage.sendToTelegram("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName(), telegramToken);

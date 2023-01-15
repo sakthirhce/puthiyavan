@@ -1,6 +1,7 @@
 package com.sakthi.trade.options;
 
 import com.sakthi.trade.fyer.service.TransactionService;
+import com.sakthi.trade.options.nifty.buy.NiftyORB;
 import com.sakthi.trade.telegram.TelegramMessenger;
 
 import com.sakthi.trade.util.ZippingDirectory;
@@ -18,6 +19,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.DAY_OF_WEEK;
@@ -36,9 +38,9 @@ public class WeeklyDataBackup {
 
     @Autowired
     TelegramMessenger sendMessage;
+    public static final Logger LOGGER = Logger.getLogger(WeeklyDataBackup.class.getName());
 
-
-    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+ //   SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
     public Map<String,String> lsHoliday=new HashMap<>();
 
     public String currentExp(){
@@ -89,10 +91,18 @@ public class WeeklyDataBackup {
     String telegramToken;
     @Value("${telegram.orb.bot.token}")
     String telegramTokenGroup;
+    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+    @Scheduled(cron="${app.log.backup}")
+    public void logBackUp() throws Exception {
+        Date currentDate=new Date();
+        String message="log export date:" + format.format(currentDate);
+        LOGGER.info(message);
+        telegramClient.sendToTelegram(message,telegramTokenGroup);
+        telegramClient.sendLogToTelegram("/home/ubuntu/application.log",format.format(currentDate));
+    }
     @Scheduled(cron="${zerodha.data.backup}")
     public void dataBackUp() throws Exception {
-        log.info("Expiry export started");
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        LOGGER.info("Expiry export started");
         SimpleDateFormat year = new SimpleDateFormat("yyyy");
         SimpleDateFormat month = new SimpleDateFormat("MMM");
         Date currentDate=new Date();
@@ -149,14 +159,14 @@ try {
     }
     String fnexpPath = fnmonthFile + "/" + currentFNExp;
     File fnexpFolder = new File(fnexpPath);
-    if (!nexpFolder.exists()) {
+    if (!fnexpFolder.exists()) {
         fnexpFolder.mkdir();
     }
     fnexpFolder.setReadable(true); //read
     fnexpFolder.setWritable(true); //write
 
     if (currentFNExp.equals(format.format(currentDate))) {
-        String message="FN Expiry export date:" + currentExp;
+        String message="FN Expiry export date:" + currentFNExp;
         telegramClient.sendToTelegram(message,telegramTokenGroup, "-713214125");
         zerodhaTransactionService.finNiftyWeeklyOptions.entrySet().stream().forEach(exp -> {
 
@@ -164,8 +174,8 @@ try {
             map.entrySet().stream().forEach(optionExp -> {
                 String strikeNo = optionExp.getValue();
                 String strikeKey = optionExp.getKey();
-                String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentExp + "+15:30:00&oi=1";
-                String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
+                String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentFNExp + "+15:30:00&oi=1";
+                String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
                 String fileName;
                 if (strikeKey.contains("CE")) {
                     fileName = exp.getKey() + "CE";
@@ -187,7 +197,6 @@ try {
             });
         });
         zippingDirectory.test(fnexpPath, "FINNIFTY_"+format.format(currentDate));
-        telegramClient.sendDocumentToTelegram(fnexpPath+"/FINNIFTY_"+format.format(currentDate)+".zip","FINNIFTY");
         FileUtils.deleteDirectory(new File(fnexpPath));
     }
 
@@ -205,7 +214,7 @@ try {
                         String strikeNo = optionExp.getValue();
                         String strikeKey = optionExp.getKey();
                         String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentExp + "+15:30:00&oi=1";
-                        String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
+                        String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
                         String fileName;
                         if (strikeKey.contains("CE")) {
                             fileName = exp.getKey() + "CE";
@@ -240,7 +249,7 @@ try {
                     String strikeNo = optionExp.getValue();
                     String strikeKey = optionExp.getKey();
                     String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentExp + "+15:30:00&oi=1";
-                    String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
+                    String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
                     String fileName;
                     if(strikeKey.contains("CE"))
                     {

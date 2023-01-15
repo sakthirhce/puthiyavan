@@ -513,6 +513,12 @@ NiftyOptionBuy935 niftyOptionBuy935;
         //       zippingDirectory.test();
 
     }
+    @GetMapping("/sendLog")
+    public void sendLog() throws Exception {
+        weeklyDataBackup.logBackUp();
+        //       zippingDirectory.test();
+
+    }
 
     @GetMapping("/monitorPositionSize")
     public void monitorPositionSize() throws Exception, KiteException {
@@ -622,7 +628,17 @@ NiftyOptionBuy935 niftyOptionBuy935;
         /*  });*/
 
     }
+    @Autowired
+    NiftyORB niftyORB;
+    @GetMapping("/niftyORB")
+    public void niftyORB(@RequestParam int day) throws Exception, KiteException {
 
+       /* List<StockEntity> stockEntityList=stockRepository.findAll();
+        stockEntityList.forEach(stockEntity -> {*/
+        niftyORB.ORB();
+        /*  });*/
+
+    }
     @GetMapping("/loadStockYearHistory")
     public void loadStockYearHistory(@RequestParam int day) throws Exception, KiteException {
         List<StockEntity> stockEntityList = stockRepository.findAll();

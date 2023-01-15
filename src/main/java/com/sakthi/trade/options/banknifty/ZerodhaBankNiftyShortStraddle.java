@@ -748,7 +748,7 @@ public class ZerodhaBankNiftyShortStraddle {
                 BrokerWorker brokerWorker= workerFactory.getWorker(user);
                 List<Order> orders = brokerWorker.getOrders(user);
                 List<Position> positions = brokerWorker.getPositions(user);
-                LOGGER.info(new Gson().toJson(positions));
+                //LOGGER.info(new Gson().toJson(positions));
                 if (user.getStraddleConfigOld().straddleTradeMap != null) {
                     user.getStraddleConfigOld().straddleTradeMap.entrySet().stream().filter(orbTradeDataEntity -> orbTradeDataEntity.getValue().isOrderPlaced && orbTradeDataEntity.getValue().isExited && !orbTradeDataEntity.getValue().isSLHit).forEach(trendMap -> {
                         TradeData trendTradeData = trendMap.getValue();
@@ -760,7 +760,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                 try {
                                     String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:11:00";
                                     String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
-                                    System.out.print(trendTradeData.getStockName() + " history api 3:10 response:" + response);
+                           //         System.out.print(trendTradeData.getStockName() + " history api 3:10 response:" + response);
                                     HistoricalData historicalData = new HistoricalData();
                                     JSONObject json = new JSONObject(response);
                                     String status = json.getString("status");

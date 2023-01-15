@@ -3,6 +3,7 @@ package com.sakthi.trade.fyer.service;
 import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import com.sakthi.trade.fyer.Account;
+import com.sakthi.trade.options.nifty.buy.NiftyORB;
 import com.sakthi.trade.options.nifty.buy.NiftyOptionBuy935V2;
 import com.sakthi.trade.zerodha.account.User;
 import com.sakthi.trade.zerodha.account.UserList;
@@ -32,13 +33,13 @@ public class TransactionService {
 
     @Autowired
     UserList userList;
-
+    public static final Logger LOGGER = Logger.getLogger(TransactionService.class.getName());
     KiteConnect kiteConnect;
     public void setup(){
         User user =userList.getUser().stream().filter(User::isAdmin).findFirst().get();
         kiteConnect = user.getKiteConnect();
     }
-    public static final Logger LOGGER = Logger.getLogger(TransactionService.class.getName());
+  //  public static final Logger LOGGER = Logger.getLogger(TransactionService.class.getName());
     public Request createPostPutDeleteRequest(HttpMethod httpMethod,String uri,String payload){
         Request.Builder requestBuilder=new Request.Builder();
         requestBuilder.addHeader("Content-Type","application/json;charset=UTF-8");
@@ -115,7 +116,7 @@ public class TransactionService {
             User user =userList.getUser().stream().filter(user1 -> user1.isAdmin()).findFirst().get();
             kiteConnect = user.getKiteConnect();
         }
-            log.info("uri:" + uri);
+            LOGGER.info("uri:" + uri);
             Request.Builder requestBuilder = new Request.Builder();
             requestBuilder.addHeader("X-Kite-Version", "3");
             requestBuilder.addHeader("Authorization", "token " + kiteConnect.getApiKey() + ":" + kiteConnect.getAccessToken());
@@ -123,6 +124,21 @@ public class TransactionService {
             requestBuilder.url(uri);
             requestBuilder.get();
             return requestBuilder.build();
+
+    }
+    public Request createZerodhaGetRequestWithoutLog(String uri){
+        if(kiteConnect == null) {
+            User user =userList.getUser().stream().filter(user1 -> user1.isAdmin()).findFirst().get();
+            kiteConnect = user.getKiteConnect();
+        }
+      //  LOGGER.info("uri:" + uri);
+        Request.Builder requestBuilder = new Request.Builder();
+        requestBuilder.addHeader("X-Kite-Version", "3");
+        requestBuilder.addHeader("Authorization", "token " + kiteConnect.getApiKey() + ":" + kiteConnect.getAccessToken());
+
+        requestBuilder.url(uri);
+        requestBuilder.get();
+        return requestBuilder.build();
 
     }
     public Request createZerodhaGetRequestTest(String uri){

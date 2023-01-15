@@ -80,7 +80,7 @@ public class BNiftyOptionBuy917 {
     }
     public static final Logger LOGGER = Logger.getLogger(BNiftyOptionBuy917.class.getName());
 
-    @Scheduled(cron = "${bniftyBuy917.schedule.entry}")
+    //@Scheduled(cron = "${bniftyBuy917.schedule.entry}")
     public void buy() throws ParseException, KiteException, IOException {
         sendMessage.sendToTelegram("bniftyBuy917 execution startede", telegramToken);
         StopWatch stopWatch = new StopWatch();
