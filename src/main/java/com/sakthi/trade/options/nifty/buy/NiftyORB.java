@@ -1,8 +1,7 @@
 package com.sakthi.trade.options.nifty.buy;
 
-import com.opencsv.CSVWriter;
 import com.sakthi.trade.domain.TradeData;
-import com.sakthi.trade.fyer.service.TransactionService;
+import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.MathUtils;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
@@ -14,17 +13,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
-
-import static java.util.Calendar.DAY_OF_MONTH;
 
 @Service
 public class NiftyORB {

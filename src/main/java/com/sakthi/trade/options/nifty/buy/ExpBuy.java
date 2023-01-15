@@ -2,8 +2,6 @@ package com.sakthi.trade.options.nifty.buy;
 
 import com.google.gson.Gson;
 import com.sakthi.trade.domain.TradeData;
-import com.sakthi.trade.entity.OpenTradeDataEntity;
-import com.sakthi.trade.fyer.service.TransactionService;
 import com.sakthi.trade.options.Strategy;
 import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.MathUtils;
@@ -22,12 +20,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
 @Service

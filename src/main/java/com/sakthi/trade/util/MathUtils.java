@@ -3,7 +3,7 @@ package com.sakthi.trade.util;
 import com.google.common.util.concurrent.AtomicDouble;
 import com.sakthi.trade.domain.Brokerage;
 import com.sakthi.trade.domain.TradeData;
-import com.sakthi.trade.fyer.service.TransactionService;
+import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import com.sakthi.trade.zerodha.account.Expiry;
 import com.sakthi.trade.zerodha.account.StrikeData;

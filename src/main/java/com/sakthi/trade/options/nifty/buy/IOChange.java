@@ -3,7 +3,7 @@ package com.sakthi.trade.options.nifty.buy;
 import com.google.common.util.concurrent.AtomicDouble;
 import com.google.gson.Gson;
 import com.sakthi.trade.domain.OIChangeData;
-import com.sakthi.trade.fyer.service.TransactionService;
+import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.options.Strategy;
 import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.CommonUtil;

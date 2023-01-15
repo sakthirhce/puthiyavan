@@ -5,7 +5,7 @@ import com.google.gson.Gson;
 import com.sakthi.trade.domain.*;
 import com.sakthi.trade.entity.OpenTradeDataBackupEntity;
 import com.sakthi.trade.entity.OpenTradeDataEntity;
-import com.sakthi.trade.fyer.service.TransactionService;
+import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.repo.OpenTradeDataBackupRepo;
 import com.sakthi.trade.repo.OpenTradeDataRepo;

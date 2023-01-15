@@ -9,7 +9,7 @@ import com.sakthi.trade.dhan.DhanRoutes;
 import com.sakthi.trade.dhan.schema.OrderResponseDTO;
 import com.sakthi.trade.dhan.schema.PositionResponseDTO;
 import com.sakthi.trade.domain.TradeData;
-import com.sakthi.trade.fyer.service.TransactionService;
+import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.zerodha.account.User;
 import com.zerodhatech.models.Order;
 import com.zerodhatech.models.OrderParams;

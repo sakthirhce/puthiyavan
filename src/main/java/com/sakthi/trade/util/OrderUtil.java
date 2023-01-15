@@ -4,9 +4,8 @@ import com.google.common.util.concurrent.AtomicDouble;
 import com.google.gson.Gson;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.entity.OpenTradeDataEntity;
-import com.sakthi.trade.fyer.service.TransactionService;
+import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.mapper.TradeDataMapper;
-import com.sakthi.trade.options.banknifty.ZerodhaBankNiftyShortStraddle;
 import com.sakthi.trade.repo.OpenTradeDataRepo;
 import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.worker.BrokerWorker;
@@ -23,7 +22,6 @@ import com.zerodhatech.models.OrderParams;
 import com.zerodhatech.models.Position;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;

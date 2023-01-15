@@ -1,7 +1,6 @@
 package com.sakthi.trade.options;
 
-import com.sakthi.trade.fyer.service.TransactionService;
-import com.sakthi.trade.options.nifty.buy.NiftyORB;
+import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.telegram.TelegramMessenger;
 
 import com.sakthi.trade.util.ZippingDirectory;

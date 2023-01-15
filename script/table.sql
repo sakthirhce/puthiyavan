@@ -63,6 +63,28 @@ CREATE table INDEX (
         UNIQUE(index_name)
 );
 
+
+CREATE table trade_user (
+	user_id VARCHAR(50)  PRIMARY KEY,
+	broker VARCHAR (50),
+	enabled VARCHAR (50),
+        UNIQUE(user_id)
+);
+
+CREATE table trade_strategy (
+	index VARCHAR(50),
+	trade_time timestamp,
+       open numeric(10,2),
+        high numeric(10,2),
+       low numeric(10,2),
+       close numeric(10,2),
+       volume numeric(50,2),
+       oi numeric(50,2),
+        vwap numeric(10,2),
+           CONSTRAINT fk_bn_key
+              FOREIGN KEY(index_key)
+        	  REFERENCES INDEX(index_key)
+);
 CREATE table INDEX_DATA (
 	index_key VARCHAR(50),
 	trade_time timestamp,

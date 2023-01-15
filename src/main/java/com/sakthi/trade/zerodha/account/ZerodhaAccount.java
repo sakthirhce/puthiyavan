@@ -4,15 +4,11 @@ import com.google.gson.Gson;
 import com.sakthi.trade.dhan.DhanRoutes;
 import com.sakthi.trade.dhan.schema.FundResponseDTO;
 import com.sakthi.trade.domain.OpenPositionData;
-import com.sakthi.trade.entity.*;
 import com.sakthi.trade.fyer.AuthRequestDTO;
-import com.sakthi.trade.fyer.model.PivotTimeFrame;
-import com.sakthi.trade.fyer.model.StandardPivot;
-import com.sakthi.trade.fyer.model.StandardPivots;
-import com.sakthi.trade.fyer.service.TransactionService;
+import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.repo.*;
 import com.sakthi.trade.telegram.TelegramMessenger;
-import com.sakthi.trade.util.MathUtils;
+
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import com.zerodhatech.kiteconnect.KiteConnect;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
@@ -445,9 +441,6 @@ public class ZerodhaAccount {
     @Autowired
     ZerodhaTransactionService zerodhaTransactionService;
     List<String> aboveR1Live=new ArrayList<>();
-
-    Map<String,StandardPivots> indexPivots=new HashMap<>();
-    Map<String,StandardPivots> stockPivots=new HashMap<>();
     @Autowired
     StockDayDataRepository stockDayDataRepository;
 
@@ -474,109 +467,6 @@ public class ZerodhaAccount {
         return cal;
 
     }
-   // @Scheduled(cron="${zerodha.pivots.data}")
-    public void populatePivots(){
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        Calendar fromCalendar = Calendar.getInstance();
-        fromCalendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-        fromCalendar.add(Calendar.DATE, -7);
-        Calendar toCalender = Calendar.getInstance();
-        toCalender.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-        toCalender.add(Calendar.DATE, -1);
-        String weekPivotStartDay = dateFormat.format(fromCalendar.getTime());
-        Calendar calPreYear=getPreviousYear();
-        String yearPivotStartDay = dateFormat.format(calPreYear.getTime());
-        Calendar monthCalendar = Calendar.getInstance();
-        monthCalendar.add(Calendar.MONTH, -1);
-        monthCalendar.set(Calendar.DATE, 1);
-        String monthDateStr = dateFormat.format(monthCalendar.getTime());/*
-        Calendar currentDay = Calendar.getInstance();
-        currentDay.add(Calendar.DATE, -1);
-        String dayPivotStartDay = dateFormat.format(currentDay.getTime());*/
-
-        IndexWeekDataEntity indexWeekDataEntity=indexWeekDataRepository.findSymbolWithDate("BANKNIFTY",weekPivotStartDay);
-        IndexMonthlyDataEntity indexMonthlyDataEntity=indexMonthDataRepository.findSymbolWithDate("BANKNIFTY",monthDateStr);
-        IndexYearDataEntity indexYearly=indexYearDataRepository.findSymbolWithDate("BANKNIFTY",yearPivotStartDay);
-        IndexDayDataEntity indexDayDataEntity=indexDayDataRepository.findLastRecord("BANKNIFTY");
-        try{
-        StandardPivot dayPivots=calculatePRS(indexDayDataEntity.getHigh(),indexDayDataEntity.getLow(),indexDayDataEntity.getClose(), PivotTimeFrame.DAY.name());
-        StandardPivot weekPivots=calculatePRS(indexWeekDataEntity.getHigh(),indexWeekDataEntity.getLow(),indexWeekDataEntity.getClose(), PivotTimeFrame.WEEK.name());
-        StandardPivot monthPivots=calculatePRS(indexMonthlyDataEntity.getHigh(),indexMonthlyDataEntity.getLow(),indexMonthlyDataEntity.getClose(), PivotTimeFrame.MONTH.name());
-        StandardPivot yearPivots=calculatePRS(indexYearly.getHigh(),indexYearly.getLow(),indexYearly.getClose(), PivotTimeFrame.YEAR.name());
-        StandardPivots standardPivots=new StandardPivots();
-        standardPivots.setDayPivots(dayPivots);
-        standardPivots.setWeekPivots(weekPivots);
-        standardPivots.setYearPivots(yearPivots);
-        standardPivots.setMonthPivots(monthPivots);
-        indexPivots.put("BANKNIFTY",standardPivots);
-        }catch (Exception e){e.printStackTrace();
-        }
-        List<StockEntity> stockEntityList=stockRepository.findAll();
-        stockEntityList.forEach(stockEntity -> {
-            try {
-                StockWeekDataEntity stockWeekDataEntity = stockWeekDataRepository.findSymbolWithDate(stockEntity.getSymbol(), weekPivotStartDay);
-                StockMonthDataEntity stockMonthDataEntity = stockMonthDataRepository.findSymbolWithDate(stockEntity.getSymbol(), monthDateStr);
-                StockYearDataEntity stockYearDataEntity = stockYearDataRepository.findSymbolWithDate(stockEntity.getSymbol(), yearPivotStartDay);
-                StockDayDataEntity stockDayDataEntity = stockDayDataRepository.findLastRecord(stockEntity.getSymbol());
-                StandardPivot stockDayPivots = calculatePRS(stockDayDataEntity.getHigh(), stockDayDataEntity.getLow(), stockDayDataEntity.getClose(), PivotTimeFrame.DAY.name());
-                StandardPivot stockWeekPivots = calculatePRS(stockWeekDataEntity.getHigh(), stockWeekDataEntity.getLow(), stockWeekDataEntity.getClose(), PivotTimeFrame.WEEK.name());
-                StandardPivot stockMonthPivots = calculatePRS(stockMonthDataEntity.getHigh(), stockMonthDataEntity.getLow(), stockMonthDataEntity.getClose(), PivotTimeFrame.MONTH.name());
-                StandardPivot stockYearPivots = calculatePRS(stockYearDataEntity.getHigh(), stockYearDataEntity.getLow(), stockYearDataEntity.getClose(), PivotTimeFrame.YEAR.name());
-                StandardPivots stockStandardPivots = new StandardPivots();
-                stockStandardPivots.setDayPivots(stockDayPivots);
-                stockStandardPivots.setWeekPivots(stockWeekPivots);
-                stockStandardPivots.setYearPivots(stockYearPivots);
-                stockStandardPivots.setMonthPivots(stockMonthPivots);
-                //   System.out.println(stockStandardPivots);
-                stockPivots.put(stockEntity.getSymbol(), stockStandardPivots);
-            }catch (Exception e){
-                e.printStackTrace();
-            }
-        });
-        System.out.println(new Gson().toJson(indexPivots));
-        System.out.println(new Gson().toJson(stockPivots));
-    }
-
-    public StandardPivot calculatePRS(double HIGHprev, double LOWprev, double CLOSEprev, String timeFrame){
-        NumberFormat formatter = new DecimalFormat("#0.00");
-        double PP;
-        double R1;
-        double S1;
-        double R2;
-        double S2;
-        double R3;
-        double S3;
-        double R4;
-        double S4;
-        double R5;
-        double S5;
-        PP = (HIGHprev + LOWprev + CLOSEprev) / 3;
-        R1 = PP * 2 - LOWprev;
-        S1 = PP * 2 - HIGHprev;
-        R2 = PP + (HIGHprev - LOWprev);
-        S2 = PP - (HIGHprev - LOWprev);
-        R3 = PP * 2 + (HIGHprev - 2 * LOWprev);
-        S3 = PP * 2 - (2 * HIGHprev - LOWprev);
-        R4 = PP * 3 + (HIGHprev - 3 * LOWprev);
-        S4 = PP * 3 - (3 * HIGHprev - LOWprev);
-        R5 = PP * 4 + (HIGHprev - 4 * LOWprev);
-        S5 = PP * 4 - (4 * HIGHprev - LOWprev);
-        StandardPivot standardPivots=new StandardPivot();
-        standardPivots.setPP(Double.parseDouble(formatter.format(PP)));
-        standardPivots.setPivotTimeFrame(timeFrame);
-        standardPivots.setR1(Double.parseDouble(formatter.format(R1)));
-        standardPivots.setR2(Double.parseDouble(formatter.format(R2)));
-        standardPivots.setR3(Double.parseDouble(formatter.format(R3)));
-        standardPivots.setR5(Double.parseDouble(formatter.format(R5)));
-        standardPivots.setR4(Double.parseDouble(formatter.format(R4)));
-        standardPivots.setS1(Double.parseDouble(formatter.format(S1)));
-        standardPivots.setS2(Double.parseDouble(formatter.format(S2)));
-        standardPivots.setS3(Double.parseDouble(formatter.format(S3)));
-        standardPivots.setS4(Double.parseDouble(formatter.format(S4)));
-        standardPivots.setS5(Double.parseDouble(formatter.format(S5)));
-        return standardPivots;
-
-    }
     Map<String,Double> last20DayMax=new HashMap<>();
     Map<String,Double> last365Max=new HashMap<>();
 
@@ -598,61 +488,6 @@ public class ZerodhaAccount {
             }
         });
     }
-  //  @Scheduled(cron = "${zerodha.schedule.pivot.alert}")
-    public void findPivots() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Calendar currentDate = Calendar.getInstance();
-        String fromDate = dateFormat.format(currentDate.getTime());
-
-        zerodhaTransactionService.lsSymbols.entrySet().forEach(symbolMap -> {
-            try {
-                System.out.println(symbolMap+":"+dateTimeFormat.format(new Date()));
-                HistoricalData historicalData = zerodhaAccount.kiteSdk.getHistoricalData(dateTimeFormat.parse(fromDate + " 09:15:00"), dateTimeFormat.parse(fromDate + " 15:05:00"), symbolMap.getValue(), "5minute", false, false);
-                Thread.sleep(400);
-                if (historicalData != null && historicalData.dataArrayList.size() > 0) {
-                    HistoricalData historicalDataOpen = historicalData.dataArrayList.get(0);
-                    HistoricalData lastCandle = historicalData.dataArrayList.get(historicalData.dataArrayList.size() - 1);
-                    StandardPivots standardPivots = stockPivots.get(symbolMap.getKey());
-                    if(standardPivots!=null) {
-                        StandardPivot weekPivot = standardPivots.getWeekPivots();
-                        StandardPivot monthPivot = standardPivots.getMonthPivots();
-                        double perMove = MathUtils.percentageMove(historicalDataOpen.open, lastCandle.close);
-                        if (perMove > 0 && lastCandle.close > weekPivot.getR1() && !aboveR1Live.contains(symbolMap.getKey())) {
-                            aboveR1Live.add(symbolMap.getKey());
-                            String message="Stock Above WR1: " + symbolMap.getKey() + " WR1: " + weekPivot.getR1() + " Current Close: " + lastCandle.close;
-                            if (lastCandle.close > monthPivot.getR1()) {
-                                message= message+"\n"+ "Stock Above MR1 ";
-                            }
-                            if(historicalDataOpen.close > weekPivot.getR1()){
-                                message= message+"\n"+ "Open Above WR1 ";
-                            }
-                       double last20DayMaxValue=last20DayMax.get(symbolMap.getKey());
-                            double last365MaxValue=last365Max.get(symbolMap.getKey());
-                            if (lastCandle.close >last20DayMaxValue) {
-                                message= message+"\n"+ "Above 52 week ";
-                            }
-                            if(historicalDataOpen.close > last365MaxValue){
-                                message= message+"\n"+ "Above 20 Day";
-                            }
-                            try {
-                                sendMessage.sendToTelegram(message, telegramToken);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                }
-            }catch (KiteException e) {
-                System.out.println(symbolMap.getKey()+":"+String.valueOf(e.code));
-                e.printStackTrace();
-            }catch (Exception e){
-                System.out.println(symbolMap.getKey()+":");
-                e.printStackTrace();
-            }
-        });
-    }
-
     @Autowired
     OpenTradeDataRepo openTradeDataRepo;
     private Map<String,Integer> getTradeOpenQty(){

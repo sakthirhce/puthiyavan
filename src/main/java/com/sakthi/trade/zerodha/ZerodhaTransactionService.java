@@ -1,9 +1,7 @@
 package com.sakthi.trade.zerodha;
 
-import com.google.gson.Gson;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
-import com.sakthi.trade.fyer.service.TransactionService;
 import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.zerodha.account.Expiry;
 import com.sakthi.trade.zerodha.account.StrikeData;

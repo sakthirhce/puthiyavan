@@ -1,13 +1,9 @@
-package com.sakthi.trade.fyer.service;
+package com.sakthi.trade.zerodha;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
-import com.sakthi.trade.fyer.Account;
-import com.sakthi.trade.options.nifty.buy.NiftyORB;
-import com.sakthi.trade.options.nifty.buy.NiftyOptionBuy935V2;
 import com.sakthi.trade.zerodha.account.User;
 import com.sakthi.trade.zerodha.account.UserList;
-import com.sakthi.trade.zerodha.account.ZerodhaAccount;
 import com.zerodhatech.kiteconnect.KiteConnect;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
@@ -17,8 +13,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
-import java.util.Iterator;
-import java.util.Map;
 import java.util.logging.Logger;
 
 @Component
@@ -28,8 +22,6 @@ public class TransactionService {
     @Autowired
     @Qualifier("createOkHttpClient")
         OkHttpClient okHttpClient;
-    @Autowired
-    Account account;
 
     @Autowired
     UserList userList;
@@ -39,40 +31,6 @@ public class TransactionService {
         User user =userList.getUser().stream().filter(User::isAdmin).findFirst().get();
         kiteConnect = user.getKiteConnect();
     }
-  //  public static final Logger LOGGER = Logger.getLogger(TransactionService.class.getName());
-    public Request createPostPutDeleteRequest(HttpMethod httpMethod,String uri,String payload){
-        Request.Builder requestBuilder=new Request.Builder();
-        requestBuilder.addHeader("Content-Type","application/json;charset=UTF-8");
-        requestBuilder.addHeader("Authorization" , account.token);
-        requestBuilder.url(uri);
-        MediaType JSON=MediaType.parse("application/json");
-        log.info("payload: "+ payload);
-
-        if(HttpMethod.POST.equals(httpMethod)){
-            RequestBody body= RequestBody.create(JSON,payload);
-        requestBuilder.post(body);}
-        else if(HttpMethod.PUT.equals(httpMethod)){
-            RequestBody body= RequestBody.create(JSON,payload);
-            requestBuilder.put(body);
-        }else if(HttpMethod.DELETE.equals(httpMethod)){
-            RequestBody body= RequestBody.create(JSON,payload);
-            requestBuilder.delete(body);
-        }
-        return requestBuilder.build();
-    }
-
-    public Request createGetRequest(String uri,String queryValue){
-        Request.Builder requestBuilder=new Request.Builder();
-        requestBuilder.addHeader("Content-Type","application/json;charset=UTF-8");
-        requestBuilder.addHeader("Authorization" , account.token);
-        if(queryValue!=null){
-            uri=uri+Long.valueOf(queryValue);
-        }
-        requestBuilder.url(uri);
-        requestBuilder.get();
-        return requestBuilder.build();
-    }
-
     public Request createPostRequest(String url, JSONObject params, String accessToken) {
         MediaType JSON=MediaType.parse("application/json");
         String payload= new Gson().toJson(params);

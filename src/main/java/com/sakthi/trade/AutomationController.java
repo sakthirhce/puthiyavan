@@ -9,24 +9,15 @@ import com.sakthi.trade.algotest.backtest.data.Algotest;
 import com.sakthi.trade.domain.*;
 import com.sakthi.trade.entity.*;
 import com.sakthi.trade.futures.banknifty.BNFFuturesTrendFollowing;
-import com.sakthi.trade.fyer.Account;
 //import com.sakthi.trade.fyer.FyerTrendTest;
-import com.sakthi.trade.fyer.mapper.FyerTransactionMapper;
-import com.sakthi.trade.fyer.service.TransactionService;
+import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.fyer.transactions.OrderStatusResponseDTO;
 import com.sakthi.trade.fyer.transactions.PlaceOrderRequestDTO;
 import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.options.WeeklyDataBackup;
 import com.sakthi.trade.options.banknifty.*;
-import com.sakthi.trade.options.banknifty.backtest.*;
 import com.sakthi.trade.options.banknifty.buy.BNiftyOptionBuy917;
 import com.sakthi.trade.options.banknifty.buy.BNiftyOptionBuy935;
-import com.sakthi.trade.options.buy.banknifty.IndexGapBacktest;
-import com.sakthi.trade.options.buy.banknifty.VwapRsiOiVolumeBuyBacktest;
-import com.sakthi.trade.options.buy.banknifty.VwapRsiOiVolumeBuyBacktestTrueData;
-import com.sakthi.trade.options.nifty.NIftyORBBackTest;
-import com.sakthi.trade.options.nifty.NIftyStraddleLongBackTest;
-import com.sakthi.trade.options.nifty.NiftyShortStraddleOI;
 import com.sakthi.trade.options.nifty.buy.*;
 import com.sakthi.trade.repo.*;
 import com.sakthi.trade.telegram.DataBot;
@@ -71,8 +62,6 @@ import java.util.logging.Logger;
 public class AutomationController {
     public Session session = null;
     public Boolean trendCompleted = false;
-    @Autowired
-    Account account;
     @Value("${filepath.trend}")
     String trendPath;
     /* @Autowired
@@ -93,8 +82,6 @@ public class AutomationController {
     @Value("${fyers.get.order.status.api}")
     String orderStatusAPIUrl;
     @Autowired
-    FyerTransactionMapper fyerTransactionMapper;
-    @Autowired
     ZerodhaTransactionService instrumentService;
     @Autowired
     TransactionService transactionService;
@@ -105,8 +92,7 @@ public class AutomationController {
     DataBot dataBot;
     /*@Autowired
     HistoricWebsocket historicWebsocket;*/
-    @Autowired
-    NIftyStraddleLongBackTest nIftyStraddleLongBackTest;/*
+ /*
     @Autowired
     BankNIftyStraddleLongBackTest bankNIftyStraddleLongBackTest;*/
     @Autowired
@@ -134,18 +120,8 @@ public class AutomationController {
     VwapRsiOiVolumeBuy vwapRsiOiVolumeBuy;*/
 
     @Autowired
-    VwapRsiOiVolumeSelling vwapRsiOiVolumeSelling;
-    @Autowired
-    NiftyVwapRsiOiVolumeBuy niftyVwapRsiOiVolumeBuy;
-
-    @Autowired
-    VwapRsiOiVolumeBuyBacktest vwapRsiOiVolumeBuyBacktest;
-
-    @Autowired
     ZerodhaTransactionService ztransactionService;
 
-    @Autowired
-    NiftyVwapRsiOiVolumeBuyBacktest niftyVwapRsiOiVolumeBuyBacktest;
 
     @Autowired
     BNFFuturesTrendFollowing bnfFuturesTrendFollowing;
@@ -160,29 +136,9 @@ public class AutomationController {
     @Autowired
     IndexRepository indexRepository;
     @Autowired
-    BankNiftyOiSellingBackTest bankNiftyOiSellingBackTest;
-    @Autowired
-    BankNiftyShortStraddleOIBacktest bankNiftyShortStraddleOI;
-    @Autowired
-    VwapRsiOiVolumeBuyBacktestTrueData vwapRsiOiVolumeBuyBacktestTrueData;
-    @Autowired
-    BankNiftyShortStraddleOIBuyBacktest bankNiftyShortStraddleOIBuyBacktest;
-    @Autowired
-    NiftyShortStraddleOI niftyShortStraddleOI;
-    @Autowired
-    BankNiftyShortStraddleOIDBBacktest bankNiftyShortStraddleOIDBBacktest;
-    @Autowired
-    BankNiftyShortStraddleOIDBBuyBacktest bankNiftyShortStraddleOIDBBuyBacktest;
-    @Autowired
     BankNiftyOptionRepository bankNiftyOptionRepository;
     @Autowired
-    BankNiftyOptionSelling bankNiftyOptionSelling;
-    @Autowired
-    BankNiftyOptionSelling1 bankNiftyOptionSelling1;
-    @Autowired
     UserLoginRepository userLoginRepository;
-    @Autowired
-    CryptoRepository cryptoRepository;
     @Value("${binance.sathiyaseelanrhce.v11.secret}")
     private String binanceSecretKey;
     @Value("${binance.sathiyaseelanrhce.v11.apikey}")
@@ -260,25 +216,7 @@ public class AutomationController {
 MathUtils mathUtils;
 
     @Autowired
-    IndexGapBacktest indexGapBacktest;
-    @Autowired
     ZerodhaTransactionService zerodhaTransactionService;
-    @GetMapping("/indexGaptest")
-    public ResponseEntity<String> indexGaptest(@RequestParam String index,String day) throws Exception, KiteException {
-        Map<String,Map<String,String>> strikeMasterMap;
-        String stockId;
-        if ("BNF".equals(index)) {
-            strikeMasterMap=zerodhaTransactionService.bankNiftyWeeklyOptions;
-            stockId="260105";
-        }else {
-            strikeMasterMap=zerodhaTransactionService.niftyWeeklyOptions;
-            stockId="256265";
-        }
-        HttpHeaders responseHeaders = new HttpHeaders();
-        indexGapBacktest.buy(Integer.parseInt(day),stockId);
-
-        return new ResponseEntity<>(new Gson().toJson("Ok"), responseHeaders, HttpStatus.OK);
-    }
     @GetMapping("/testRange")
     public ResponseEntity<String> testRange(@RequestParam String index,String date,int upperRange,int lowerRange) throws Exception, KiteException {
         Map<String,Map<String,String>> strikeMasterMap;
@@ -307,8 +245,6 @@ String stockId;
     @Autowired
     BNiftyOptionBuy935 bNiftyOptionBuy935;
 
-    @Autowired
-    NiftyOptionBuy935V2 niftyOptionBuy935V2;
 
     @GetMapping("/bNiftyOptionBuy935")
     public void bNiftyOptionBuy935() throws Exception, KiteException {
@@ -496,10 +432,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
     public void niftyOptionBuy935loadmtest() throws Exception {
         niftyOptionBuy935.loadNrmlPositions();
     }
-    @GetMapping("/niftyOptionBuy935V2")
-    public void niftyOptionBuy935V2() throws Exception, KiteException {
-        niftyOptionBuy935V2.buy();
-    }
     @GetMapping("/zerodha_instrument")
     public void generateInstrument() throws Exception {
         instrumentService.getInstrument();
@@ -541,16 +473,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
     }
 */
 
-    @GetMapping("/loadHistory")
-    public void loadHistory(@RequestParam int day) throws Exception, KiteException {
-
-        List<StockEntity> stockEntityList = stockRepository.findMissingStockData();
-
-        stockEntityList.forEach(stockEntity -> {
-            account.loadHistory(day, stockEntity.getSymbol(), stockEntity.getFyerSymbol());
-        });
-
-    }
 
    /* @GetMapping("/live")
     public void startORBLive() throws Exception {
@@ -561,73 +483,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
         orbScheduler.ORB15MinDataScheduler();
     }*/
 
-    @GetMapping("/loadStockDayHistory")
-    public void loadStockDayHistory(@RequestParam int day) throws Exception, KiteException {
-
-        List<StockEntity> stockEntityList = stockRepository.findAll();
-
-        stockEntityList.forEach(stockEntity -> {
-            account.loadDayHistory(day, stockEntity.getSymbol(), stockEntity.getFyerSymbol());
-        });
-
-    }
-
-    @GetMapping("/loadStockWeekHistory")
-    public void loadStockWeekHistory(@RequestParam int day) throws Exception, KiteException {
-
-        List<StockEntity> stockEntityList = stockRepository.findAll();
-
-        stockEntityList.forEach(stockEntity -> {
-            account.loadStockWeekHistory(stockEntity.getSymbol());
-        });
-
-    }
-
-    @GetMapping("/calculateBigTimeFrame")
-    public void calculateBigTimeFrame(@RequestParam int day) throws Exception, KiteException {
-
-        account.calculateBigTimeFrame();
-    }
-
-    @GetMapping("/populatePivots")
-    public void populatePivots() throws Exception, KiteException {
-
-       /* List<StockEntity> stockEntityList=stockRepository.findAll();
-        stockEntityList.forEach(stockEntity -> {*/
-        account.populatePivots();
-        /*  });*/
-
-    }
-
-    @GetMapping("/findMax")
-    public void findMax() throws Exception, KiteException {
-
-       /* List<StockEntity> stockEntityList=stockRepository.findAll();
-        stockEntityList.forEach(stockEntity -> {*/
-        account.findMax();
-        /*  });*/
-
-    }
-
-    @GetMapping("/testPivots")
-    public void testPivots(@RequestParam String fromDate, @RequestParam String toDate) throws Exception, KiteException {
-
-       /* List<StockEntity> stockEntityList=stockRepository.findAll();
-        stockEntityList.forEach(stockEntity -> {*/
-        account.testPivots(fromDate, toDate);
-        /*  });*/
-
-    }
-
-    @GetMapping("/testPivotsHistory")
-    public void testPivotsHistory(@RequestParam int day) throws Exception, KiteException {
-
-       /* List<StockEntity> stockEntityList=stockRepository.findAll();
-        stockEntityList.forEach(stockEntity -> {*/
-        account.testPivotsHistory(day);
-        /*  });*/
-
-    }
     @Autowired
     NiftyORB niftyORB;
     @GetMapping("/niftyORB")
@@ -637,83 +492,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
         stockEntityList.forEach(stockEntity -> {*/
         niftyORB.ORB();
         /*  });*/
-
-    }
-    @GetMapping("/loadStockYearHistory")
-    public void loadStockYearHistory(@RequestParam int day) throws Exception, KiteException {
-        List<StockEntity> stockEntityList = stockRepository.findAll();
-        stockEntityList.forEach(stockEntity -> {
-            account.loadStockYearHistory(stockEntity.getSymbol());
-        });
-    }
-
-    @GetMapping("/loadIndicesDayHistory")
-    public void loadIndicesDayHistory(@RequestParam int day) throws Exception, KiteException {
-
-        account.loadIndicesDayHistory(day, "BANKNIFTY", "NSE:NIFTYBANK-INDEX");
-
-    }
-
-    @GetMapping("/loadIndicesHistory")
-    public void loadIndicesHistory(@RequestParam int day) throws Exception, KiteException {
-        account.loadIndicesHistory(day, "BANKNIFTY", "NSE:NIFTYBANK-INDEX");
-
-
-    }
-
-    @GetMapping("/testPivotsIndices")
-    public void testPivotsIndices(@RequestParam int day) throws Exception, KiteException {
-        account.testPivotsIndices(day);
-
-
-    }
-
-    /*  @GetMapping("/vwapBuy")
-      public void vwapBuy() throws Exception, KiteException {
-          zerodhaAccount.generateAccessToken();
-          instrumentService.getInstrument();
-          vwapRsiOiVolumeBuy.buy();
-
-      }*/
-    @GetMapping("/vwapBuyTest")
-    public void vwapBuyTest(@RequestParam int day, @RequestParam String tf, @RequestParam String tailSL, @RequestParam String target, @RequestParam String slipage) throws Exception, KiteException {
-        vwapRsiOiVolumeBuyBacktest.buy(day, tf, tailSL, target, slipage);
-
-    }
-
-    @GetMapping("/OiSelling")
-    public void OiSelling(@RequestParam int day, @RequestParam String tf, @RequestParam String tailSL, @RequestParam String target, @RequestParam String slipage) throws Exception, KiteException {
-        bankNiftyOiSellingBackTest.sell(day, tf, tailSL, target, slipage);
-
-    }
-    @Autowired
-    NIftyORBBackTest nIftyORBBackTest;
-    @GetMapping("/NIftyORBBackTest")
-    public void NIftyORBBackTest(@RequestParam int day) throws Exception, KiteException {
-        nIftyORBBackTest.ORB(day);
-
-    }
-
-    @GetMapping("/vwapSellTest")
-    public void vwapSellTest(@RequestParam int day, @RequestParam String tf, @RequestParam String tailSL, @RequestParam String target, @RequestParam String slipage) throws Exception, KiteException {
-        vwapRsiOiVolumeSelling.sell(day, tf, tailSL, target, slipage);
-
-    }
-
-    @GetMapping("/enableScheduler")
-    public void enableScheduler(@RequestParam boolean isEnabled) throws Exception, KiteException {
-        niftyVwapRsiOiVolumeBuy.isEnabled = isEnabled;
-
-    }
-
-    @GetMapping("/niftyvwapBuyTest")
-    public void niftyvwapBuyTest(@RequestParam int day, @RequestParam String tf, @RequestParam String tailSL, @RequestParam String target, @RequestParam String slipage, @RequestParam boolean targetEnabled) throws Exception, KiteException {
-        niftyVwapRsiOiVolumeBuyBacktest.buy(day, tf, tailSL, target, slipage, targetEnabled);
-    }
-
-    @GetMapping("/niftyVwapBuy")
-    public void niftyVwapBuy() throws Exception, KiteException {
-        niftyVwapRsiOiVolumeBuy.buy();
 
     }
 
@@ -734,55 +512,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
         zerodhaAccount.generateAccessToken();
         instrumentService.getInstrument();
         zerodhaBankNiftyShortStraddle.zerodhaBankNifty();
-
-    }
-
-    @GetMapping("/fundCheck")
-    public void fundCheck() throws Exception {
-        account.availableFund();
-    }
-
-    @GetMapping("/fyersToken")
-    public void fyersToken() throws Exception {
-        account.generateToken();
-    }
-
-    // @GetMapping("/placeOrder")
-    public void placeOrder() throws Exception {
-        PlaceOrderRequestDTO placeOrderRequestDTO = fyerTransactionMapper.placeOrderRequestDTO("SBIN", Order.BUY, OrderType.MARKET_ORDER, ProductType.INTRADAY, Validity.DAY, 1, new BigDecimal(0), new BigDecimal(0), new BigDecimal(0));
-        Request request = transactionService.createPostPutDeleteRequest(HttpMethod.POST, orderPlaceURL, new Gson().toJson(placeOrderRequestDTO));
-        String response = transactionService.callAPI(request);
-        System.out.println("buy response: " + response);
-    }
-
-    // @GetMapping("/emptyToken")
-    public void emptyToken() throws Exception {
-        account.emptyToken();
-    }
-
-    //  @GetMapping("/sellOrder")
-    public void sellOrder() throws Exception {
-        PlaceOrderRequestDTO placeOrderRequestDTO = fyerTransactionMapper.placeOrderRequestDTO("SBIN", Order.SELL, OrderType.MARKET_ORDER, ProductType.INTRADAY, Validity.DAY, 1, new BigDecimal(0), new BigDecimal(0), new BigDecimal(0));
-        Request request = transactionService.createPostPutDeleteRequest(HttpMethod.POST, orderPlaceURL, new Gson().toJson(placeOrderRequestDTO));
-        String response = transactionService.callAPI(request);
-        System.out.println("sell response: " + response);
-    }
-
-    @GetMapping("/trendTest")
-    public void trendTest(@RequestParam int day, @RequestParam String[] stocks) throws Exception {
-        int n = day;
-        while (n >= 0) {
-            LocalDate tradeDate = LocalDate.now().minusDays(n);
-            bankNiftyShortStraddleOI.triggerNIFTYBANK(tradeDate);
-            n--;
-        }
-
-    }
-
-    @GetMapping("/trendTestV")
-    public void trendTestV(@RequestParam int day, @RequestParam String tf, @RequestParam String tailSL, @RequestParam String target, @RequestParam String slipage) throws Exception, KiteException {
-        int n = day;
-        vwapRsiOiVolumeBuyBacktestTrueData.buy(day, tf, tailSL, target, slipage);
 
     }
    /* @GetMapping("/shortStraddleScheduleTest")
@@ -816,50 +545,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
     }*/
 
 
-    @GetMapping("/trendTestBuy")
-    public void trendTestBuy(@RequestParam int day, @RequestParam String[] stocks) throws Exception {
-        int n = day;
-        while (n >= 0) {
-            LocalDate tradeDate = LocalDate.now().minusDays(n);
-            bankNiftyShortStraddleOIBuyBacktest.triggerNIFTYBANK(tradeDate);
-            n--;
-        }
-
-    }
-
-    @GetMapping("/niftyStaddleTrend")
-    public void niftyStaddleTrend(@RequestParam int day, @RequestParam String[] stocks) throws Exception {
-        int n = day;
-        while (n >= 0) {
-            LocalDate tradeDate = LocalDate.now().minusDays(n);
-            niftyShortStraddleOI.triggerNIFTY(tradeDate);
-            n--;
-        }
-
-    }
-
-    @GetMapping("/bankNiftyShortStraddleOIDB")
-    public void bankNiftyShortStraddleOIDBBacktest(@RequestParam int day, @RequestParam String[] stocks) throws Exception {
-        int n = day;
-        while (n >= 0) {
-            LocalDate tradeDate = LocalDate.now().minusDays(n);
-            bankNiftyShortStraddleOIDBBacktest.triggerNIFTYBANK(tradeDate);
-            n--;
-        }
-
-    }
-
-    @GetMapping("/bankNiftyShortStraddleOIDBBuyBacktest")
-    public void bankNiftyShortStraddleOIDBBuyBacktest(@RequestParam int day, @RequestParam String[] stocks) throws Exception {
-        int n = day;
-        while (n >= 0) {
-            LocalDate tradeDate = LocalDate.now().minusDays(n);
-            bankNiftyShortStraddleOIDBBuyBacktest.triggerNIFTYBANK(tradeDate);
-            n--;
-        }
-
-    }
-
     @GetMapping("/optionExpDate")
     public ResponseEntity<?> optionExpDate() throws Exception {
         HttpHeaders responseHeaders = new HttpHeaders();
@@ -881,27 +566,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
         System.out.println(stringList);
         entity.setName(stringList);
         return new ResponseEntity<>(entity, responseHeaders, HttpStatus.OK);
-    }
-
-    @GetMapping("/optionStrikeData")
-    public ResponseEntity<String> optionStrikeData(@RequestParam String tradeDate, @RequestParam String expDate, @RequestParam String strikeType) throws Exception {
-        HttpHeaders responseHeaders = new HttpHeaders();
-        SimpleDateFormat format1 = new SimpleDateFormat("dd-MM-yyyy");
-        LocalDate expDateD = LocalDate.parse(expDate);
-        LocalDate tradeDateD = LocalDate.parse(tradeDate);
-        OptionCandleChartData optionCandleChartData = bankNiftyShortStraddleOIDBBacktest.straddleOI(tradeDateD, expDateD, strikeType);
-        return new ResponseEntity<>(new Gson().toJson(optionCandleChartData), responseHeaders, HttpStatus.OK);
-    }
-
-    @GetMapping("/getIndexData")
-    public ResponseEntity<String> getIndexData(@RequestParam String tradeDate, @RequestParam String indexName, int i) throws Exception {
-        HttpHeaders responseHeaders = new HttpHeaders();
-        DateTimeFormatter format1 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        LocalDate fromDate = LocalDate.parse(tradeDate, format1).minusDays(2);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        LocalDate tradeDateD = LocalDate.parse(tradeDate, format1);
-        String optionCandleChartData = account.getBarHistory(indexName, fromDate, tradeDateD);
-        return new ResponseEntity<>(new Gson().toJson(optionCandleChartData), responseHeaders, HttpStatus.OK);
     }
 
     /*
@@ -979,11 +643,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
           bankNiftyShortStraddle.getWeeklyExpiryOptionsDetails();
 
       }*/
-    @GetMapping("/niftyshortStraddleLongTest")
-    public void niftyshortStraddleLongTest() throws Exception {
-        nIftyStraddleLongBackTest.niftyStraddleLongTest();
-
-    }
 
     /*  @GetMapping("/preOpenPopulate")
       public void preOpenPopulate() throws Exception {
@@ -1026,24 +685,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
         niftyShortStraddle.shortStraddleTradeSchedule();
 
     }*/
-    @GetMapping("/passwordValidityCheck")
-    public void passwordValidityCheck() throws Exception {
-        account.passwordValidityCheck();
-
-    }
-
-    @GetMapping("/getOrderStatus")
-    public void getOrderStatus(@RequestParam String orderId) throws Exception {
-
-        Request request = transactionService.createGetRequest(orderStatusAPIUrl, orderId);
-        String response = transactionService.callAPI(request);
-        System.out.println(response);
-        //  String response ="{\"s\":\"ok\",\"message\":\"\",\"orderDetails\":{\"status\":2,\"symbol\":\"NSE:IGL-EQ\",\"qty\":49,\"orderNumStatus\":\"120082021161:2\",\"dqQtyRem\":0,\"orderDateTime\":\"20-Aug-2020 09:33:30\",\"orderValidity\":\"DAY\",\"fyToken\":\"101000000011262\",\"slNo\":13,\"message\":\"TRADE CONFIRMED\",\"segment\":\"E\",\"id\":\"120082021161\",\"stopPrice\":0.0,\"instrument\":\"EQUITY\",\"exchOrdId\":\"1100000001815348\",\"remainingQuantity\":0,\"filledQty\":49,\"limitPrice\":0.0,\"offlineOrder\":false,\"source\":\"ITS\",\"productType\":\"INTRADAY\",\"type\":2,\"side\":1,\"tradedPrice\":404.95,\"discloseQty\":0}}";
-        OrderStatusResponseDTO orderStatusResponseDTO = new Gson().fromJson(response, OrderStatusResponseDTO.class);
-        System.out.println(response);
-
-    }
-
     @GetMapping("/getPositions")
     public void getPositions() throws Exception {
         String response = "{\"s\":\"ok\",\"netPositions\":[{\"crossCurrency\":\"N\",\"qty\":16,\"realized_profit\":0.0,\"id\":\"NSE:JPASSOCIAT-EQ-CNC\",\"unrealized_profit\":0.32,\"buyQty\":16,\"sellAvg\":0.0,\"sellQty\":0,\"buyAvg\":4.78,\"symbol\":\"NSE:JPASSOCIAT-EQ\",\"fyToken\":\"101000000011460\",\"slNo\":0,\"avgPrice\":4.78,\"segment\":\"E\",\"dummy\":\" \",\"rbiRefRate\":1.0,\"side\":1,\"netQty\":16,\"pl\":0.32,\"productType\":\"CNC\",\"netAvg\":4.78,\"qtyMulti_com\":1.0},{\"crossCurrency\":\"N\",\"qty\":90,\"realized_profit\":0.0,\"id\":\"NSE:RCOM-EQ-CNC\",\"unrealized_profit\":1.8,\"buyQty\":90,\"sellAvg\":0.0,\"sellQty\":0,\"buyAvg\":2.03,\"symbol\":\"NSE:RCOM-EQ\",\"fyToken\":\"101000000013187\",\"slNo\":1,\"avgPrice\":2.03,\"segment\":\"E\",\"dummy\":\" \",\"rbiRefRate\":1.0,\"side\":1,\"netQty\":90,\"pl\":1.8,\"productType\":\"CNC\",\"netAvg\":2.03,\"qtyMulti_com\":1.0}],message:\"\"}";
@@ -1125,15 +766,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
         map.entrySet().stream().findFirst().isPresent();
     }
 
-    @GetMapping("/testOptionSelling")
-    public void testOptionSelling(@RequestParam int days, @RequestParam String trialPercent, @RequestParam boolean isPCREnabled) throws KiteException, Exception {
-        bankNiftyOptionSelling.optionSelling(days, trialPercent, isPCREnabled);
-    }
-
-    @GetMapping("/testOptionSelling1")
-    public void testOptionSelling1(@RequestParam int days, @RequestParam String trialPercent, @RequestParam boolean isPCREnabled) throws KiteException, Exception {
-        bankNiftyOptionSelling1.optionSelling(days, trialPercent, isPCREnabled);
-    }
 
 
     @PostMapping("/authenticate")
@@ -1177,44 +809,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
             tradeDataList=mapOpenTradeDataEntityToTradeData(orderDetails);
             return new ResponseEntity<>(new Gson().toJson(tradeDataList),HttpStatus.OK);
             }else {
-            orderDetails = openTradeDataRepo.getOpenPositionDetails(user.getUserId());
-            if (orderDetails.size() > 0){
-                tradeDataList=mapOpenTradeDataEntityToTradeData(orderDetails);
-                return new ResponseEntity<>(new Gson().toJson(tradeDataList),HttpStatus.OK);
-            }
-        }
-        return new ResponseEntity<>(null,HttpStatus.NOT_FOUND);
-    }
-    @Autowired
-    NiftyOptionBuy1035 niftyOptionBuy1035;
-
-    @PostMapping("/getPreviousDayTradeDetails")
-    public ResponseEntity<?> getPreviousDayTradeDetails(@RequestBody String payload) throws Exception {
-        Users users=new Gson().fromJson(payload,Users.class);
-        User user=users.getUser();
-        Date date = new Date();
-        if(niftyOptionBuy935.openTradeDataEntities1.size()>0)
-        {
-
-        }
-        if(niftyOptionBuy1035.openTradeDataEntities1.size()>0)
-        {
-
-        }
-        if(bnfFuturesTrendFollowing.openTradeDataEntities1.size()>0)
-        {
-
-        }
-      /*  if(zerodhaBankNiftyShortStraddleWithLong.openTradeDataEntities1.size()>0)
-        {
-
-        }*/
-        List<OpenTradeDataEntity> orderDetails = openTradeDataRepo.getOrderDetails(user.getUserId(),format.format(date));
-        List<TradeData> tradeDataList = new ArrayList<>();
-        if (orderDetails.size() > 0){
-            tradeDataList=mapOpenTradeDataEntityToTradeData(orderDetails);
-            return new ResponseEntity<>(new Gson().toJson(tradeDataList),HttpStatus.OK);
-        }else {
             orderDetails = openTradeDataRepo.getOpenPositionDetails(user.getUserId());
             if (orderDetails.size() > 0){
                 tradeDataList=mapOpenTradeDataEntityToTradeData(orderDetails);
