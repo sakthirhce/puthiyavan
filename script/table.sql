@@ -72,18 +72,35 @@ CREATE table trade_user (
 );
 
 CREATE table trade_strategy (
-	index VARCHAR(50),
-	trade_time timestamp,
-       open numeric(10,2),
-        high numeric(10,2),
-       low numeric(10,2),
-       close numeric(10,2),
-       volume numeric(50,2),
-       oi numeric(50,2),
-        vwap numeric(10,2),
-           CONSTRAINT fk_bn_key
-              FOREIGN KEY(index_key)
-        	  REFERENCES INDEX(index_key)
+    trade_strategy_key VARCHAR(50)  PRIMARY KEY,
+	index VARCHAR(50), --NIFTY/BNF
+	entry_time timestamp,
+	trade_validity VARCHAR(50), --MIS,BTST
+	exit_time timestamp,
+	user_id VARCHAR(50),
+	strike_selection_type VARCHAR(50),--ATM/Price Range
+	strike_price_range_low numeric(10,2), --350
+	strike_price_range_high numeric(10,2), --450
+	strike_closest_premium numeric(10,2), --5
+	order_type VARCHAR(50), --BUY/SELL
+	strike_type VARCHAR(50), --PE/CE
+	entry_order_type VARCHAR(50), --market/limit
+	exit_order_type VARCHAR(50), --market/limit
+	simple_momentum boolean not null default false,
+	simple_momentum_type VARCHAR(50), --percent/point
+	simple_momentum_value numeric(10,2),
+	range_break boolean not null default false,
+	range_break_type VARCHAR(50), --percent/point
+	range_break_time VARCHAR(50),
+    range_break_value numeric(10,2),
+    range_break_side VARCHAR(50), --high/low
+    range_break_instrument VARCHAR(50), --index/options
+    sl_type VARCHAR(50), --percent/point
+    sl_value numeric(10,2),
+    sl_order_type numeric(10,2), --market/limit
+	CONSTRAINT user_fk
+              FOREIGN KEY(user_id)
+        	  REFERENCES trade_user(user_id)
 );
 CREATE table INDEX_DATA (
 	index_key VARCHAR(50),

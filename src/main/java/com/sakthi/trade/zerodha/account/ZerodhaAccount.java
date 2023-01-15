@@ -279,24 +279,24 @@ public class ZerodhaAccount {
                             AuthRequestDTO authRequest = new AuthRequestDTO();
                             webDriver.get(url);
 
-                            Thread.sleep(1000);
+                            Thread.sleep(2000);
 
                             webDriver.findElements(By.xpath("//input")).get(0).sendKeys(user1.name);
                             webDriver.findElements(By.xpath("//input")).get(1).sendKeys(user1.password);
                             webDriver.findElements(By.xpath("//button")).get(0).click();
                             //       takeSnapShot(webDriver, "/home/hasvanth/test3_"+user1.name+".png");
-                            Thread.sleep(1000);
+                            Thread.sleep(2000);
                             String totp = getTotp(user1.totp);
                             webDriver.findElements(By.xpath("//input")).get(0).sendKeys(totp);
                             //      takeSnapShot(webDriver, "/home/hasvanth/test2_"+user1.name+".png");
-                            webDriver.findElements(By.xpath("//button")).get(0).click();
+                     //       webDriver.findElements(By.xpath("//button")).get(0).click();
 
-                            Thread.sleep(1000);
+                       //     Thread.sleep(1000);
                             //         takeSnapShot(webDriver, "/home/hasvanth/test1_"+user1.name+".png");
                /* webDriver.findElements(By.xpath("//input")).get(0).sendKeys(zerodhaPin);
                 this.takeSnapShot(webDriver, "/home/hasvanth/test3.png");
                 webDriver.findElements(By.xpath("//button")).get(0).click();*/
-                            Thread.sleep(1000);
+                            Thread.sleep(2000);
                             System.out.println(webDriver.getCurrentUrl());
                             List<NameValuePair> queryParams = new URIBuilder(webDriver.getCurrentUrl()).getQueryParams();
                             String requestToken = queryParams.stream().filter(param -> param.getName().equals("request_token")).map(NameValuePair::getValue).findFirst().orElse("");
