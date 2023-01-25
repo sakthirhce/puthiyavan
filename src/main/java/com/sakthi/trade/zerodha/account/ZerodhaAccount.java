@@ -26,6 +26,9 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.interactions.Actions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -46,7 +49,6 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
-import java.util.logging.Logger;
 
 @Slf4j
 @Component
@@ -82,7 +84,7 @@ public class ZerodhaAccount {
     public String token = null;
     public KiteConnect kiteSdk;
     public int spaceCheck=0;
-
+    SimpleDateFormat candleDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
     //  @Scheduled(cron="${zerodha.login.schedule}")
     public String generateToken() throws IOException, InterruptedException, URISyntaxException {
@@ -255,12 +257,15 @@ public class ZerodhaAccount {
         return null;
     }
 
-    public static final Logger LOGGER = Logger.getLogger(ZerodhaAccount.class.getName());;
+
+    Logger logger = LoggerFactory.getLogger(ZerodhaAccount.class);
     @Autowired
     UserList userList;
     @Scheduled(cron = "${zerodha.generate.token}")
     @PostConstruct
     public String generateMultiUserAccessToken() throws IOException, InterruptedException, URISyntaxException {
+        Date date=new Date();
+        MDC.put("run_time",candleDateTimeFormat.format(date));
         if(!testProfile) {
             userList.getUser().stream().filter(user1 -> user1.enabled).forEach(user1 -> {
                 if (user1.tokenCount < 2) {
@@ -307,8 +312,8 @@ public class ZerodhaAccount {
                             token = user.accessToken;
                             kiteConnect.setPublicToken(user.publicToken);
                             Margin margins = kiteConnect.getMargins("equity");
-                            LOGGER.info(margins.available.cash);
-                            LOGGER.info(margins.utilised.debits);
+                            logger.info(margins.available.cash);
+                            logger.info(margins.utilised.debits);
                             String botId = "";
                             TelegramBot telegramBot = user1.getTelegramBot();
                             if (telegramBot != null) {

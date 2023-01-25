@@ -67,17 +67,20 @@ CREATE table INDEX (
 CREATE table trade_user (
 	user_id VARCHAR(50)  PRIMARY KEY,
 	broker VARCHAR (50),
-	enabled VARCHAR (50),
+	enabled boolean,
         UNIQUE(user_id)
 );
 
 CREATE table trade_strategy (
     trade_strategy_key VARCHAR(50)  PRIMARY KEY,
 	index VARCHAR(50), --NIFTY/BNF
-	entry_time timestamp,
+	entry_time VARCHAR(50),
 	trade_validity VARCHAR(50), --MIS,BTST
-	exit_time timestamp,
+	exit_time VARCHAR(50),
+	intraday_exit_time VARCHAR(50),
+	trade_days VARCHAR(50),
 	user_id VARCHAR(50),
+	strategy_enabled boolean not null default false,
 	strike_selection_type VARCHAR(50),--ATM/Price Range
 	strike_price_range_low numeric(10,2), --350
 	strike_price_range_high numeric(10,2), --450
@@ -90,14 +93,26 @@ CREATE table trade_strategy (
 	simple_momentum_type VARCHAR(50), --percent/point
 	simple_momentum_value numeric(10,2),
 	range_break boolean not null default false,
-	range_break_type VARCHAR(50), --percent/point
 	range_break_time VARCHAR(50),
-    range_break_value numeric(10,2),
     range_break_side VARCHAR(50), --high/low
     range_break_instrument VARCHAR(50), --index/options
+    reentry boolean not null default false,
+    reentry_type VARCHAR(50), --ASAP/COST
+    reentry_count numeric(10,2),
+    positional_lot_size numeric(10,2),
+    intraday_lot_size numeric(10,2),
+    reentry_count numeric(10,2),
     sl_type VARCHAR(50), --percent/point
     sl_value numeric(10,2),
-    sl_order_type numeric(10,2), --market/limit
+    trail_sl_type VARCHAR(50), --percent/point
+    trail_sl_moves numeric(10,2),
+    trail_sl_move numeric(10,2),
+    sl_order_type VARCHAR(50), --market/limit
+    target boolean not null default false,
+    target_type VARCHAR(50),--percent/point
+    target_value numeric(10,2),
+    target_order_type VARCHAR(50), --market/limit
+    alias_name VARCHAR(50),
 	CONSTRAINT user_fk
               FOREIGN KEY(user_id)
         	  REFERENCES trade_user(user_id)

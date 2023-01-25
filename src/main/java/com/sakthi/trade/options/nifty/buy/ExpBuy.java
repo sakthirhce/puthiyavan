@@ -76,22 +76,24 @@ public class ExpBuy implements Strategy {
         }
          final int lotSize=lotSize1;
         if (expDay && lotSize1>0) {
-            Map<Double, Map.Entry<String, StrikeData>> strikes = mathUtils.getPriceCloseToPremium(currentDate, 5, "14:44:00", index);
+            Map<Double, Map<String, StrikeData>> strikes = mathUtils.getPriceCloseToPremium(currentDate, 5, "14:44:00", index);
             try {
                 strikes.entrySet().stream().forEach(atmNiftyStrikeMap -> {
-                    Map.Entry<String, StrikeData> strikeDataEntry = atmNiftyStrikeMap.getValue();
+                    Map<String, StrikeData> strikeDataEntry = atmNiftyStrikeMap.getValue();
                     Double triggerPriceD = atmNiftyStrikeMap.getKey();
-                    LOGGER.info(strikeDataEntry.getValue().getZerodhaSymbol());
+                    strikeDataEntry.entrySet().stream().forEach(stringStrikeDataEntry -> {
+                    LOGGER.info(stringStrikeDataEntry.getValue().getZerodhaSymbol());
                     OrderParams orderParams = new OrderParams();
-                    orderParams.tradingsymbol = strikeDataEntry.getValue().getZerodhaSymbol();
+                    orderParams.tradingsymbol = stringStrikeDataEntry.getValue().getZerodhaSymbol();
                     orderParams.exchange = "NFO";
                     orderParams.orderType = "SL";
                     orderParams.product = "MIS";
                     orderParams.transactionType = "BUY";
                     orderParams.validity = "DAY";
-                    double triggerPrice = triggerPriceD * 300;
-                    orderParams.triggerPrice = triggerPrice;
-                    BigDecimal price = BigDecimal.valueOf(triggerPrice).setScale(0, RoundingMode.HALF_UP).add(BigDecimal.valueOf(triggerPrice).setScale(0, RoundingMode.HALF_UP).divide(new BigDecimal(100))).setScale(0, RoundingMode.HALF_UP);
+                   // double triggerPrice = triggerPriceD * 300;
+                    BigDecimal triggerPriceTemp = (MathUtils.percentageValueOfAmountWithoutRund(new BigDecimal(200), new BigDecimal(triggerPriceD)).add(new BigDecimal(triggerPriceD))).setScale(2,BigDecimal.ROUND_HALF_UP);
+                    orderParams.triggerPrice = triggerPriceTemp.doubleValue();
+                    BigDecimal price = triggerPriceTemp.setScale(2, RoundingMode.HALF_UP).add(triggerPriceTemp.setScale(2, RoundingMode.HALF_UP).divide(new BigDecimal(100))).setScale(2, RoundingMode.HALF_UP);
                     orderParams.price = price.doubleValue();
                     userList.getUser().stream().filter(
                             user -> user.getExpZeroToHero() != null && user.getExpZeroToHero().isNrmlEnabled()
@@ -103,10 +105,10 @@ public class ExpBuy implements Strategy {
                         TradeData tradeData = new TradeData();
                         String dataKey = UUID.randomUUID().toString();
                         tradeData.setDataKey(dataKey);
-                        tradeData.setStockName(strikeDataEntry.getValue().getZerodhaSymbol());
+                        tradeData.setStockName(stringStrikeDataEntry.getValue().getZerodhaSymbol());
                         try {
                             LOGGER.info("input:" + gson.toJson(orderParams));
-                            tradeData.setStrikeId(strikeDataEntry.getValue().getDhanId());
+                            tradeData.setStrikeId(stringStrikeDataEntry.getValue().getDhanId());
                             order = brokerWorker.placeOrder(orderParams, user, tradeData);
 
                             tradeData.setEntryOrderId(order.orderId);
@@ -114,16 +116,16 @@ public class ExpBuy implements Strategy {
                             tradeData.setQty(lotSize * qty);
                             tradeData.setEntryType("BUY");
                             tradeData.setUserId(user.getName());
-                            tradeData.setStockId(Integer.parseInt(strikeDataEntry.getValue().getZerodhaId()));
+                            tradeData.setStockId(Integer.parseInt(stringStrikeDataEntry.getValue().getZerodhaId()));
                             tradeData.setBuyPrice(BigDecimal.valueOf(triggerPriceD));
                             tradeData.setBuyTradedPrice(BigDecimal.valueOf(triggerPriceD));
                             if (user.getBroker().equals("dhan")) {
-                                tradeData.setStockName(strikeDataEntry.getValue().getDhanSymbol());
+                                tradeData.setStockName(stringStrikeDataEntry.getValue().getDhanSymbol());
                                 user.getExpZeroToHero().straddleTradeMap.put(tradeData.getStockName(), tradeData);
                             } else {
                                 user.getExpZeroToHero().straddleTradeMap.put(tradeData.getStockName(), tradeData);
                             }
-                            String message = "option buy limit order placed for for user:" + user.getName() + " strike: " + strikeDataEntry.getValue().getZerodhaSymbol() + ":" + getAlgoName();
+                            String message = "option buy limit order placed for for user:" + user.getName() + " strike: " + stringStrikeDataEntry.getValue().getZerodhaSymbol() + ":" + getAlgoName();
                             LOGGER.info(message);
                             LOGGER.info("Trade Data:" + new Gson().toJson(tradeData));
 
@@ -138,6 +140,7 @@ public class ExpBuy implements Strategy {
                             sendMessage.sendToTelegram("Error while placing nifty buy order: " + atmNiftyStrikeMap.getKey() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName(), telegramToken);
                         }
                         LOGGER.info(new Gson().toJson(user.getExpZeroToHero().straddleTradeMap));
+                    });
                     });
                 });
 
@@ -170,4 +173,6 @@ public class ExpBuy implements Strategy {
             orderUtil.exitPriceNrmlPositions( user,this.getAlgoName(),user.getExpZeroToHero(),exitTime);
         });
     }
+
+
 }

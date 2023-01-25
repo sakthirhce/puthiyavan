@@ -22,6 +22,8 @@ import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
 import com.zerodhatech.models.*;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -41,7 +43,6 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 
 @Component
 @Slf4j
@@ -77,7 +78,7 @@ public class NiftyOptionBuy935 {
     public String getAlgoName() {
         return "NIFTY_BUY_935";
     }
-    public static final Logger LOGGER = Logger.getLogger(NiftyOptionBuy935.class.getName());
+    public static final Logger LOGGER = LoggerFactory.getLogger(NiftyOptionBuy935.class);
     @Scheduled(cron = "${niftyBuy935.schedule.entry}")
     public void buy() throws ParseException, KiteException, IOException {
         sendMessage.sendToTelegram("niftyBuy935 execution startede", telegramToken);

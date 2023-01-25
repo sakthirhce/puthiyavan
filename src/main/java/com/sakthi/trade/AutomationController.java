@@ -1,18 +1,13 @@
 package com.sakthi.trade;
 
-import com.binance.client.RequestOptions;
-import com.binance.client.impl.RestApiRequestImpl;
-import com.binance.client.impl.SyncRequestImpl;
 import com.google.gson.Gson;
-import com.opencsv.CSVReader;
+import com.google.gson.reflect.TypeToken;
 import com.sakthi.trade.algotest.backtest.data.Algotest;
 import com.sakthi.trade.domain.*;
 import com.sakthi.trade.entity.*;
 import com.sakthi.trade.futures.banknifty.BNFFuturesTrendFollowing;
 //import com.sakthi.trade.fyer.FyerTrendTest;
 import com.sakthi.trade.zerodha.TransactionService;
-import com.sakthi.trade.fyer.transactions.OrderStatusResponseDTO;
-import com.sakthi.trade.fyer.transactions.PlaceOrderRequestDTO;
 import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.options.WeeklyDataBackup;
 import com.sakthi.trade.options.banknifty.*;
@@ -33,25 +28,21 @@ import com.zerodhatech.models.LTPQuote;
 import com.zerodhatech.models.Position;
 import com.zerodhatech.models.Trade;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Request;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.websocket.Session;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
 import java.util.logging.Logger;
@@ -60,6 +51,7 @@ import java.util.logging.Logger;
 @RestController
 @Slf4j
 public class AutomationController {
+    Gson gson=new Gson();
     public Session session = null;
     public Boolean trendCompleted = false;
     @Value("${filepath.trend}")
@@ -143,9 +135,6 @@ public class AutomationController {
     private String binanceSecretKey;
     @Value("${binance.sathiyaseelanrhce.v11.apikey}")
     private String binanceApiKey;
-    RestApiRequestImpl restApiRequest = new RestApiRequestImpl(binanceApiKey, binanceSecretKey, new RequestOptions());
-    SyncRequestImpl syncRequest = new SyncRequestImpl(restApiRequest);
-
 
     @GetMapping("/zerodhatest")
     public void zerodhaGenerateToken() throws Exception {
@@ -156,27 +145,27 @@ public class AutomationController {
     public void zerodhaTradeGet(@RequestParam String orderId) throws Exception, KiteException {
         List<Trade> trades = zerodhaAccount.kiteSdk.getOrderTrades(orderId); //oly for executed
         trades.stream().findFirst();
-        log.info("getOrderTrades:" + new Gson().toJson(trades));
+        log.info("getOrderTrades:" + gson.toJson(trades));
     }
 
     @GetMapping("/zerodhaTrades")
     public void zerodhaTrades() throws Exception, KiteException {
         List<Trade> trades = zerodhaAccount.kiteSdk.getTrades(); //all executed trades
         trades.stream().findFirst();
-        log.info("zerodhaTrades:" + new Gson().toJson(trades));
+        log.info("zerodhaTrades:" + gson.toJson(trades));
     }
 
     @GetMapping("/zerodhaOrders")
     public void zerodhaOrders() throws Exception, KiteException {
         List<com.zerodhatech.models.Order> trades = zerodhaAccount.kiteSdk.getOrders(); //all orders including pending, completed
         trades.stream().findFirst();
-        log.info("zerodhaOrders:" + new Gson().toJson(trades));
+        log.info("zerodhaOrders:" + gson.toJson(trades));
     }
 
     /*  @GetMapping("/zerodhaOrdersAndAdd")
       public void zerodhaOrdersAndAdd(@RequestParam String orderId, @RequestParam boolean isSLPlaced, @RequestParam String slOrderId) throws Exception, KiteException {
           List<com.zerodhatech.models.Order> trades = zerodhaAccount.kiteSdk.getOrders(); //all orders including pending, completed
-          log.info("zerodhaOrders:" + new Gson().toJson(trades));
+          log.info("zerodhaOrders:" + gson.toJson(trades));
           trades.stream().forEach(order -> {
               if (orderId.equals(order.orderId) && "COMPLETE".equals(order.status)) {
                   TradeData tradeData = new TradeData();
@@ -192,20 +181,20 @@ public class AutomationController {
                   zerodhaBankNiftyShortStraddle.straddleTradeMap.put(order.tradingSymbol, tradeData);
               }
           });
-          log.info("zerodhaOrders:" + new Gson().toJson(trades));
+          log.info("zerodhaOrders:" + gson.toJson(trades));
 
       }
   */
     @GetMapping("/zerodhaGetPositions")
     public void zerodhaGetPositions() throws Exception, KiteException {
         Map<String, List<Position>> trades = zerodhaAccount.kiteSdk.getPositions(); //all orders including pending, completed
-        log.info("zerodhaOrders:" + new Gson().toJson(trades));
+        log.info("zerodhaOrders:" + gson.toJson(trades));
     }
 
     @GetMapping("/zerodhaOrdersId")
     public void zerodhaOrdersId(@RequestParam String orderId) throws Exception, KiteException {
         List<com.zerodhatech.models.Order> trades = zerodhaAccount.kiteSdk.getOrderHistory(orderId);
-        log.info("zerodhaOrdersId:" + new Gson().toJson(trades));
+        log.info("zerodhaOrdersId:" + gson.toJson(trades));
     }
 
     @GetMapping("/bnfFutures")
@@ -233,7 +222,7 @@ String stockId;
         strike.entrySet().stream().forEach(map->{
             System.out.println(date+":"+map.getKey());
         });
-        return new ResponseEntity<>(new Gson().toJson(strike), responseHeaders, HttpStatus.OK);
+        return new ResponseEntity<>(gson.toJson(strike), responseHeaders, HttpStatus.OK);
     }
     @Autowired
     BNiftyOptionBuy917 bNiftyOptionBuy917;
@@ -259,7 +248,7 @@ String stockId;
         DayOfWeek dow = localDate.getDayOfWeek();
         String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
         String todayCaps = today.toUpperCase();
-        AddTrade addTrade=new Gson().fromJson(payload,AddTrade.class);
+        AddTrade addTrade=gson.fromJson(payload,AddTrade.class);
         userList.getUser().stream().filter(
                 user -> user.getName().equals(addTrade.getUserId())
         ).forEach(user -> {
@@ -415,7 +404,7 @@ String stockId;
     public ResponseEntity<String> getAlgoTestData() throws Exception {
         SummaryDataList tradeData= algotest.getAlgoTestData();
         HttpHeaders responseHeaders = new HttpHeaders();
-        return new ResponseEntity<>(new Gson().toJson(tradeData), responseHeaders, HttpStatus.OK);
+        return new ResponseEntity<>(gson.toJson(tradeData), responseHeaders, HttpStatus.OK);
     }
     @GetMapping("/zerodhaloginmtest")
     public void zerodhaloginmtest() throws Exception {
@@ -457,31 +446,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
         zerodhaAccount.monitorPositionSize();
     }
 
-  /*  @GetMapping("/zerodhatrend")
-    public void trendLive() throws Exception, KiteException {
-        zerodhaAccount.generateAccessToken();
-        instrumentService.getInstrument();
-        zerodhaTrendScheduler.trendLive();
-
-    }*/
-/*
-
-    @GetMapping("/newFyersTrend")
-    public void newFyersTrend(@RequestParam int day, @RequestParam boolean isOpenPriceSL, @RequestParam String slPer, @RequestParam String gainPer, @RequestParam String margin, @RequestParam int topNumber, @RequestParam boolean isPyramid, @RequestParam boolean shortTest) throws Exception, KiteException {
-        fyerTrendTest.trendScheduler(day, isOpenPriceSL, slPer, gainPer, margin, topNumber, isPyramid, shortTest);
-
-    }
-*/
-
-
-   /* @GetMapping("/live")
-    public void startORBLive() throws Exception {
-        orbScheduler.ORBScheduler();
-    }
-    @GetMapping("/data15min")
-    public void startORB15min() throws Exception {
-        orbScheduler.ORB15MinDataScheduler();
-    }*/
 
     @Autowired
     NiftyORB niftyORB;
@@ -495,15 +459,16 @@ NiftyOptionBuy935 niftyOptionBuy935;
 
     }
 
-    @GetMapping("/testRSI")
-    public void testRSI() throws Exception, KiteException {
-        double[] list = {44.34, 44.09, 44.15, 43.61, 44.33, 44.83, 45.10, 45.42, 45.84, 46.08, 45.89, 46.03, 45.61, 46.28, 46.28, 46.00, 46.03, 46.41, 46.22, 45.64, 46.21, 46.25, 45.71, 46.45, 45.78, 45.35, 44.03, 44.18, 44.22, 44.57, 43.42, 42.66, 43.13};
+    @Autowired
+    TradeEngine oneTradeExecutor;
+    @GetMapping("/oneTradeExecutor")
+    public void oneTradeExecutor() throws Exception, KiteException {
 
-        MathUtils.RSI rsi = new MathUtils.RSI(14);
-        for (double a : list
-        ) {
-            rsi.compute(a);
-        }
+       /* List<StockEntity> stockEntityList=stockRepository.findAll();
+        stockEntityList.forEach(stockEntity -> {*/
+        oneTradeExecutor.loadStrategy();
+        oneTradeExecutor.executeStrategy();
+        /*  });*/
 
     }
 
@@ -514,35 +479,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
         zerodhaBankNiftyShortStraddle.zerodhaBankNifty();
 
     }
-   /* @GetMapping("/shortStraddleScheduleTest")
-    public void shortStraddleScheduleTest() throws Exception {
-        bankNiftyShortStraddle.shortStraddleTradeSchedule();
-
-    }
-*//*
-    //use it for stock mock based historic test
-    @GetMapping("/bankNIftyStraddleLongBackTest")
-    public void bankNIftyStraddleLongBackTest() throws Exception {
-        bankNIftyStraddleLongBackTest.bankNiftyStraddleLongTest();
-
-    }
-    @GetMapping("/summaryReport")
-    public void summaryReport() throws Exception {
-        bankNIftyStraddleLongBackTest.summaryReport();
-
-    }*/
-
-   /* @GetMapping("/eodTest")
-    public void eodTest() throws Exception {
-        System.out.println("eodTest");
-        historicWebsocket.eodData();
-
-    }*/
-  /*  @GetMapping("/preOpenTest")
-    public void preOpenTest() throws Exception {
-        System.out.println("preOpenTest");
-        historicWebsocket.preOpenSchedule();
-    }*/
 
 
     @GetMapping("/optionExpDate")
@@ -568,69 +504,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
         return new ResponseEntity<>(entity, responseHeaders, HttpStatus.OK);
     }
 
-    /*
-    @GetMapping("/crudeTest")
-    public void crudeTest(@RequestParam int day) throws Exception {
-        int n=day;
-        Session session=historicWebsocket.session;
-        if (session==null || !session.isOpen()){
-            session = historicWebsocket.createHistoricWebSocket();
-        }
-        while(n>0) {
-            LocalDate currentdate = LocalDate.now().minusDays(n);
-
-            LocalDate finalDate = currentdate;
-            DateTimeFormatter df = DateTimeFormatter.ofPattern("MMM");
-            DateTimeFormatter df1 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            if (currentdate.getDayOfMonth() >= 20) {
-                finalDate = currentdate.plusMonths(1);
-            } else {
-                df.format(currentdate);
-            }
-            String payload = orbIntraday15minHistoricInput(df1.format(currentdate), "5min", "CRUDEOIL20"+df.format(finalDate).toUpperCase()+"FUT");
-
-            try {
-                if (session.isOpen()) {
-                    session.getBasicRemote().sendText(payload);
-                } else {
-                    session = historicWebsocket.createHistoricWebSocket();
-                    session.getBasicRemote().sendText(payload);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            n--;
-        }
-
-    }*/
-    // @GetMapping("/trendTestReport")
-    public void trendTestReport(@RequestParam String date) throws Exception {
-
-        CSVReader csvReader = new CSVReader(new FileReader("/home/hasvanth/Downloads/trend.csv"));
-
-    }
-
-    /* @GetMapping("/trendScheduler")
-     public void trendScheduler(@RequestParam String date) throws Exception {
-
-        trendScheduler.trendScheduler();
-
-     }*/
-   /* @GetMapping("/historyHeartBeat")
-    public void historyHeartBeat(@RequestParam String date) throws Exception {
-        historicWebsocket.heartBeat();
-
-    }*/
-    @GetMapping("/telegramtest")
-    public void telegramtest() throws Exception {
-       sendMessage.sendDocumentToTelegram("/home/hasvanth/Downloads/FINNIFTY/2022/Dec/2022-12-20/FINNIFTY_2022-12-20.zip","test");
-
-    }
-    @GetMapping("/telegramMtest")
-    public void telegramMtest() throws Exception {
-        dataBot.sendMessage("hello",-713214125);
-
-    }
     @Autowired
     ExpBuy expBuy;
     @GetMapping("/expBuy")
@@ -638,59 +511,12 @@ NiftyOptionBuy935 niftyOptionBuy935;
        // expBuy.buy();
 
     }
-    /*  @GetMapping("/shortStraddleTest")
-      public void shortStraddleTest() throws Exception {
-          bankNiftyShortStraddle.getWeeklyExpiryOptionsDetails();
-
-      }*/
-
-    /*  @GetMapping("/preOpenPopulate")
-      public void preOpenPopulate() throws Exception {
-          System.out.println("preOpenTest preOpenPopulate");
-          historicWebsocket.preOpenPopulate();
-      }*/
-   /* @GetMapping("/shortStraddleBackTest")
-    public void shortStraddleBackTest(@RequestParam int day,@RequestParam int toDay) throws Exception {
-        while(day>toDay) {
-            LocalDate currentdate = LocalDate.now().minusDays(day);
-            DateTimeFormatter df1 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            bankNiftyShortStraddle.getWeeklyExpiryOptionsDetailsBackTest(df1.format(currentdate));
-
-            bankNiftyShortStraddle.shortStraddleTradeScheduleBacktest(df1.format(currentdate));
-            Thread.sleep(2000);
-            day--;
-        }
-    }*/
- /*   @GetMapping("/niftyShortStraddleBackTest")
-    public void niftyShortStraddleBackTest(@RequestParam int day,@RequestParam int toDay) throws Exception {
-        while(day>toDay) {
-            LocalDate currentdate = LocalDate.now().minusDays(day);
-            DateTimeFormatter df1 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            niftyShortStraddle.getWeeklyExpiryOptionsDetailsBackTest(df1.format(currentdate));
-
-            niftyShortStraddle.shortStraddleTradeScheduleBacktest(df1.format(currentdate));
-            Thread.sleep(2000);
-            day--;
-        }
-    }*/
-  /*  @GetMapping("/shortStraddleScheduleBBTest")
-    public void shortStraddleScheduleBackTest() throws Exception {
-        bankNiftyShortStraddle.shortStraddleTradeSchedule();
-
-    }*/
-  /*  @GetMapping("/niftyshortStraddleScheduleBBTest")
-    public void niftyShortStraddleScheduleBackTest() throws Exception {
-        niftyShortStraddle.getWeeklyExpiryOptionsDetails();
-        Thread.sleep(5000);
-        niftyShortStraddle.shortStraddleTradeSchedule();
-
-    }*/
     @GetMapping("/getPositions")
     public void getPositions() throws Exception {
         String response = "{\"s\":\"ok\",\"netPositions\":[{\"crossCurrency\":\"N\",\"qty\":16,\"realized_profit\":0.0,\"id\":\"NSE:JPASSOCIAT-EQ-CNC\",\"unrealized_profit\":0.32,\"buyQty\":16,\"sellAvg\":0.0,\"sellQty\":0,\"buyAvg\":4.78,\"symbol\":\"NSE:JPASSOCIAT-EQ\",\"fyToken\":\"101000000011460\",\"slNo\":0,\"avgPrice\":4.78,\"segment\":\"E\",\"dummy\":\" \",\"rbiRefRate\":1.0,\"side\":1,\"netQty\":16,\"pl\":0.32,\"productType\":\"CNC\",\"netAvg\":4.78,\"qtyMulti_com\":1.0},{\"crossCurrency\":\"N\",\"qty\":90,\"realized_profit\":0.0,\"id\":\"NSE:RCOM-EQ-CNC\",\"unrealized_profit\":1.8,\"buyQty\":90,\"sellAvg\":0.0,\"sellQty\":0,\"buyAvg\":2.03,\"symbol\":\"NSE:RCOM-EQ\",\"fyToken\":\"101000000013187\",\"slNo\":1,\"avgPrice\":2.03,\"segment\":\"E\",\"dummy\":\" \",\"rbiRefRate\":1.0,\"side\":1,\"netQty\":90,\"pl\":1.8,\"productType\":\"CNC\",\"netAvg\":2.03,\"qtyMulti_com\":1.0}],message:\"\"}";
         System.out.println(response);
         //  String response ="{\"s\":\"ok\",\"message\":\"\",\"orderDetails\":{\"status\":2,\"symbol\":\"NSE:IGL-EQ\",\"qty\":49,\"orderNumStatus\":\"120082021161:2\",\"dqQtyRem\":0,\"orderDateTime\":\"20-Aug-2020 09:33:30\",\"orderValidity\":\"DAY\",\"fyToken\":\"101000000011262\",\"slNo\":13,\"message\":\"TRADE CONFIRMED\",\"segment\":\"E\",\"id\":\"120082021161\",\"stopPrice\":0.0,\"instrument\":\"EQUITY\",\"exchOrdId\":\"1100000001815348\",\"remainingQuantity\":0,\"filledQty\":49,\"limitPrice\":0.0,\"offlineOrder\":false,\"source\":\"ITS\",\"productType\":\"INTRADAY\",\"type\":2,\"side\":1,\"tradedPrice\":404.95,\"discloseQty\":0}}";
-        OpenPositionsResponseDTO orderStatusResponseDTO = new Gson().fromJson(response, OpenPositionsResponseDTO.class);
+        OpenPositionsResponseDTO orderStatusResponseDTO = gson.fromJson(response, OpenPositionsResponseDTO.class);
         System.out.println(response);
 
     }
@@ -704,7 +530,7 @@ NiftyOptionBuy935 niftyOptionBuy935;
         historicRequestDTO.setSymbol(stock);
         historicRequestDTO.setInterval(interval);
         historicRequestDTO.setMethod("gethistory");
-        return new Gson().toJson(historicRequestDTO);
+        return gson.toJson(historicRequestDTO);
     }
 
     public Map<String, Double> getOrbStockList(String strdate) throws Exception {
@@ -798,28 +624,54 @@ NiftyOptionBuy935 niftyOptionBuy935;
         System.out.print(response);
         return new ResponseEntity<>(null,HttpStatus.OK);
     }
+
+    @Autowired
+    TradeUserRepository tradeUserRepository;
+    @Autowired
+    TradeStrategyRepo tradeStrategyRepo;
+    @GetMapping("/saveStrategy")
+    public ResponseEntity<?> saveStrategy(@RequestBody String payload) throws Exception {
+        List<TradeStrategy> tradeStrategies=gson.fromJson(payload, new TypeToken<List<TradeStrategy>>(){}.getType());
+        System.out.println(gson.toJson(tradeStrategies));
+        tradeStrategyRepo.saveAll(tradeStrategies);
+        tradeStrategyRepo.flush();
+        return new ResponseEntity<>(null,HttpStatus.OK);
+    }
+
+
+    @GetMapping("/saveTradeUser")
+    public ResponseEntity<?> saveTradeUser(@RequestBody String payload) throws Exception {
+        List<TradeUserEntity> tradeUserEntities=gson.fromJson(payload, new TypeToken<List<TradeUserEntity>>(){}.getType());
+        System.out.println(gson.toJson(tradeUserEntities));
+        tradeUserEntities.forEach(tradeUserEntity -> {
+            tradeUserRepository.saveAndFlush(tradeUserEntity);
+       //     tradeUserRepository.flush();
+        });
+
+        return new ResponseEntity<>(null,HttpStatus.OK);
+    }
     @PostMapping("/getTradeDetails")
     public ResponseEntity<?> getTradeDetails(@RequestBody String payload) throws Exception {
-        Users users=new Gson().fromJson(payload,Users.class);
+        Users users=gson.fromJson(payload,Users.class);
         User user=users.getUser();
         Date date = new Date();
         List<OpenTradeDataEntity> orderDetails = openTradeDataRepo.getOrderDetails(user.getUserId(),format.format(date));
         List<TradeData> tradeDataList = new ArrayList<>();
         if (orderDetails.size() > 0){
             tradeDataList=mapOpenTradeDataEntityToTradeData(orderDetails);
-            return new ResponseEntity<>(new Gson().toJson(tradeDataList),HttpStatus.OK);
+            return new ResponseEntity<>(gson.toJson(tradeDataList),HttpStatus.OK);
             }else {
             orderDetails = openTradeDataRepo.getOpenPositionDetails(user.getUserId());
             if (orderDetails.size() > 0){
                 tradeDataList=mapOpenTradeDataEntityToTradeData(orderDetails);
-                return new ResponseEntity<>(new Gson().toJson(tradeDataList),HttpStatus.OK);
+                return new ResponseEntity<>(gson.toJson(tradeDataList),HttpStatus.OK);
             }
         }
         return new ResponseEntity<>(null,HttpStatus.NOT_FOUND);
     }
     @PostMapping("/getOpenOrderDetails")
     public ResponseEntity<?> getOpenOrderDetails(@RequestBody String payload) throws Exception {
-        Users users = new Gson().fromJson(payload, Users.class);
+        Users users = gson.fromJson(payload, Users.class);
         User user = users.getUser();
         com.sakthi.trade.zerodha.account.User zerodhaUser = userList.getUser().stream().filter(user1 -> user1.getName().equals(user.getUserId())).findFirst().get();
 
@@ -827,19 +679,19 @@ NiftyOptionBuy935 niftyOptionBuy935;
             List<com.zerodhatech.models.Order> orderList = null;
             try {
                 orderList = zerodhaUser.getKiteConnect().getOrders();
-                //   LOGGER.info("get trade response:"+new Gson().toJson(orderList));
+                //   LOGGER.info("get trade response:"+gson.toJson(orderList));
             } catch (KiteException | IOException e) {
                 e.printStackTrace();
             }
             if (orderList.size() > 0) {
-                return new ResponseEntity<>(new Gson().toJson(orderList), HttpStatus.OK);
+                return new ResponseEntity<>(gson.toJson(orderList), HttpStatus.OK);
             }}
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
 
     }
     @PostMapping("/getPositionDetails")
     public ResponseEntity<?> getPositionDetails(@RequestBody String payload) throws Exception {
-        Users users = new Gson().fromJson(payload, Users.class);
+        Users users = gson.fromJson(payload, Users.class);
         User user = users.getUser();
         com.sakthi.trade.zerodha.account.User zerodhaUser = userList.getUser().stream().filter(user1 -> user1.getName().equals(user.getUserId())).findFirst().get();
 
@@ -847,32 +699,19 @@ NiftyOptionBuy935 niftyOptionBuy935;
             List<Position> positions = null;
             try {
                  positions = zerodhaUser.getKiteConnect().getPositions().get("net");
-                   LOGGER.info("get trade response:"+new Gson().toJson(positions));
+                   LOGGER.info("get trade response:"+gson.toJson(positions));
             } catch (KiteException | IOException e) {
                 e.printStackTrace();
             }
             if (positions.size() > 0) {
-                return new ResponseEntity<>(new Gson().toJson(positions), HttpStatus.OK);
+                return new ResponseEntity<>(gson.toJson(positions), HttpStatus.OK);
             }
 
         }
         return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
 
     }
-    /*@PostMapping("/getTOtp")
-    public String getTOtp(@RequestBody String payload) throws Exception {
-        Users users = new Gson().fromJson(payload, Users.class);
-        User user = users.getUser();
-        com.sakthi.trade.zerodha.account.User zerodhaUser = userList.getUser().stream().filter(user1 -> user1.getName().equals(user.getUserId())).findFirst().get();
-        String totp=null;
-        if (user != null) {
-             totp=zerodhaAccount.getTotp(zerodhaUser.getTotp());
 
-
-        }
-        return totp;
-
-    }*/
     public List<TradeData> mapOpenTradeDataEntityToTradeData( List<OpenTradeDataEntity> tradeDataEntities) {
         try {
             List<TradeData> tradeDataList = new ArrayList<>();
@@ -911,11 +750,5 @@ NiftyOptionBuy935 niftyOptionBuy935;
                 LOGGER.info(e.getMessage());
             }
         return null;
-    }
-    @GetMapping("/sendDocumentTest")
-    public void testTelegram() {
-        File file = new File("/home/hasvanth/Downloads/BANKNIFTY/2022/Feb/2022-02-24/34500PE.json");
-//        sendMessage.sendDocumentToTelegram(file,"1162339611:AAGTezAs6970OmLwhcBuTlef_-dsfcoQi_o","-713214125");
-
     }
 }

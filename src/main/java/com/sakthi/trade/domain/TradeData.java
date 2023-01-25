@@ -1,5 +1,6 @@
 package com.sakthi.trade.domain;
 
+import com.sakthi.trade.entity.TradeStrategy;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -80,5 +81,5 @@ public class TradeData {
     public BigDecimal plAfterCharges;
 
     String strikeId;
-
+    TradeStrategy tradeStrategy;
 }

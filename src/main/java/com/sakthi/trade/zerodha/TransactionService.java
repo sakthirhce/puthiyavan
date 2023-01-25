@@ -7,13 +7,13 @@ import com.sakthi.trade.zerodha.account.UserList;
 import com.zerodhatech.kiteconnect.KiteConnect;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
-
-import java.util.logging.Logger;
 
 @Component
 @Slf4j
@@ -25,7 +25,7 @@ public class TransactionService {
 
     @Autowired
     UserList userList;
-    public static final Logger LOGGER = Logger.getLogger(TransactionService.class.getName());
+    public static final Logger LOGGER = LoggerFactory.getLogger(TransactionService.class);
     KiteConnect kiteConnect;
     public void setup(){
         User user =userList.getUser().stream().filter(User::isAdmin).findFirst().get();

@@ -25,6 +25,8 @@ import com.zerodhatech.models.OrderParams;
 import com.zerodhatech.models.Position;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -43,7 +45,6 @@ import java.time.format.TextStyle;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 
 @Component
 @Slf4j
@@ -79,7 +80,7 @@ public class BNiftyOptionBuy935 {
     public String getAlgoName() {
         return "BNIFTY_BUY_935";
     }
-    public static final Logger LOGGER = Logger.getLogger(BNiftyOptionBuy935.class.getName());
+    public static final Logger LOGGER = LoggerFactory.getLogger(BNiftyOptionBuy935.class);
     @Scheduled(cron = "${bniftyBuy935.schedule.entry}")
     public void buy() throws ParseException, KiteException, IOException {
         sendMessage.sendToTelegram("bniftyBuy935 execution startede", telegramToken);

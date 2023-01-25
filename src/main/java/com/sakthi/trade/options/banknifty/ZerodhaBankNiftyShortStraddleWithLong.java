@@ -21,6 +21,8 @@ import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
 import com.zerodhatech.models.*;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -39,7 +41,6 @@ import java.time.format.TextStyle;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 
 
 @Component
@@ -54,7 +55,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
     String telegramToken;
 
     // AtomicInteger doubleTopCount = new AtomicInteger(0);
-    public static final Logger LOGGER = Logger.getLogger(ZerodhaBankNiftyShortStraddleWithLong.class.getName());
+    public static final Logger LOGGER = LoggerFactory.getLogger(ZerodhaBankNiftyShortStraddleWithLong.class);
     @Value("${telegram.orb.bot.token}")
     String telegramTokenGroup;
     @Autowired

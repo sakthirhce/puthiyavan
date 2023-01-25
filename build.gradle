@@ -77,12 +77,9 @@ dependencies {
 // https://mvnrepository.com/artifact/commons-codec/commons-codec
     implementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
 
-    implementation("org.springframework:spring-messaging")
-    implementation("org.springframework:spring-messaging")
     // https://mvnrepository.com/artifact/jfree/jfreechart
     implementation group: 'jfree', name: 'jfreechart', version: '1.0.13'
     implementation files('/home/hasvanth/Downloads/kiteconnect.jar')
-    implementation files('/home/hasvanth/Downloads/binance-client-1.0.8-SNAPSHOT.jar')
 // https://mvnrepository.com/artifact/com.alibaba/fastjson
     implementation group: 'com.alibaba', name: 'fastjson', version: '1.2.78'
 

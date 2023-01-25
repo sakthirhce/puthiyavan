@@ -64,11 +64,13 @@ public class IOChange implements Strategy {
     @Scheduled(cron = "${exp.oi.atm.get.time}")
     public void getAtm(){
         Date date = new Date();
+        String currentDate = format.format(date);
+        if(zerodhaTransactionService.expDate.equals(currentDate) || zerodhaTransactionService.finExpDate.equals(currentDate)){
         LOGGER.info("IOChange get atm");
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
         SimpleDateFormat weekDay = new SimpleDateFormat("EEE");
-        String currentDate = format.format(date);
+
        // String niftyBank = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
         List<String> stockIdList = new ArrayList<>();
         if(zerodhaTransactionService.expDate.equals(currentDate)) {
@@ -106,91 +108,108 @@ public class IOChange implements Strategy {
             JSONObject json = new JSONObject(response);
             Map<Double, Map.Entry<String, StrikeData>> rangeStrike = new HashMap<>();
             String status = json.getString("status");
-            LOGGER.info("IOChange 2:45 response:"+response);
+           // LOGGER.info("IOChange 2:45 response:"+response);
             Map<String,Map<String,StrikeData>> strikeMasterMap=strikeMasterMap1;
             if (!status.equals("error")) {
                 historicalData.parseResponse(json);
-                historicalData.dataArrayList.forEach(historicalData1 -> {
+                HistoricalData lastElement =historicalData.dataArrayList.get(historicalData.dataArrayList.size()-1);
+               // historicalData.dataArrayList.forEach(historicalData1 -> {
                     try {
                         Date openDatetime = null;
                         try {
-                            openDatetime = sdf.parse(historicalData1.timeStamp);
+                            openDatetime = sdf.parse(lastElement.timeStamp);
                         } catch (ParseException e) {
                             throw new RuntimeException(e);
                         }
+                    //    LOGGER.info("IOChange lastElement:"+new Gson().toJson(lastElement));
                         String openDate = format.format(openDatetime);
                         if (sdf.format(openDatetime).equals(openDate + "T14:44:00")) {/*"09:30:00"*/
-                            int atmStrike = commonUtil.findATM((int) historicalData1.close);
+                     //       LOGGER.info("IOChange inside if");
+                            int atmStrike = commonUtil.findATM((int) lastElement.close);
+                      //      LOGGER.info("IOChange atmStrike:"+atmStrike);
                             final Map<String, StrikeData> atmStrikesStraddle = strikeMasterMap.get(String.valueOf(atmStrike));
                             atmStrikeList.put(index,atmStrikesStraddle);
+                     //       LOGGER.info("IOChange atmStrikeList:"+new Gson().toJson(atmStrikeList));
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                });
+             //   });
             }
-        });
+        });}
     }
     @Scheduled(cron = "${exp.oi.atm.monitor.time}")
     public void expOIMonitorSchedule(){
-        LOGGER.info("IOChange 2:45 response:"+new Gson().toJson(atmStrikeList));
         Date date = new Date();
         String currentDate = format.format(date);
-        if(atmStrikeList.size()>0) {
-            atmStrikeList.entrySet().stream().forEach(indexMapEntry -> {
-                Map<String, StrikeData> strikeDataMap = indexMapEntry.getValue();
-                strikeDataMap.entrySet().stream().forEach(strikeDataEntry -> {
-                    String historicURLStrike = "https://api.kite.trade/instruments/historical/" + strikeDataEntry.getValue().getZerodhaId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:34:00";
-                    String priceResponse = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURLStrike));
-                    //  LOGGER.info("API response:"+strikeName+":" + priceResponse);
-                    HistoricalData historicalPriceData = new HistoricalData();
-                    JSONObject priceJson = new JSONObject(priceResponse);
-                    String responseStatus = priceJson.getString("status");
-                    AtomicDouble closePrice = new AtomicDouble(0);
-                    if (!responseStatus.equals("error")) {
-                        historicalPriceData.parseResponse(priceJson);
-                        HistoricalData lasthistoricalPriceData = historicalPriceData.dataArrayList.get(historicalPriceData.dataArrayList.size() - 1);
 
-                        Map<String, OIChangeData> indexOI = previousOI.get(indexMapEntry.getKey());
-                        if (indexOI != null && indexOI.containsKey(strikeDataEntry.getKey())) {
-                            OIChangeData previosOI = indexOI.get(strikeDataEntry.getKey());
-                            double OIchange = MathUtils.percentageMove(previosOI.getCurrentOI(), lasthistoricalPriceData.oi);
-                            previosOI.setPreviousOI(previosOI.getCurrentOI());
-                            previosOI.setCurrentOI(lasthistoricalPriceData.oi);
-                            previosOI.setOiPercentChange(OIchange);
+        if(zerodhaTransactionService.expDate.equals(currentDate) || zerodhaTransactionService.finExpDate.equals(currentDate)) {
+      //      LOGGER.info("IOChange 2:45 response:" + new Gson().toJson(atmStrikeList));
 
-                            if (OIchange > 10) {
-                                previosOI.setPositiveChange(true);
+            if (!atmStrikeList.isEmpty()) {
+                atmStrikeList.entrySet().stream().forEach(indexMapEntry -> {
+                    Map<String, StrikeData> strikeDataMap = indexMapEntry.getValue();
+                    strikeDataMap.entrySet().stream().forEach(strikeDataEntry -> {
+                        String historicURLStrike = "https://api.kite.trade/instruments/historical/" + strikeDataEntry.getValue().getZerodhaId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:34:00";
+                        String priceResponse = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURLStrike));
+                        //  LOGGER.info("API response:"+strikeName+":" + priceResponse);
+                        HistoricalData historicalPriceData = new HistoricalData();
+                        JSONObject priceJson = new JSONObject(priceResponse);
+                        String responseStatus = priceJson.getString("status");
+                        AtomicDouble closePrice = new AtomicDouble(0);
+                        if (!responseStatus.equals("error")) {
+                            historicalPriceData.parseResponse(priceJson);
+                            HistoricalData lasthistoricalPriceData = historicalPriceData.dataArrayList.get(historicalPriceData.dataArrayList.size() - 1);
+
+                            Map<String, OIChangeData> indexOI = previousOI.get(indexMapEntry.getKey());
+                            if (indexOI != null) {
+                                if(indexOI.containsKey(strikeDataEntry.getKey())){
+                                OIChangeData previosOI = indexOI.get(strikeDataEntry.getKey());
+                                double OIchange = MathUtils.percentageMove(previosOI.getCurrentOI(), lasthistoricalPriceData.oi);
+                                previosOI.setPreviousOI(previosOI.getCurrentOI());
+                                previosOI.setCurrentOI(lasthistoricalPriceData.oi);
+                                previosOI.setOiPercentChange(OIchange);
+
+                                if (OIchange > 10) {
+                                    previosOI.setPositiveChange(true);
+                                }
+                                if (OIchange < -10) {
+                                    previosOI.setNegativeChange(true);
+                                }}
+                                else{
+                                    OIChangeData oiChangeData = new OIChangeData();
+                                    oiChangeData.setStrikeName(strikeDataEntry.getValue().getZerodhaSymbol());
+                                    oiChangeData.setCurrentOI(lasthistoricalPriceData.oi);
+                                    indexOI.put(strikeDataEntry.getKey(), oiChangeData);
+                                }
+                            } else {
+                                Map<String, OIChangeData> strikeOI = new ConcurrentHashMap<>();
+                                OIChangeData oiChangeData = new OIChangeData();
+                                oiChangeData.setStrikeName(strikeDataEntry.getValue().getZerodhaSymbol());
+                                oiChangeData.setCurrentOI(lasthistoricalPriceData.oi);
+                                strikeOI.put(strikeDataEntry.getKey(), oiChangeData);
+                                previousOI.put(indexMapEntry.getKey(), strikeOI);
                             }
-                            if (OIchange < -10) {
-                                previosOI.setNegativeChange(true);
-                            }
-                        } else {
-                            Map<String, OIChangeData> strikeOI = new ConcurrentHashMap<>();
-                            OIChangeData oiChangeData = new OIChangeData();
-                            oiChangeData.setStrikeName(strikeDataEntry.getValue().getZerodhaSymbol());
-                            oiChangeData.setCurrentOI(lasthistoricalPriceData.oi);
-                            strikeOI.put(strikeDataEntry.getKey(), oiChangeData);
-                            previousOI.put(indexMapEntry.getKey(), strikeOI);
+                        }
+                    });
+                    LOGGER.info("IOChange previousOI:" + new Gson().toJson(previousOI));
+                    Map<String, OIChangeData> oiChangeDataMap = previousOI.get(indexMapEntry);
+                    OIChangeData ceData = oiChangeDataMap.get("CE");
+                    OIChangeData peData = oiChangeDataMap.get("PE");
+                    if (ceData.getCurrentOI() > 0 && peData.getCurrentOI() > 0 && ceData.getPreviousOI() > 0 && peData.getPreviousOI() > 0 && !peData.isOrderPlaced() && !ceData.isOrderPlaced()) {
+                        if (ceData.isPositiveChange() && peData.isNegativeChange()) {
+                            String message = "Take PE position:" + peData.getStrikeName() + ". PE oi declined by:" + peData.getOiPercentChange() + " CE oi increased by:" + ceData.getOiPercentChange();
+                            telegramClient.sendToTelegram(message, telegramTokenGroup, "-713214125");
+                            peData.setOrderPlaced(true);
+                        }
+                        if (ceData.isNegativeChange() && peData.isPositiveChange()) {
+                            String message = "Take CE position:" + ceData.getStrikeName() + ". PE oi increased by:" + peData.getOiPercentChange() + " CE oi declined by:" + ceData.getOiPercentChange();
+                            telegramClient.sendToTelegram(message, telegramTokenGroup, "-713214125");
+                            ceData.setOrderPlaced(true);
                         }
                     }
                 });
-                Map<String, OIChangeData> oiChangeDataMap = previousOI.get(indexMapEntry);
-                OIChangeData ceData = oiChangeDataMap.get("CE");
-                OIChangeData peData = oiChangeDataMap.get("PE");
-                if (ceData.getCurrentOI() > 0 && peData.getCurrentOI() > 0 && ceData.getPreviousOI() > 0 && peData.getPreviousOI() > 0 && !peData.isOrderPlaced() && !ceData.isOrderPlaced()) {
-                    if (ceData.isPositiveChange() && peData.isNegativeChange()) {
-                        String message = "Take PE position:" + peData.getStrikeName() + ". PE oi declined by:" + peData.getOiPercentChange() + " CE oi increased by:" + ceData.getOiPercentChange();
-                        telegramClient.sendToTelegram(message, telegramTokenGroup, "-713214125");
-                        peData.setOrderPlaced(true);
-                    }
-                    if (ceData.isNegativeChange() && peData.isPositiveChange()) {
-                        String message = "Take CE position:" + ceData.getStrikeName() + ". PE oi increased by:" + peData.getOiPercentChange() + " CE oi declined by:" + ceData.getOiPercentChange();
-                        telegramClient.sendToTelegram(message, telegramTokenGroup, "-713214125");
-                        ceData.setOrderPlaced(true);
-                    }
-                }
-            });
+            }
         }
     }
 

@@ -22,6 +22,8 @@ import com.zerodhatech.models.*;
 import com.zerodhatech.models.Order;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -40,7 +42,6 @@ import java.time.format.TextStyle;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 
 
 @Component
@@ -55,7 +56,7 @@ public class ZerodhaBankNiftyShortStraddle {
 
     @Value("${telegram.straddle.bot.token}")
     String telegramToken;
-    public static final Logger LOGGER = Logger.getLogger(ZerodhaBankNiftyShortStraddle.class.getName());
+    public static final Logger LOGGER = LoggerFactory.getLogger(ZerodhaBankNiftyShortStraddle.class);
 
 
 

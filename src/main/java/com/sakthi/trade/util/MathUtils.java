@@ -41,7 +41,10 @@ public class MathUtils {
         BigDecimal value = amount.divide(new BigDecimal("100"), 2, BigDecimal.ROUND_UP).multiply(percent).setScale(0, RoundingMode.HALF_UP);
         return value;
     }
-
+    public static BigDecimal percentageValueOfAmountWithoutRund(BigDecimal percent, BigDecimal amount) {
+        BigDecimal value = amount.divide(new BigDecimal("100")).multiply(percent);
+        return value;
+    }
     public static BigDecimal percentageMove(BigDecimal open, BigDecimal close) {
         BigDecimal value = ((close.subtract(open)).divide(open, RoundingMode.HALF_EVEN)).multiply(new BigDecimal(100)).setScale(2, BigDecimal.ROUND_UP);
         return value;
@@ -297,7 +300,7 @@ public class MathUtils {
         return rangeStrike;
     }
 //use only for exp for now
-    public Map<Double,Map.Entry<String, StrikeData>> getPriceCloseToPremium( String currentDate, int closePremium, String checkTime, String index) {
+    public Map<Double,Map<String, StrikeData>> getPriceCloseToPremium( String currentDate, int closePremium, String checkTime, String index) {
         //     String historicURL = "https://api.kite.trade/instruments/historical/" + niftyBank + "/5minute?from=2021-01-01+09:00:00&to=2021-01-01+11:15:00";
         Map<String,Map<String, StrikeData>> strikeMasterMap1=new HashMap<>();
         // Map<String,Map<String,String>> dhanStrikeMasterMap1=new HashMap<>();
@@ -328,7 +331,7 @@ public class MathUtils {
         String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
         HistoricalData historicalData = new HistoricalData();
         JSONObject json = new JSONObject(response);
-        Map<Double,Map.Entry<String, StrikeData>> rangeStrike = new HashMap<>();
+        Map<Double,Map<String, StrikeData>> rangeStrike = new HashMap<>();
         String status = json.getString("status");
         if (!status.equals("error")) {
             historicalData.parseResponse(json);
@@ -346,7 +349,7 @@ public class MathUtils {
                             if (atmStrikesStraddle.getKey().contains("CE")) {
                                 double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate,checkTime,atmStrikesStraddle.getKey());
                                 Thread.sleep(200);
-                                tempStrike = tempStrike+50;
+                                tempStrike = tempStrike+50; //TODO: handle BNF, increase BNF 100
                                 ce.put(closePrice,atmStrikesStraddle);
 
                             }
@@ -361,6 +364,8 @@ public class MathUtils {
                                 double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate,checkTime,atmStrikesStraddle.getKey());
                                 Thread.sleep(200);
                                 tempStrike2 = tempStrike2-50;
+                                Map<String, StrikeData> atmStrikesStraddle1 =new HashMap<>();
+                              //  atmStrikesStraddle1.put(atmStrikesStraddle.getKey(),atmStrikesStraddle.getValue())
                                 pe.put(closePrice,atmStrikesStraddle);
                             }
                             j++;
@@ -617,19 +622,21 @@ public class MathUtils {
         }
         return 0;
     }
-    public static void selectClosestStrikePrice(Map<Double, Map.Entry<String, StrikeData>> strikePrices, double targetPrice,Map<Double, Map.Entry<String, StrikeData>> range) {
-        Map<Double, Map.Entry<String, StrikeData>>  closestStrikePrice = new HashMap<>();
+    public static void selectClosestStrikePrice(Map<Double, Map.Entry<String, StrikeData>> strikePrices, double targetPrice,Map<Double, Map<String, StrikeData>> range) {
+        Map<Double, Map<String, StrikeData>>  closestStrikePrice = new HashMap<>();
         double minDifference = Double.MAX_VALUE;
         for (Map.Entry<Double, Map.Entry<String, StrikeData>> entry : strikePrices.entrySet()) {
             double strikePrice = entry.getKey();
             double difference = Math.abs(strikePrice - targetPrice);
             if (difference < minDifference) {
                 closestStrikePrice=new HashMap<>();
-                closestStrikePrice.put(entry.getKey(), entry.getValue());
+                Map<String, StrikeData> closestStrikePrice1=new HashMap<>();
+                closestStrikePrice1.put(entry.getValue().getKey(),entry.getValue().getValue());
+                closestStrikePrice.put(entry.getKey(), closestStrikePrice1);
                 minDifference = difference;
             }
         }
-        for (Map.Entry<Double, Map.Entry<String, StrikeData>> entry : closestStrikePrice.entrySet()) {
+        for (Map.Entry<Double, Map<String, StrikeData>> entry : closestStrikePrice.entrySet()) {
             range.put(entry.getKey(), entry.getValue());
         }
     }

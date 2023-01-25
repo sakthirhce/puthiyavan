@@ -357,7 +357,7 @@ public class BNFFuturesTrendFollowing {
         openTradeDataEntities1 = openTradeDataRepo.findAll();
         openTradeDataEntities1.forEach(openTradeDataEntity -> {
             if (openTradeDataEntity.getAlgoName().equals(this.getAlgoName())) {
-                if (!openTradeDataEntity.isExited && !openTradeDataEntity.isErrored) {
+                if (!openTradeDataEntity.isExited && !openTradeDataEntity.isErrored && openTradeDataEntity.getEntryOrderId() != "") {
                     User user = userList.getUser().stream().filter(user1 -> user1.getName().equals(openTradeDataEntity.getUserId())).findFirst().get();
                     List<Position> positions = null;
                     try {

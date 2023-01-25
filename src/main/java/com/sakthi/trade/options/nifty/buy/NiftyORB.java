@@ -8,6 +8,8 @@ import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import com.sakthi.trade.zerodha.account.StrikeData;
 import com.zerodhatech.models.HistoricalData;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,7 +21,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 
 @Service
 public class NiftyORB {
@@ -37,7 +38,7 @@ public class NiftyORB {
     @Value("${telegram.straddle.bot.token}")
     String telegramToken;
 
-    public static final Logger LOGGER = Logger.getLogger(NiftyORB.class.getName());
+    public static final Logger LOGGER = LoggerFactory.getLogger(NiftyORB.class);
     @Autowired
     TelegramMessenger sendMessage;
     boolean cePlaced=false;

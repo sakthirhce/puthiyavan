@@ -7,6 +7,8 @@ import com.sakthi.trade.util.ZippingDirectory;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,7 +20,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import static java.util.Calendar.DAY_OF_MONTH;
 import static java.util.Calendar.DAY_OF_WEEK;
@@ -37,7 +38,7 @@ public class WeeklyDataBackup {
 
     @Autowired
     TelegramMessenger sendMessage;
-    public static final Logger LOGGER = Logger.getLogger(WeeklyDataBackup.class.getName());
+    public static final Logger LOGGER = LoggerFactory.getLogger(WeeklyDataBackup.class);
 
  //   SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
     public Map<String,String> lsHoliday=new HashMap<>();
@@ -196,6 +197,7 @@ try {
             });
         });
         zippingDirectory.test(fnexpPath, "FINNIFTY_"+format.format(currentDate));
+        telegramClient.sendDocumentToTelegram(fnexpPath+"/FINNIFTY_"+format.format(currentDate)+".zip","FINNIFTY_"+format.format(currentDate));
         FileUtils.deleteDirectory(new File(fnexpPath));
     }
 

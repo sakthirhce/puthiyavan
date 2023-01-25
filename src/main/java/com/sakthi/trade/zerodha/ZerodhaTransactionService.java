@@ -7,6 +7,8 @@ import com.sakthi.trade.zerodha.account.Expiry;
 import com.sakthi.trade.zerodha.account.StrikeData;
 import com.sakthi.trade.zerodha.account.ZerodhaAccount;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -73,6 +75,7 @@ public class ZerodhaTransactionService {
     TelegramMessenger sendMessage;
     @Value("${telegram.orb.bot.token}")
     String telegramToken;
+    public static final Logger LOGGER = LoggerFactory.getLogger(ZerodhaTransactionService.class);
     public void olhc(){
 
         String historicURL = "https://api.kite.trade/instruments/historical/5633/5minute?from=2020-12-17+09:00:00&to=2020-12-17+10:30:00";
@@ -115,7 +118,7 @@ public class ZerodhaTransactionService {
         if(nextWeekExpOff){
             currentWeekExpCal.add(DAY_OF_MONTH, -1);
             weekExp=format.format(currentWeekExpCal.getTime());
-            log.info("Thursday falling on holiday. recalculated weekly exp date is:"+weekExp);
+            LOGGER.info("Thursday falling on holiday. recalculated weekly exp date is:"+weekExp);
         }
         return currentWeekExpCal.getTime();
     }
