@@ -122,9 +122,6 @@ public class TelegramMessenger {
             if (!profile) {
                 try {
                     long start = System.currentTimeMillis();
-                    //botsApi.registerBot(bot);
-                    //  long chatId = -713214125; // Replace with the chat ID of the chat where you want to send the file
-                    //   String filePath = "/home/hasvanth/Downloads/FINNIFTY/2022/Dec/2022-12-20/FINNIFTY_2022-12-20.zip"; // Replace with the file path of the ZIP file
                     logBot.sendZipFile(filePath,fileName,-848547540);
                     long finish = System.currentTimeMillis();
                     long timeElapsed = finish - start;
