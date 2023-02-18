@@ -79,6 +79,7 @@ public class NiftyOptionBuy935 {
         return "NIFTY_BUY_935";
     }
     public static final Logger LOGGER = LoggerFactory.getLogger(NiftyOptionBuy935.class);
+
     @Scheduled(cron = "${niftyBuy935.schedule.entry}")
     public void buy() throws ParseException, KiteException, IOException {
         sendMessage.sendToTelegram("niftyBuy935 execution startede", telegramToken);

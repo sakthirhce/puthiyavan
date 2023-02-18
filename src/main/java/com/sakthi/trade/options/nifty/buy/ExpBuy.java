@@ -93,7 +93,7 @@ public class ExpBuy implements Strategy {
                    // double triggerPrice = triggerPriceD * 300;
                     BigDecimal triggerPriceTemp = (MathUtils.percentageValueOfAmountWithoutRund(new BigDecimal(200), new BigDecimal(triggerPriceD)).add(new BigDecimal(triggerPriceD))).setScale(2,BigDecimal.ROUND_HALF_UP);
                     orderParams.triggerPrice = triggerPriceTemp.doubleValue();
-                    BigDecimal price = triggerPriceTemp.setScale(2, RoundingMode.HALF_UP).add(triggerPriceTemp.setScale(2, RoundingMode.HALF_UP).divide(new BigDecimal(100))).setScale(2, RoundingMode.HALF_UP);
+                    BigDecimal price = triggerPriceTemp.setScale(2,   BigDecimal.ROUND_HALF_UP).add(triggerPriceTemp.setScale(2, BigDecimal.ROUND_HALF_UP).divide(new BigDecimal(100))).setScale(2, BigDecimal.ROUND_HALF_UP);
                     orderParams.price = price.doubleValue();
                     userList.getUser().stream().filter(
                             user -> user.getExpZeroToHero() != null && user.getExpZeroToHero().isNrmlEnabled()

@@ -24,7 +24,7 @@ public class ZerodhaWorker implements BrokerWorker {
     public Order placeOrder(OrderParams orderParams, User user, TradeData tradeData) throws IOException, KiteException {
         try {
             long start = System.currentTimeMillis();
-            LOGGER.info("zerodha order input: "+new Gson().toJson(orderParams));
+            LOGGER.info("zerodha order input: "+user.getName()+":"+new Gson().toJson(orderParams));
             Order order=user.getKiteConnect().placeOrder(orderParams, "regular");
             long finish = System.currentTimeMillis();
             long timeElapsed = finish - start;
@@ -55,7 +55,7 @@ public class ZerodhaWorker implements BrokerWorker {
             List<Order> orderList= user.getKiteConnect().getOrders();
             long finish = System.currentTimeMillis();
             long timeElapsed = finish - start;
-            LOGGER.info("get order time:"+timeElapsed);
+//            LOGGER.info("get order time:"+timeElapsed);
             return orderList;
         }
         catch (KiteException e) {
@@ -73,7 +73,7 @@ public class ZerodhaWorker implements BrokerWorker {
             List<Position> positions=user.getKiteConnect().getPositions().get("net");
             long finish = System.currentTimeMillis();
             long timeElapsed = finish - start;
-            LOGGER.info("get position time:"+timeElapsed);
+        //    LOGGER.info("get position time:"+timeElapsed);
             return positions;
         } catch (KiteException e) {
             log.error(e.message+":"+e.code);

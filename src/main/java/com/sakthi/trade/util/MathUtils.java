@@ -1,6 +1,7 @@
 package com.sakthi.trade.util;
 
 import com.google.common.util.concurrent.AtomicDouble;
+import com.google.gson.Gson;
 import com.sakthi.trade.domain.Brokerage;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.zerodha.TransactionService;
@@ -137,7 +138,7 @@ public class MathUtils {
             }
         }
         Map<String,Map<String,String>> strikeMasterMap=strikeMasterMap1;
-        String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+11:15:00";
+        String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:30:00";
         String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
         HistoricalData historicalData = new HistoricalData();
         JSONObject json = new JSONObject(response);
@@ -232,7 +233,7 @@ public class MathUtils {
         Map<Double,Map.Entry<String, StrikeData>> ce=new HashMap<>();
         Map<Double,Map.Entry<String, StrikeData>> pe=new HashMap<>();
         Map<String,Map<String,StrikeData>> strikeMasterMap=strikeMasterMap1;
-        String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+11:15:00";
+        String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + currentDate + "+09:15:00&to=" + currentDate + "+15:30:00";
         String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
         HistoricalData historicalData = new HistoricalData();
         JSONObject json = new JSONObject(response);
@@ -240,11 +241,12 @@ public class MathUtils {
         String status = json.getString("status");
         if (!status.equals("error")) {
             historicalData.parseResponse(json);
+          // HistoricalData lastElement= historicalData.dataArrayList.get(historicalData.dataArrayList.size()-1);
             historicalData.dataArrayList.forEach(historicalData1 -> {
                 try {
                     Date openDatetime = sdf.parse(historicalData1.timeStamp);
-                    String openDate = format.format(openDatetime);
-                    if (sdf.format(openDatetime).equals(openDate + "T" + checkTime)) {/*"09:30:00"*/
+                  //  String openDate = format.format(openDatetime);
+                    if (sdf.format(openDatetime).equals(currentDate + "T" + checkTime)) {/*"09:30:00"*/
                         int atmStrike = commonUtil.findATM((int) historicalData1.close);
                         int tempStrike = atmStrike;
                         int i=0;
@@ -406,7 +408,7 @@ public class MathUtils {
         Map<Double,Map.Entry<String, StrikeData>> pe=new HashMap<>();
         Map<String,Map<String,StrikeData>> strikeMasterMap=strikeMasterMap1;
      //   Map<String,Map<String,String>> dhanStrikeMasterMap=dhanStrikeMasterMap1;
-        String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+11:15:00";
+        String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:30:00";
         String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
         HistoricalData historicalData = new HistoricalData();
         JSONObject json = new JSONObject(response);
@@ -493,7 +495,7 @@ public class MathUtils {
         return min.getValue();
     }
     public double callStrike(String strikeId, String currentDate,String checkTime) {
-        String historicURLStrike = "https://api.kite.trade/instruments/historical/" + strikeId + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
+        String historicURLStrike = "https://api.kite.trade/instruments/historical/" + strikeId + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:30:00";
         String priceResponse = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURLStrike));
         LOGGER.info("API response:" + priceResponse);
         HistoricalData historicalPriceData = new HistoricalData();
@@ -518,7 +520,7 @@ public class MathUtils {
         return closePrice.get();
     }
     public double callStrikeWithName(String strikeId, String currentDate,String checkTime,String strikeName) {
-        String historicURLStrike = "https://api.kite.trade/instruments/historical/" + strikeId + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
+        String historicURLStrike = "https://api.kite.trade/instruments/historical/" + strikeId + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:30:00";
         String priceResponse = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURLStrike));
      //   LOGGER.info("API response:"+strikeName+":" + priceResponse);
         HistoricalData historicalPriceData = new HistoricalData();
@@ -543,26 +545,29 @@ public class MathUtils {
         return closePrice.get();
     }
     public double callStrikeWithName(StrikeData strikeData, String currentDate,String checkTime,String strikeName) {
-        String historicURLStrike = "https://api.kite.trade/instruments/historical/" + strikeData.getZerodhaId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:34:00";
+        String historicURLStrike = "https://api.kite.trade/instruments/historical/" + strikeData.getZerodhaId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:30:00";
         String priceResponse = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURLStrike));
-      //  LOGGER.info("API response:"+strikeName+":" + priceResponse);
+        LOGGER.info("URL"+historicURLStrike+" API response:"+strikeName+":" + priceResponse);
         HistoricalData historicalPriceData = new HistoricalData();
         JSONObject priceJson = new JSONObject(priceResponse);
         String responseStatus = priceJson.getString("status");
         AtomicDouble closePrice = new AtomicDouble(0);
         if (!responseStatus.equals("error")) {
             historicalPriceData.parseResponse(priceJson);
-            historicalPriceData.dataArrayList.forEach(historicalDataPrice -> {
+            //   HistoricalData lastElement=historicalPriceData.dataArrayList.get(historicalPriceData.dataArrayList.size()-1);
+            historicalPriceData.dataArrayList.forEach(historicalData1 -> {
                 try {
-                    Date priceDatetime = sdf.parse(historicalDataPrice.timeStamp);
-                    String priceDate = format.format(priceDatetime);
-                    if (sdf.format(priceDatetime).equals(priceDate + "T"+checkTime)) {
-                        closePrice.getAndSet(historicalDataPrice.close);
+                    Date openDatetime = sdf.parse(historicalData1.timeStamp);
+                    String priceDate = format.format(openDatetime);
+                    if (sdf.format(openDatetime).equals(priceDate + "T" + checkTime)) {
+                        LOGGER.info("API last element price :" + strikeName + ":" + historicalData1.close);
+                        closePrice.getAndSet(historicalData1.close);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
 
                 }
+
             });
         }
         return closePrice.get();

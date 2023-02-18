@@ -74,7 +74,7 @@ public class TransactionService {
             User user =userList.getUser().stream().filter(user1 -> user1.isAdmin()).findFirst().get();
             kiteConnect = user.getKiteConnect();
         }
-            LOGGER.info("uri:" + uri);
+          //  LOGGER.info("uri:" + uri);
             Request.Builder requestBuilder = new Request.Builder();
             requestBuilder.addHeader("X-Kite-Version", "3");
             requestBuilder.addHeader("Authorization", "token " + kiteConnect.getApiKey() + ":" + kiteConnect.getAccessToken());

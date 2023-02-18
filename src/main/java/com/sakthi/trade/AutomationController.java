@@ -147,6 +147,12 @@ public class AutomationController {
         trades.stream().findFirst();
         log.info("getOrderTrades:" + gson.toJson(trades));
     }
+    @GetMapping("/currentDate")
+    public void niftyBuyTest(@RequestParam String orderId) throws Exception, KiteException {
+        String currentDate="2023-02-14";
+        mathUtils.getPriceRangeSortedWithLowRangeNifty(currentDate,200,150,"09:34:00","NF");
+        //log.info("getOrderTrades:" + gson.toJson(trades));
+    }
 
     @GetMapping("/zerodhaTrades")
     public void zerodhaTrades() throws Exception, KiteException {

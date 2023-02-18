@@ -19,6 +19,7 @@ public class TradeStrategy {
     String  tradeStrategyKey;
     String  index ; //NIFTY/BNF
     String entryTime;
+    String candleCheckTime;
     String tradeValidity; //MIS,BTST
     String exitTime;
     String intradayExitTime;
@@ -39,13 +40,15 @@ public class TradeStrategy {
     boolean strategyEnabled;
     String rangeBreakType ; //percent/point
     String rangeBreakTime ;
+    String rangeStartTime ;
     BigDecimal rangeBreakValue ;
     String rangeBreakSide ; //high/low
     String rangeBreakInstrument ; //index/options
     boolean  reentry ;
-
+    int intradayLotSiz;
+    int intradayLotSize;
     int lotSize;
-
+    int positionalLotSize;
     String reentryType ; //ASAP/COST
     BigDecimal reentryCount ;
     String slType ; //percent/point
