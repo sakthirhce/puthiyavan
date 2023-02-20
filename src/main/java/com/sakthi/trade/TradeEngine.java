@@ -27,6 +27,7 @@ import com.zerodhatech.models.HistoricalData;
 import com.zerodhatech.models.Order;
 import com.zerodhatech.models.OrderParams;
 import com.zerodhatech.models.Position;
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +52,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
+@Slf4j
 public class TradeEngine {
     public static final Logger LOGGER =  LoggerFactory.getLogger(TradeEngine.class);
     @Autowired
@@ -146,17 +148,20 @@ public class TradeEngine {
         Date date = new Date();
         MDC.put("run_time",candleDateTimeFormat.format(date));
         String currentDateStr = dateFormat.format(date);
-       // String currentDateStr="2023-01-27";
+       // String currentDateStr="2023-02-17";
         LOGGER.info("trade engine: " + currentDateStr);
         Calendar candleCalenderMin = Calendar.getInstance();
         Calendar calendarCurrentMin = Calendar.getInstance();
       //  SimpleDateFormat minFormat = new SimpleDateFormat("HH:mm");
         candleCalenderMin.add(Calendar.MINUTE, -1);
         Date currentMinDate = calendarCurrentMin.getTime();
-       // String candleHourMinStr=hourMinFormat.format(currentMinDate);
-        String candleHourMinStr="09:22";
-        //String currentHourMinStr=hourMinFormat.format(calendarCurrentMin.getTime());
-        String currentHourMinStr="09:23";
+        Date candleCurrentMinDate = candleCalenderMin.getTime();
+        String candleHourMinStr=hourMinFormat.format(candleCurrentMinDate);
+        System.out.println(candleHourMinStr);
+        //candleHourMinStr="09:16";
+        String currentHourMinStr=hourMinFormat.format(currentMinDate);
+        System.out.println(currentHourMinStr);
+     //   currentHourMinStr="09:17";
         executorThread.submit(() -> {
                     strategyMap.entrySet().forEach(indexEntry -> {
                         String index = indexEntry.getKey();
@@ -194,7 +199,7 @@ public class TradeEngine {
                                         Map<Double, Map<String, StrikeData>> rangeStrikes = new HashMap<>();
                                         if (strategy.isRangeBreak()) {
                                             try {
-                                                orbRangeBreak(strategy, historicalData, currentDateStr,currentHourMinStr,candleHourMinStr+":00");
+                                                orbRangeBreak(strategy, historicalData, currentDateStr,currentHourMinStr,candleHourMinStr+":00",lastHistoricalData);
                                             } catch (Exception e) {
                                                 throw new RuntimeException(e);
                                             }
@@ -215,10 +220,10 @@ public class TradeEngine {
                                                 if (strategy.getSimpleMomentumType().equals(ValueType.PERCENT_DOWN.getType())) {
                                                     BigDecimal triggerPriceTemp = (new BigDecimal(strikePrice)).subtract(MathUtils.percentageValueOfAmount(strategy.getSimpleMomentumValue(), new BigDecimal(strikePrice))).setScale(0, RoundingMode.HALF_UP);
                                                     System.out.println(triggerPriceTemp);
-                                                } else if (strategy.getSimpleMomentumType().equals(ValueType.POINT_UP.getType())) {
+                                                } else if (strategy.getSimpleMomentumType().equals(ValueType.POINTS_UP.getType())) {
                                                     BigDecimal triggerPriceTemp = new BigDecimal(strikePrice).add(strategy.getSimpleMomentumValue()).setScale(0, RoundingMode.HALF_UP);
                                                     System.out.println(triggerPriceTemp);
-                                                } else if (strategy.getSimpleMomentumType().equals(ValueType.POINT_DOWN.getType())) {
+                                                } else if (strategy.getSimpleMomentumType().equals(ValueType.POINTS_DOWN.getType())) {
                                                     BigDecimal triggerPriceTemp = new BigDecimal(strikePrice).subtract(strategy.getSimpleMomentumValue()).setScale(0, RoundingMode.HALF_UP);
                                                     System.out.println(triggerPriceTemp);
 
@@ -264,12 +269,12 @@ public class TradeEngine {
                                                     tradeDataList.add(tradeData);
                                                     openTrade.put(strikeData.getZerodhaId(), tradeDataList);
                                                     LOGGER.info("trade data" + new Gson().toJson(tradeData));
-                                                    sendMessage.sendToTelegram("Options traded for user:" + user.getName() + " strike: " + strikeData.getZerodhaSymbol() + ":" + strategy.getAliasName(), telegramTokenGroup, "-713214125");
+                                                    sendMessage.sendToTelegram("Options traded for user:" + user.getName() + " strike: " + strikeData.getZerodhaSymbol() + ":" + strategy.getAliasName(), telegramToken);
                                                 } catch (Exception e) {
                                                     tradeData.isErrored = true;
                                                     LOGGER.info("Error while placing straddle order: " + e);
                                                     e.printStackTrace();
-                                                    sendMessage.sendToTelegram("Error while placing straddle order: " + strikeData.getZerodhaSymbol() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName(), telegramTokenGroup, "-713214125");
+                                                    sendMessage.sendToTelegram("Error while placing straddle order: " + strikeData.getZerodhaSymbol() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName(), telegramToken);
 
                                                 }
                                             });
@@ -504,7 +509,7 @@ public class TradeEngine {
         });
     }
 
-    public void  orbRangeBreak(TradeStrategy strategy,HistoricalData historicalData,String currentDateStr,String currentHourMinStr,String candleHourMinStr) throws Exception {
+    public void  orbRangeBreak(TradeStrategy strategy,HistoricalData historicalData,String currentDateStr,String currentHourMinStr,String candleHourMinStr,HistoricalData lastHistoricData) throws Exception {
 
         Map<String, Double> orbHighLow = new HashMap<>();
         if((strategy.getRangeBreakTime()+":00").equals(currentHourMinStr + ":00")) {
@@ -513,8 +518,9 @@ public class TradeEngine {
         }
         try {
             if(dateTimeFormat.parse(currentDateStr+" "+currentHourMinStr).after(dateTimeFormat.parse(currentDateStr+" "+hourMinFormat.format(strategy.getRangeBreakTime())))) {
+
                 if (strategy.getRangeLow().doubleValue() > 0) {
-                        if (historicalData.close < strategy.getRangeLow().doubleValue()) {
+                        if (lastHistoricData.close < strategy.getRangeLow().doubleValue()) {
                             Map<String, StrikeData> rangeSelected;
                             rangeSelected = mathUtils.getPriceRangeSortedWithLowRangeNifty(currentDateStr, strategy.getStrikePriceRangeHigh().intValue(), strategy.getStrikePriceRangeLow().intValue(), candleHourMinStr+":00", strategy.getIndex());
                             Map.Entry<String, StrikeData> finalSelected = rangeSelected.entrySet().stream().filter(stringStrikeDataEntry -> stringStrikeDataEntry.getKey().equals("PE")).findFirst().get();
@@ -522,8 +528,8 @@ public class TradeEngine {
                             tradeData.setEntryType("BUY");
                             tradeData.isOrderPlaced = true;
                             tradeData.setQty(strategy.getLotSize());
-                            tradeData.setSellTime(candleDateTimeFormat.format(historicalData.timeStamp));
-                            tradeData.setSellPrice(new BigDecimal(historicalData.close));
+                            tradeData.setSellTime(candleDateTimeFormat.format(lastHistoricData.timeStamp));
+                            tradeData.setSellPrice(new BigDecimal(lastHistoricData.close));
                             tradeData.setStockId(Integer.parseInt(finalSelected.getValue().getZerodhaId()));
                             List<TradeData> tradeDataList = openTrade.get(finalSelected.getValue().getZerodhaId());
                             if (tradeDataList != null && tradeDataList.size() > 0) {
@@ -533,14 +539,14 @@ public class TradeEngine {
                                 tradeDataList.add(tradeData);
                             }
                             openTrade.put(finalSelected.getValue().getZerodhaId(), tradeDataList);
-                            String message = "TradeEngine:option orb range low broke, strike selected :" + finalSelected.getValue().getZerodhaSymbol();
+                            String message = "TradeEngine:"+strategy.getAliasName()+":"+currentHourMinStr+"option orb range low broke, strike selected :" + finalSelected.getValue().getZerodhaSymbol();
                             sendMessage.sendToTelegram(message, telegramToken);
                             strategy.setRangeLow(new BigDecimal(0));
                         }
 
                 }
                 if (strategy.getRangeHigh().doubleValue() > 0) {
-                    if (historicalData.close > strategy.getRangeHigh().doubleValue()) {
+                    if (lastHistoricData.close > strategy.getRangeHigh().doubleValue()) {
                         Map<String, StrikeData> rangeSelected;
                         rangeSelected = mathUtils.getPriceRangeSortedWithLowRangeNifty(currentDateStr, strategy.getStrikePriceRangeHigh().intValue(), strategy.getStrikePriceRangeLow().intValue(), candleHourMinStr+":00", strategy.getIndex());
                         Map.Entry<String, StrikeData> finalSelected = rangeSelected.entrySet().stream().filter(stringStrikeDataEntry -> stringStrikeDataEntry.getKey().equals("PE")).findFirst().get();
@@ -548,8 +554,8 @@ public class TradeEngine {
                         tradeData.setEntryType("BUY");
                         tradeData.isOrderPlaced = true;
                         tradeData.setQty(strategy.getLotSize());
-                        tradeData.setSellTime(candleDateTimeFormat.format(historicalData.timeStamp));
-                        tradeData.setSellPrice(new BigDecimal(historicalData.close));
+                        tradeData.setSellTime(candleDateTimeFormat.format(lastHistoricData.timeStamp));
+                        tradeData.setSellPrice(new BigDecimal(lastHistoricData.close));
                         tradeData.setStockId(Integer.parseInt(finalSelected.getValue().getZerodhaId()));
                         List<TradeData> tradeDataList = openTrade.get(finalSelected.getValue().getZerodhaId());
                         if (tradeDataList != null && tradeDataList.size() > 0) {
@@ -559,7 +565,7 @@ public class TradeEngine {
                             tradeDataList.add(tradeData);
                         }
                         openTrade.put(finalSelected.getValue().getZerodhaId(), tradeDataList);
-                        String message = "TradeEngine:option orb range low broke, strike selected :" + finalSelected.getValue().getZerodhaSymbol();
+                        String message = "TradeEngine:"+strategy.getAliasName()+":"+currentHourMinStr+"option orb range low broke, strike selected :" + finalSelected.getValue().getZerodhaSymbol();
                         sendMessage.sendToTelegram(message, telegramToken);
                         strategy.setRangeHigh(new BigDecimal(0));
                     }
@@ -704,10 +710,10 @@ public class TradeEngine {
                                         if (strategy.getSimpleMomentumType().equals(ValueType.PERCENT_DOWN.getType())) {
                                             BigDecimal triggerPriceTemp = (new BigDecimal(strikePrice)).subtract(MathUtils.percentageValueOfAmount(strategy.getSimpleMomentumValue(), new BigDecimal(strikePrice))).setScale(0, RoundingMode.HALF_UP);
                                             System.out.println(triggerPriceTemp);
-                                        } else if (strategy.getSimpleMomentumType().equals(ValueType.POINT_UP.getType())) {
+                                        } else if (strategy.getSimpleMomentumType().equals(ValueType.POINTS_UP.getType())) {
                                             BigDecimal triggerPriceTemp = new BigDecimal(strikePrice).add(strategy.getSimpleMomentumValue()).setScale(0, RoundingMode.HALF_UP);
                                             System.out.println(triggerPriceTemp);
-                                        } else if (strategy.getSimpleMomentumType().equals(ValueType.POINT_DOWN.getType())) {
+                                        } else if (strategy.getSimpleMomentumType().equals(ValueType.POINTS_DOWN.getType())) {
                                             BigDecimal triggerPriceTemp = new BigDecimal(strikePrice).subtract(strategy.getSimpleMomentumValue()).setScale(0, RoundingMode.HALF_UP);
                                             System.out.println(triggerPriceTemp);
 
@@ -749,12 +755,12 @@ public class TradeEngine {
                                             tradeDataList.add(tradeData);
                                             openTrade.put(strikeData.getZerodhaId(), tradeDataList);
                                             LOGGER.info("trade data" + new Gson().toJson(tradeData));
-                                            sendMessage.sendToTelegram("Options traded for user:" + user.getName() + " strike: " + strikeData.getZerodhaSymbol() + ":" + strategy.getAliasName(), telegramTokenGroup, "-713214125");
+                                            sendMessage.sendToTelegram("Options traded for user:" + user.getName() + " strike: " + strikeData.getZerodhaSymbol() + ":" + strategy.getAliasName(), telegramToken);
                                         } catch (Exception e) {
                                             tradeData.isErrored = true;
                                             LOGGER.info("Error while placing straddle order: " + e);
 
-                                            sendMessage.sendToTelegram("Error while placing straddle order: " + strikeData.getZerodhaSymbol() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName(), telegramTokenGroup, "-713214125");
+                                            sendMessage.sendToTelegram("Error while placing straddle order: " + strikeData.getZerodhaSymbol() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName(), telegramToken);
 
                                         }
                                     });
@@ -1035,6 +1041,7 @@ public class TradeEngine {
         }
         orbHighLow.put("LOW", low);
         orbHighLow.put("HIGH", high);
+        LOGGER.info(strategy.getAliasName()+":Low:"+low+":high:"+high);
         strategy.setRangeLow(new BigDecimal(low));
         strategy.setRangeHigh(new BigDecimal(high));
     }
@@ -1066,6 +1073,46 @@ public class TradeEngine {
             Map<Double, Map<String, StrikeData>> stringMapMap = new HashMap<>();
             Map<String, StrikeData> strikeDataMap1 = strikeMasterMap.get(String.valueOf(atmStrike));
             stringMapMap.put(close, strikeDataMap1);
+            return stringMapMap;
+        }if (strikeSelectionType.contains(StrikeSelectionType.OTM.getType())) {
+            int atmStrike = commonUtil.findATM((int) close);
+            if (zerodhaTransactionService.expDate.equals(currentDate) && strategy.getTradeValidity().equals(TradeValidity.POSITIONAL.getValidity())) {
+                if ("BNF".equals(index)) {
+                    strikeMasterMap = zerodhaTransactionService.globalOptionsInfo.get(Expiry.BNF_NEXT.expiryName);
+                } else if ("NF".equals(index)) {
+                    strikeMasterMap = zerodhaTransactionService.globalOptionsInfo.get(Expiry.NF_NEXT.expiryName);
+                } else if ("FN".equals(index)) {
+                    strikeMasterMap = zerodhaTransactionService.globalOptionsInfo.get(Expiry.NF_NEXT.expiryName);
+                }
+            } else {
+                if ("BNF".equals(index)) {
+                    strikeMasterMap = zerodhaTransactionService.globalOptionsInfo.get(Expiry.BNF_CURRENT.expiryName);
+                } else if ("NF".equals(index)) {
+                    strikeMasterMap = zerodhaTransactionService.globalOptionsInfo.get(Expiry.NF_CURRENT.expiryName);
+                } else if ("FN".equals(index)) {
+                    strikeMasterMap = zerodhaTransactionService.globalOptionsInfo.get(Expiry.FN_CURRENT.expiryName);
+                }
+            }
+            Map<Double, Map<String, StrikeData>> stringMapMap = new HashMap<>();
+            String otmStrikeVale=strikeSelectionType.substring(3);
+           // String sub=otmStrikeVale.substring(3);
+            int otmValue=Integer.valueOf(otmStrikeVale)*100;
+            int ceValue=atmStrike+otmValue;
+            int peValue=atmStrike-otmValue;
+            Optional<Map.Entry<String, StrikeData>> strikeDataMapCeOp = strikeMasterMap.get(String.valueOf(ceValue)).entrySet().stream().filter(map -> map.getKey().contains("CE")).findFirst();
+            if (strikeDataMapCeOp.isPresent()){
+                Map.Entry<String, StrikeData> strikeDataMapCe =strikeDataMapCeOp.get();
+                Map<String, StrikeData> stringMapCE = new HashMap<>();
+                stringMapCE.put(strikeDataMapCe.getKey(),strikeDataMapCe.getValue());
+                stringMapMap.put(Double.parseDouble(String.valueOf(ceValue)), stringMapCE);
+            }
+            Optional<Map.Entry<String, StrikeData>> strikeDataMapPeOp = strikeMasterMap.get(String.valueOf(peValue)).entrySet().stream().filter(map -> map.getKey().contains("PE")).findFirst();
+            if (strikeDataMapPeOp.isPresent()){
+                Map.Entry<String, StrikeData> strikeDataMapPe =strikeDataMapPeOp.get();
+                Map<String, StrikeData> stringMapPE = new HashMap<>();
+                stringMapPE.put(strikeDataMapPe.getKey(),strikeDataMapPe.getValue());
+                stringMapMap.put(Double.parseDouble(String.valueOf(peValue)), stringMapPE);
+            }
             return stringMapMap;
         }
         if (strikeSelectionType.equals(StrikeSelectionType.CLOSE_PREMUIM.getType())) {

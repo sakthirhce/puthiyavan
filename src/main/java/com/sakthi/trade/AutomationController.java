@@ -643,7 +643,16 @@ NiftyOptionBuy935 niftyOptionBuy935;
         tradeStrategyRepo.flush();
         return new ResponseEntity<>(null,HttpStatus.OK);
     }
-
+    @Autowired
+    TradeEngine tradeEngine;
+/*    @GetMapping("/oneTradeExecutor")
+    public ResponseEntity<?> oneTradeExecutor(@RequestBody String payload) throws Exception {
+        List<TradeStrategy> tradeStrategies=gson.fromJson(payload, new TypeToken<List<TradeStrategy>>(){}.getType());
+        System.out.println(gson.toJson(tradeStrategies));
+      tradeEngine.loadStrategy();
+      tradeEngine.executeStrategy();
+        return new ResponseEntity<>(null,HttpStatus.OK);
+    }*/
 
     @GetMapping("/saveTradeUser")
     public ResponseEntity<?> saveTradeUser(@RequestBody String payload) throws Exception {

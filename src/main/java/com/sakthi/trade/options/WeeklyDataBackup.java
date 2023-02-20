@@ -167,7 +167,7 @@ try {
 
     if (currentFNExp.equals(format.format(currentDate))) {
         String message="FN Expiry export date:" + currentFNExp;
-        telegramClient.sendToTelegram(message,telegramTokenGroup, "-713214125");
+        telegramClient.sendToTelegram(message,telegramTokenGroup, "-646157933");
         zerodhaTransactionService.finNiftyWeeklyOptions.entrySet().stream().forEach(exp -> {
 
             Map<String, String> map = exp.getValue();
@@ -208,7 +208,7 @@ try {
            // log.info("Expiry export date:"+currentExp);
             try {
                 String message = "BNifty Expiry export date:" + currentExp;
-                telegramClient.sendToTelegram(message, telegramTokenGroup, "-713214125");
+                telegramClient.sendToTelegram(message, telegramTokenGroup, "-646157933");
                 zerodhaTransactionService.bankNiftyWeeklyOptions.entrySet().stream().forEach(exp -> {
                     Map<String, String> map = exp.getValue();
                     map.entrySet().stream().forEach(optionExp -> {
@@ -280,7 +280,7 @@ try {
             }
                 /*  zipUtils.zipExpData(expFolder.getPath(),currentExp);
         File zipPath=new File(expFolder.getPath()+"/"+currentExp+".zip");*/
-      //  sendMessage.sendDocumentToTelegram(zipPath,"1162339611:AAGTezAs6970OmLwhcBuTlef_-dsfcoQi_o","-713214125");
+      //  sendMessage.sendDocumentToTelegram(zipPath,"1162339611:AAGTezAs6970OmLwhcBuTlef_-dsfcoQi_o","-646157933");
 
         }
     }

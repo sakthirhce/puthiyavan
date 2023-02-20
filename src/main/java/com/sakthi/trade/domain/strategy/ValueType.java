@@ -1,7 +1,7 @@
 package com.sakthi.trade.domain.strategy;
 
 public enum ValueType {
-    PERCENT_UP("PERCENT_UP"),POINT_UP("POINT_UP"),PERCENT_DOWN("PERCENT_DOWN"),POINT_DOWN("POINT_DOWN");
+    PERCENT_UP("PERCENT_UP"),POINTS_UP("POINTS_UP"),PERCENT_DOWN("PERCENT_DOWN"),POINTS_DOWN("POINTS_DOWN");
 
     String type;
     ValueType(String type){

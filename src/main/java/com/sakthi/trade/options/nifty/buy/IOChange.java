@@ -199,12 +199,12 @@ public class IOChange implements Strategy {
                     if (ceData.getCurrentOI() > 0 && peData.getCurrentOI() > 0 && ceData.getPreviousOI() > 0 && peData.getPreviousOI() > 0 && !peData.isOrderPlaced() && !ceData.isOrderPlaced()) {
                         if (ceData.isPositiveChange() && peData.isNegativeChange()) {
                             String message = "Take PE position:" + peData.getStrikeName() + ". PE oi declined by:" + peData.getOiPercentChange() + " CE oi increased by:" + ceData.getOiPercentChange();
-                            telegramClient.sendToTelegram(message, telegramTokenGroup, "-713214125");
+                            telegramClient.sendToTelegram(message, telegramTokenGroup, "-646157933");
                             peData.setOrderPlaced(true);
                         }
                         if (ceData.isNegativeChange() && peData.isPositiveChange()) {
                             String message = "Take CE position:" + ceData.getStrikeName() + ". PE oi increased by:" + peData.getOiPercentChange() + " CE oi declined by:" + ceData.getOiPercentChange();
-                            telegramClient.sendToTelegram(message, telegramTokenGroup, "-713214125");
+                            telegramClient.sendToTelegram(message, telegramTokenGroup, "-646157933");
                             ceData.setOrderPlaced(true);
                         }
                     }

@@ -1,7 +1,7 @@
 package com.sakthi.trade.domain.strategy;
 
 public enum StrikeSelectionType {
-    ATM("ATM"),PRICE_RANGE("PRICE_RANGE"),CLOSE_PREMUIM("CLOSE_PREMUIM");
+    ATM("ATM"),PRICE_RANGE("PRICE_RANGE"),CLOSE_PREMUIM("CLOSE_PREMUIM"),OTM("OTM");
 
     String type;
     StrikeSelectionType(String type){

@@ -340,7 +340,7 @@ public class ZerodhaAccount {
                             user1.tokenCount = user1.tokenCount + 1;
                             webDriver.quit();
                         } catch (URISyntaxException | IOException | KiteException | InterruptedException e) {
-                            sendMessage.sendToTelegram("Token generation failed" + e.getMessage(), telegramToken, "-713214125");
+                            sendMessage.sendToTelegram("Token generation failed" + e.getMessage(), telegramToken, "-646157933");
                             try {
                                 //takeSnapShot(webDriver, "/home/ubuntu/test1_"+user1.name+".png");
                             } catch (Exception ex) {
@@ -354,7 +354,7 @@ public class ZerodhaAccount {
                                 if (user1.getStraddleConfigOld().enabled) {
                                     sendMessage.sendToTelegram("Token generation failed", telegramToken);
                                 } else {
-                                    sendMessage.sendToTelegram("Token generation failed", telegramToken, "-713214125");
+                                    sendMessage.sendToTelegram("Token generation failed", telegramToken, "-646157933");
                                 }
                             } catch (Exception ex) {
                                 ex.printStackTrace();
@@ -376,7 +376,7 @@ public class ZerodhaAccount {
                         com.sakthi.trade.dhan.schema.FundResponseDTO fundResponseDTO = new Gson().fromJson(response, FundResponseDTO.class);
                         sendMessage.sendToTelegram("Dhan client ID :" + fundResponseDTO.getDhanClientId() + ":" + user1.clientName + " : Available cash: " + fundResponseDTO.getAvailabelBalance().setScale(0, RoundingMode.HALF_UP).doubleValue(), telegramToken, botIdFinal);
                     } catch (Exception e) {
-                        sendMessage.sendToTelegram("Dhan client ID :" + user1.getClientId() + "Token generation failed" + e.getMessage(), telegramToken, "-713214125");
+                        sendMessage.sendToTelegram("Dhan client ID :" + user1.getClientId() + "Token generation failed" + e.getMessage(), telegramToken, "-646157933");
                         e.printStackTrace();
                     }
                 }
@@ -404,7 +404,7 @@ public class ZerodhaAccount {
                                 // Calculate the free disk space
                                 String usedPerf = elements[4];
                                 String total = elements[1];
-                                sendMessage.sendToTelegram("Total: " + total + " Used:" + used + " Free:" + free + " Used Percent:" + usedPerf, telegramToken, "-713214125");
+                                sendMessage.sendToTelegram("Total: " + total + " Used:" + used + " Free:" + free + " Used Percent:" + usedPerf, telegramToken, "-646157933");
                             }
 
                         }
