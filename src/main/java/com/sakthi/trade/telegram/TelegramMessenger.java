@@ -1,6 +1,7 @@
 package com.sakthi.trade.telegram;
 
 import com.sakthi.trade.worker.ZerodhaWorker;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -52,6 +53,7 @@ public class TelegramMessenger {
                         long finish = System.currentTimeMillis();
                         long timeElapsed = finish - start;
                 LOGGER.info("telegram message sent in:"+timeElapsed);
+             //       meterRegistry.counter("")
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

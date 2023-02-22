@@ -56,7 +56,7 @@ public class ZerodhaBankNiftyShortStraddle {
 
     @Value("${telegram.straddle.bot.token}")
     String telegramToken;
-    public static final Logger LOGGER = LoggerFactory.getLogger(ZerodhaBankNiftyShortStraddle.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(ZerodhaBankNiftyShortStraddle.class.getName());
 
 
 

@@ -55,7 +55,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
     String telegramToken;
 
     // AtomicInteger doubleTopCount = new AtomicInteger(0);
-    public static final Logger LOGGER = LoggerFactory.getLogger(ZerodhaBankNiftyShortStraddleWithLong.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(ZerodhaBankNiftyShortStraddleWithLong.class.getName());
     @Value("${telegram.orb.bot.token}")
     String telegramTokenGroup;
     @Autowired
@@ -1008,7 +1008,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                                 tradeBuy.setUserId(user.getName());
                                                                 tradeBuy.setSlPercentage(new BigDecimal(15));
                                                                 tradeBuy.setEntryType("BUY");
-                                                                log.info(gson.toJson(tradeBuy));
+                                                                LOGGER.info(gson.toJson(tradeBuy));
                                                                 user.getStraddleConfig().straddleTradeMap.put(tradeBuy.getStockName() + "-BUY-1535", tradeBuy);
                                                                 mapTradeDataToSaveOpenTradeDataEntity(tradeBuy, true);
                                                                 sendMessage.sendToTelegram("Straddle option bought for strike: " + tradeBuy.getStockName() + ":" + user.getName() + " and placed SL" + ":" + getAlgoName(), telegramTokenGroup, "-646157933");

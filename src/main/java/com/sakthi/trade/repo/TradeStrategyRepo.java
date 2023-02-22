@@ -7,6 +7,6 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface TradeStrategyRepo  extends JpaRepository<TradeStrategy,String> {
-    @Query(value="select ts.* from trade_strategy ts where ts.strategy_enabled=true",nativeQuery=true)
+    @Query(value="select ts.* from trade_strategy ts where ts.strategy_enabled=true order by range_break desc,order_type desc",nativeQuery=true)
     List<TradeStrategy> getActiveUsersActiveStrategy();
 }

@@ -38,7 +38,7 @@ public class WeeklyDataBackup {
 
     @Autowired
     TelegramMessenger sendMessage;
-    public static final Logger LOGGER = LoggerFactory.getLogger(WeeklyDataBackup.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(WeeklyDataBackup.class.getName());
 
  //   SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
     public Map<String,String> lsHoliday=new HashMap<>();

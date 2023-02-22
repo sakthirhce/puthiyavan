@@ -75,7 +75,7 @@ public class ZerodhaTransactionService {
     TelegramMessenger sendMessage;
     @Value("${telegram.orb.bot.token}")
     String telegramToken;
-    public static final Logger LOGGER = LoggerFactory.getLogger(ZerodhaTransactionService.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(ZerodhaTransactionService.class.getName());
     public void olhc(){
 
         String historicURL = "https://api.kite.trade/instruments/historical/5633/5minute?from=2020-12-17+09:00:00&to=2020-12-17+10:30:00";

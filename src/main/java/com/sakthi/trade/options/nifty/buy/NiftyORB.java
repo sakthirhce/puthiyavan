@@ -38,7 +38,7 @@ public class NiftyORB {
     @Value("${telegram.straddle.bot.token}")
     String telegramToken;
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(NiftyORB.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(NiftyORB.class.getName());
     @Autowired
     TelegramMessenger sendMessage;
     boolean cePlaced=false;
@@ -92,7 +92,7 @@ public class NiftyORB {
                 HistoricalData lastElement = historicalData.dataArrayList.get(historicalData.dataArrayList.size() - 1);
                 Date lastTradingDatetime = sdf.parse(lastElement.timeStamp);
                 String openDate = format.format(lastTradingDatetime);
-                if (lastTradingDatetime.after(sdf.parse(openDate + "T" + "09:22:00"))) {
+                if (lastTradingDatetime.after(sdf.parse(openDate + "T" + "09:23:00"))) {
                     double low = orbHighLow.get("LOW");
                     double high = orbHighLow.get("HIGH");
 
