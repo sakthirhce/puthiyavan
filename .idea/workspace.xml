@@ -23,24 +23,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4596dda3-5bac-4456-8a3f-6eaf35c4c141" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/6.2.2/fileContent/fileContent.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/6.2.2/fileContent/fileContent.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/checksums/checksums.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/checksums/checksums.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/checksums/md5-checksums.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/checksums/md5-checksums.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gradle/checksums/sha1-checksums.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/checksums/sha1-checksums.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules/Squant.main.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules/Squant.main.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/AppConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/AppConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/WeeklyDataBackup.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/WeeklyDataBackup.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/banknifty/ZerodhaBankNiftyShortStraddle.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/banknifty/ZerodhaBankNiftyShortStraddle.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/banknifty/ZerodhaBankNiftyShortStraddleWithLong.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/banknifty/ZerodhaBankNiftyShortStraddleWithLong.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/nifty/buy/NiftyORB.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/nifty/buy/NiftyORB.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/repo/TradeStrategyRepo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/repo/TradeStrategyRepo.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/telegram/TelegramMessenger.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/telegram/TelegramMessenger.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/util/MathUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/util/MathUtils.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/zerodha/TransactionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/zerodha/TransactionService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/zerodha/ZerodhaTransactionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/zerodha/ZerodhaTransactionService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
