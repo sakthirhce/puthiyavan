@@ -46,6 +46,11 @@ dependencies {
 //Thanks for using https://jar-download.com
 // https://mvnrepository.com/artifact/de.dentrassi.crypto/pem-keystore
     implementation group: 'de.dentrassi.crypto', name: 'pem-keystore', version: '2.2.1'
+// https://mvnrepository.com/artifact/org.apache.camel/camel-seda
+    implementation group: 'org.apache.camel', name: 'camel-seda', version: '3.0.0'
+    // https://mvnrepository.com/artifact/org.apache.camel/camel-core
+    implementation group: 'org.apache.camel', name: 'camel-core', version: '3.0.0'
+
 
     // https://mvnrepository.com/artifact/org.springframework.security.oauth/spring-security-oauth2
 // https://mvnrepository.com/artifact/org.json/json

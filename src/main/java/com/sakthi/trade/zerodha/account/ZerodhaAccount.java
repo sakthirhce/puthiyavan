@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -263,6 +264,7 @@ public class ZerodhaAccount {
     UserList userList;
     @Scheduled(cron = "${zerodha.generate.token}")
     @PostConstruct
+    @DependsOn("camelContextRoute")
     public String generateMultiUserAccessToken() throws IOException, InterruptedException, URISyntaxException {
         Date date=new Date();
         MDC.put("run_time",candleDateTimeFormat.format(date));

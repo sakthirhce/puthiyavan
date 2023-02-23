@@ -10,7 +10,7 @@ import com.sakthi.trade.entity.TradeStrategy;
 import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.repo.OpenTradeDataRepo;
 import com.sakthi.trade.repo.TradeStrategyRepo;
-import com.sakthi.trade.repo.TradeUserRepository;
+import com.sakthi.trade.seda.TradeSedaQueue;
 import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.CommonUtil;
 import com.sakthi.trade.util.MathUtils;
@@ -137,6 +137,10 @@ public class TradeEngine {
         });
         System.out.println(new Gson().toJson(strategyMap));
     }
+
+    @Autowired
+    TradeSedaQueue tradeSedaQueue;
+
     @Scheduled(cron="${tradeEngine.execute.strategy}")
     public void executeStrategy() {
         Date date = new Date();
@@ -144,6 +148,7 @@ public class TradeEngine {
         String currentDateStr = dateFormat.format(date);
        // String currentDateStr="2023-02-17";
         LOGGER.info("trade engine: " + currentDateStr);
+        tradeSedaQueue.sendTelemgramSeda("started trade engine execution");
         Calendar candleCalenderMin = Calendar.getInstance();
         Calendar calendarCurrentMin = Calendar.getInstance();
         candleCalenderMin.add(Calendar.MINUTE, -1);

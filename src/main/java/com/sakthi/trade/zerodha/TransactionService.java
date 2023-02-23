@@ -2,8 +2,8 @@ package com.sakthi.trade.zerodha;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
-import com.sakthi.trade.GlobalContextCache;
-import com.sakthi.trade.TokenBucket;
+import com.sakthi.trade.cache.GlobalContextCache;
+import com.sakthi.trade.ratelimit.TokenBucket;
 import com.sakthi.trade.zerodha.account.User;
 import com.sakthi.trade.zerodha.account.UserList;
 import com.zerodhatech.kiteconnect.KiteConnect;

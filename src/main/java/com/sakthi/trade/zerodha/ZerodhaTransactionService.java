@@ -2,6 +2,7 @@ package com.sakthi.trade.zerodha;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
+import com.sakthi.trade.seda.TradeSedaQueue;
 import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.zerodha.account.Expiry;
 import com.sakthi.trade.zerodha.account.StrikeData;
@@ -73,6 +74,9 @@ public class ZerodhaTransactionService {
     public String finExpDate;
     @Autowired
     TelegramMessenger sendMessage;
+
+    @Autowired
+    TradeSedaQueue tradeSedaQueue;
     @Value("${telegram.orb.bot.token}")
     String telegramToken;
     public static final Logger LOGGER = LoggerFactory.getLogger(ZerodhaTransactionService.class.getName());
@@ -333,7 +337,12 @@ public class ZerodhaTransactionService {
         sendMessage.sendToTelegram("Total BNF Next Week expiry strike count :" + bankNiftyNextWeeklyOptions.size(), telegramToken,"-646157933");
         sendMessage.sendToTelegram("Total Fin nifty expiry strike count:" + finNiftyWeeklyOptions.size(), telegramToken,"-646157933");
         sendMessage.sendToTelegram("Total BNF Futures strike Count for monthly exp :" +monthlyExp+":"+ currentFutures.size(), telegramToken,"-646157933");
-   try{
+        try {
+            tradeSedaQueue.sendTelemgramSeda("Total BNF current week expiry strike count :" + bankNiftyWeeklyOptions.size());
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        try{
        String dhanResponse=transactionService.downloadInstrumentData(dhanInstrumentURL);
        String[] dhanlines = dhanResponse.split("\\r?\\n");
        System.out.println("dhan output:"+ dhanResponse.length());
