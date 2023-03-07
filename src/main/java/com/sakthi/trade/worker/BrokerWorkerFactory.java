@@ -32,4 +32,7 @@ public class BrokerWorkerFactory {
     public BrokerWorker getWorker(User user){
         return orderWorkerMap.get(user.getBroker().toUpperCase());
     }
+    public BrokerWorker getWorker(String brokerName){
+        return orderWorkerMap.get(brokerName.toUpperCase());
+    }
 }

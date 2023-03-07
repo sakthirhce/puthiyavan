@@ -24,10 +24,17 @@ public class TradeSedaQueue {
         SedaComponent sedaComponent = new SedaComponent();
         sedaComponent.setQueueSize(3);
         camelContext.addComponent("telegramQueue", camelContext.getComponent("seda"));
-        camelContext.addComponent("placeQueue", camelContext.getComponent("seda"));
+        camelContext.addComponent("placeOrderQueue", camelContext.getComponent("seda"));
         camelContext.addRoutes(new RouteBuilder() {
             public void configure() throws Exception {
                 from("seda:telegramQueue")
+                        .process(telegramSedaProcessor)
+                        .end();
+            }
+        });
+        camelContext.addRoutes(new RouteBuilder() {
+            public void configure() throws Exception {
+                from("seda:placeOrderQueue")
                         .process(telegramSedaProcessor)
                         .end();
             }

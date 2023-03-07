@@ -80,7 +80,7 @@ public class ZerodhaBankNiftyShortStraddle {
     UserList userList;
     @Autowired
     BrokerWorkerFactory workerFactory;
-    @Scheduled(cron = "${banknifty.historic.straddle.quote}")
+    //@Scheduled(cron = "${banknifty.historic.straddle.quote}")
     public void zerodhaBankNifty() {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -205,7 +205,7 @@ public class ZerodhaBankNiftyShortStraddle {
     }
 
 
-    @Scheduled(cron = "${stradle.sl.scheduler}")
+  //  @Scheduled(cron = "${stradle.sl.scheduler}")
     public void sLMonitorScheduler() {
         // LOGGER.info("short straddle SLMonitor scheduler started");
 
@@ -427,7 +427,7 @@ public class ZerodhaBankNiftyShortStraddle {
     public Map<Integer, BigDecimal> slPrice = new HashMap<>();
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-    @Scheduled(cron = "${stradle.sl.immediate}")
+  //  @Scheduled(cron = "${stradle.sl.immediate}")
     public void sLMonitorSchedulerImmediate() {
         // LOGGER.info("short straddle SLMonitor scheduler started");
 
@@ -639,7 +639,7 @@ public class ZerodhaBankNiftyShortStraddle {
             }
         });
     }
-    @Scheduled(cron = "${straddle.exit.position.scheduler}")
+  //  @Scheduled(cron = "${straddle.exit.position.scheduler}")
     public void exitPositions() throws KiteException, IOException {
         LOGGER.info("Straddle Exit positions scheduler started");
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -742,7 +742,7 @@ public class ZerodhaBankNiftyShortStraddle {
     }
 
 
-    @Scheduled(cron = "${straddle.exit.price}")
+ //   @Scheduled(cron = "${straddle.exit.price}")
     public void exitPriceNrmlPositions() {
         userList.getUser().stream().filter(user -> user.getStraddleConfigOld() !=null && user.getStraddleConfigOld().isEnabled()).forEach(user -> {
             try {
@@ -811,7 +811,7 @@ public class ZerodhaBankNiftyShortStraddle {
     }
     @Autowired
     OpenTradeDataBackupRepo openTradeDataBackupRepo;
-    @Scheduled(cron = "${banknifty.nrml.nextday.position.load.schedule}")
+//    @Scheduled(cron = "${banknifty.nrml.nextday.position.load.schedule}")
     public void loadNrmlPositions() {
         Gson gson= new Gson();
         Iterable<OpenTradeDataEntity> openTradeDataEntities1 = openTradeDataRepo.findAll();
