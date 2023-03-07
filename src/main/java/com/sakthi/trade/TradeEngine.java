@@ -320,7 +320,7 @@ public class TradeEngine {
                                                     //TODO set sl price, entry price, exit date
                                                        order = brokerWorker.placeOrder(orderParams, user, tradeData);
                                                     if (order != null) tradeData.setEntryOrderId(order.orderId);
-                                                    tradeData.isOrderPlaced = true;
+                                                  //  tradeData.isOrderPlaced = true;
                                                     tradeData.setQty(strategy.getLotSize());
                                                     tradeData.setEntryType(strategy.getOrderType());
                                                     tradeData.setUserId(user.getName());
@@ -370,7 +370,7 @@ public class TradeEngine {
                 try {
                     List<Order> orderList = brokerWorker.getOrders(user);
 
-                    tradeData.stream().filter(order -> order.isOrderPlaced && order.getEntryOrderId() != null && !order.isExited).forEach(trendTradeData -> {
+                    tradeData.stream().filter(order -> order.getEntryOrderId() != null && !order.isExited).forEach(trendTradeData -> {
                         orderList.forEach(order -> {
                             if (!trendTradeData.isErrored && !trendTradeData.isSLCancelled && !trendTradeData.isExited && !trendTradeData.isSLHit) {
                                 if (order.orderId.equals(trendTradeData.getSlOrderId()) && trendTradeData.isSlPlaced) {
@@ -384,24 +384,25 @@ public class TradeEngine {
                                         } catch (Exception e) {
                                             LOGGER.info("error:" + e);
                                         }
-
-
                                     }
                                 }
-                                if (trendTradeData.getEntryOrderId().equals(order.orderId) && !trendTradeData.isSlPlaced) {
+                                if (trendTradeData.getEntryOrderId().equals(order.orderId) && !trendTradeData.isSlPlaced && !trendTradeData.isOrderPlaced ) {
                                     if (("COMPLETE".equals(order.status) || "TRADED".equals(order.status))) {
+                                        trendTradeData.isOrderPlaced=true;
+                                        try {
                                             LOGGER.info("order executed" + trendTradeData.getStockName() + ":" + trendTradeData.getEntryOrderId());
+                                            //BigDecimal slipage = (trendTradeData.getBuyPrice().subtract(trendTradeData.getBuyTradedPrice())).multiply(new BigDecimal(50)).setScale(0, RoundingMode.UP);
+                                            String message = MessageFormat.format("Order Executed for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName());
+                                            LOGGER.info(message);
+                                            sendMessage.sendToTelegram(message, telegramToken);
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
+                                if (!trendTradeData.isSlPlaced && trendTradeData.isOrderPlaced ) {
+                                //    if (("COMPLETE".equals(order.status) || "TRADED".equals(order.status))) {
                                             try {
-                                                //   LOGGER.info("buy completed");
-
-                                                try {
-                                                    //BigDecimal slipage = (trendTradeData.getBuyPrice().subtract(trendTradeData.getBuyTradedPrice())).multiply(new BigDecimal(50)).setScale(0, RoundingMode.UP);
-                                                    String message = MessageFormat.format("Option Buy Triggered for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName());
-                                                    LOGGER.info(message);
-                                                    sendMessage.sendToTelegram(message, telegramToken);
-                                                } catch (Exception e) {
-                                                    e.printStackTrace();
-                                                }
                                                 // mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, true);
                                                 OrderParams orderParams = new OrderParams();
                                                 orderParams.tradingsymbol = trendTradeData.getStockName();
@@ -434,7 +435,7 @@ public class TradeEngine {
                                                     orderd =brokerWorker.placeOrder(orderParams,user,trendTradeData);
                                                     trendTradeData.isSlPlaced = true;
                                                     trendTradeData.setSlOrderId(orderd.orderId);
-                                                          mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, true);
+                                                    mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, true);
                                                     try {
                                                         LOGGER.info("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL");
                                                         sendMessage.sendToTelegram("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL" + ":" + getAlgoName(), telegramToken);
@@ -453,7 +454,7 @@ public class TradeEngine {
                                             } catch (Exception e) {
                                                 LOGGER.info("error while placing sl:" + e.getMessage() + trendTradeData.getEntryOrderId() + ":" + trendTradeData.getStockName());
                                             }
-                                        }
+                                      //  }
 
                                 }
                                 if (("COMPLETE".equals(order.status) || "TRADED".equals(order.status)) && "SELL".equals(order.transactionType) && order.orderId.equals(trendTradeData.getSlOrderId()) && !trendTradeData.isExited && trendTradeData.isSlPlaced) {
