@@ -1,6 +1,7 @@
 package com.sakthi.trade;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.domain.strategy.StrikeSelectionType;
 import com.sakthi.trade.domain.strategy.TradeValidity;
@@ -31,13 +32,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.MessageFormat;
@@ -165,7 +166,7 @@ public class TradeEngine {
         String currentDateStr = dateFormat.format(date);
    //     String currentDateStr="2023-03-06";
 
-       // tradeSedaQueue.sendTelemgramSeda("started trade engine execution");
+       //tradeSedaQueue.sendTelemgramSeda("started trade engine execution");
         Calendar candleCalenderMin = Calendar.getInstance();
         Calendar calendarCurrentMin = Calendar.getInstance();
         candleCalenderMin.add(Calendar.MINUTE, -1);
@@ -216,7 +217,6 @@ public class TradeEngine {
                         } catch (Exception e) {
                             LOGGER.error("error"+e.getMessage());
                             throw new RuntimeException(e);
-
                         }
                     });
                     }
@@ -335,6 +335,7 @@ public class TradeEngine {
                                                     tradeData.setUserId(user.getName());
                                                     tradeData.setTradeDate(currentDateStr);
                                                     tradeData.setStockId(Integer.valueOf(strikeData.getZerodhaId()));
+                                                    tradeData.setTradeStrategy(strategy);
                                                     order = brokerWorker.placeOrder(orderParams, user, tradeData);
                                                     if (order != null) tradeData.setEntryOrderId(order.orderId);
                                                   //  tradeData.isOrderPlaced = true;
@@ -381,7 +382,7 @@ public class TradeEngine {
             openTrade.entrySet().stream().forEach(userTradeData -> {
                 String userId=userTradeData.getKey();
                 LOGGER.info("Insde SL:"+userId);
-                List<TradeData> tradeData = userTradeData.getValue();
+                List<TradeData> tradeData=userTradeData.getValue();
                 User user = userList.getUser().stream().filter(
                         user1 ->  user1.getName().equals(userId)
                 ).findFirst().get();
@@ -434,7 +435,7 @@ public class TradeEngine {
                                         }
                                     }
                                 }
-                                if (!trendTradeData.isSlPlaced && trendTradeData.isOrderPlaced ) {
+                                if (!trendTradeData.isSlPlaced && trendTradeData.isOrderPlaced && trendTradeData.getEntryOrderId().equals(order.orderId)) {
                                 //    if (("COMPLETE".equals(order.status) || "TRADED".equals(order.status))) {
                                             try {
                                                 // mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, true);
@@ -528,8 +529,10 @@ public class TradeEngine {
 
                         });
                     });
-                }catch (Exception | KiteException e){
+                }catch (Exception e){
                     e.printStackTrace();
+                } catch (KiteException e) {
+                    throw new RuntimeException(e);
                 }
             });
 
@@ -669,6 +672,7 @@ public class TradeEngine {
                                     tradeData.setUserId(user.getName());
                                     tradeData.setTradeDate(currentDateStr);
                                     tradeData.setStockId(Integer.valueOf(finalSelected.getValue().getZerodhaId()));
+                                    tradeData.setTradeStrategy(strategy);
                                     order = brokerWorker.placeOrder(orderParams, user, tradeData);
                                     if (order != null) tradeData.setEntryOrderId(order.orderId);
                                     //  tradeData.isOrderPlaced = true;
@@ -716,7 +720,7 @@ public class TradeEngine {
                       //  tradeData.setSellTime(candleDateTimeFormat.format(lastHistoricData.timeStamp));
                         tradeData.setSellPrice(new BigDecimal(lastHistoricData.close));
                         tradeData.setStockId(Integer.parseInt(finalSelected.getValue().getZerodhaId()));
-
+                        tradeData.setTradeStrategy(strategy);
                         OrderParams orderParams=new OrderParams();
                         orderParams.tradingsymbol = finalSelected.getValue().getZerodhaSymbol();
                         orderParams.exchange = "NFO";

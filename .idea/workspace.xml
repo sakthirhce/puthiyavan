@@ -31,10 +31,7 @@
       <change beforePath="$PROJECT_DIR$/.gradle/6.2.2/javaCompile/javaCompile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/6.2.2/javaCompile/javaCompile.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/script/table.sql" beforeDir="false" afterPath="$PROJECT_DIR$/script/table.sql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/entity/OpenTradeDataEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/entity/OpenTradeDataEntity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/mapper/TradeDataMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/mapper/TradeDataMapper.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -863,11 +860,6 @@
           <option name="timeStamp" value="473" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
-          <url>jar://$PROJECT_DIR$/../kiteconnect.jar!/com/zerodhatech/kiteconnect/KiteConnect.class</url>
-          <line>543</line>
-          <option name="timeStamp" value="474" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/banknifty/buy/BNiftyOptionBuy935.java</url>
           <line>174</line>
           <option name="timeStamp" value="481" />
@@ -959,18 +951,13 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>840</line>
+          <line>844</line>
           <option name="timeStamp" value="626" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>822</line>
+          <line>826</line>
           <option name="timeStamp" value="627" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>177</line>
-          <option name="timeStamp" value="638" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/util/MathUtils.java</url>
@@ -979,59 +966,26 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>380</line>
-          <option name="timeStamp" value="643" />
+          <line>395</line>
+          <properties>
+            <option name="lambda-ordinal" value="1" />
+          </properties>
+          <option name="timeStamp" value="655" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
           <line>381</line>
-          <option name="timeStamp" value="644" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>388</line>
-          <option name="timeStamp" value="645" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>385</line>
-          <properties>
-            <option name="lambda-ordinal" value="0" />
-          </properties>
-          <option name="timeStamp" value="646" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>411</line>
-          <option name="timeStamp" value="647" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>394</line>
-          <properties>
-            <option name="lambda-ordinal" value="1" />
-          </properties>
-          <option name="timeStamp" value="648" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>391</line>
-          <option name="timeStamp" value="649" />
+          <option name="timeStamp" value="656" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
           <line>396</line>
-          <option name="timeStamp" value="650" />
+          <option name="timeStamp" value="657" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>397</line>
-          <option name="timeStamp" value="651" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>398</line>
-          <option name="timeStamp" value="652" />
+          <line>482</line>
+          <option name="timeStamp" value="658" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-field">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/entity/OpenTradeDataEntity.java</url>
