@@ -52,6 +52,7 @@ public class OpenTradeDataEntity {
     public String modifyDate;
     public BigDecimal charges;
     public BigDecimal plAfterCharges;
+    public String tradeStrategyKey;
 }
 
 

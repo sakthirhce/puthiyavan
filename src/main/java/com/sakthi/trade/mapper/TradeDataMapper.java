@@ -214,6 +214,9 @@ public class TradeDataMapper {
             openTradeDataEntity.setEntryOrderId(tradeData.getEntryOrderId());
             openTradeDataEntity.setSlOrderId(tradeData.getSlOrderId());
             openTradeDataEntity.setStockId(tradeData.getStockId());
+            if(tradeData.getTradeStrategy()!=null) {
+                openTradeDataEntity.setTradeStrategyKey(tradeData.getTradeStrategy().getTradeStrategyKey());
+            }
             Date date = new Date();
             String tradeDate = format.format(date);
             if(orderPlaced) {

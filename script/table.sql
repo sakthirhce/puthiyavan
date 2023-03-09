@@ -388,7 +388,8 @@ is_errored boolean not null default false);
 
 ALTER TABLE open_trade_data_backup
 ADD COLUMN is_sl_cancelled boolean default false;
-
+ALTER TABLE open_trade_data ADD COLUMN trade_strategy_key varchar(100) null;
+ALTER TABLE open_trade_data_backup ADD COLUMN trade_strategy_key varchar(100) null;
   insert into public.open_trade_data(
   data_key ,
   stock_name,
