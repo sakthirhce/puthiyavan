@@ -4,9 +4,11 @@ import com.google.gson.Gson;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.entity.OpenTradeDataBackupEntity;
 import com.sakthi.trade.entity.OpenTradeDataEntity;
+import com.sakthi.trade.entity.TradeStrategy;
 import com.sakthi.trade.options.banknifty.ZerodhaBankNiftyShortStraddle;
 import com.sakthi.trade.repo.OpenTradeDataBackupRepo;
 import com.sakthi.trade.repo.OpenTradeDataRepo;
+import com.sakthi.trade.repo.TradeStrategyRepo;
 import com.sakthi.trade.util.MathUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -289,6 +291,44 @@ public class TradeDataMapper {
         } catch (Exception e) {
             LOGGER.info(e.getMessage());
         }
+
+    }
+    @Autowired
+    TradeStrategyRepo tradeStrategyRepo;
+    public TradeData mapTradeDataEntityToTradeData(OpenTradeDataEntity openTradeDataEntity) {
+        try {
+            TradeData tradeData = new TradeData();
+            tradeData.setDataKey(openTradeDataEntity.getDataKey());
+            tradeData.setAlgoName(openTradeDataEntity.getAlgoName());
+            tradeData.setStockName(openTradeDataEntity.getStockName());
+            tradeData.setEntryType(openTradeDataEntity.getEntryType());
+            tradeData.setUserId(openTradeDataEntity.getUserId());
+            tradeData.isOrderPlaced = openTradeDataEntity.isOrderPlaced;
+            tradeData.isSlPlaced = openTradeDataEntity.isSlPlaced();
+            tradeData.isExited = openTradeDataEntity.isExited();
+            tradeData.isErrored = openTradeDataEntity.isErrored;
+            tradeData.isSLHit = openTradeDataEntity.isSLHit;
+            tradeData.setBuyTradedPrice(openTradeDataEntity.getBuyTradedPrice());
+            tradeData.setSellTradedPrice(openTradeDataEntity.getSellTradedPrice());
+            tradeData.setExitOrderId(openTradeDataEntity.getExitOrderId());
+            tradeData.setBuyPrice(openTradeDataEntity.getBuyPrice());
+            tradeData.setSellPrice(openTradeDataEntity.getSellPrice());
+            tradeData.setSlPrice(openTradeDataEntity.getSlPrice());
+            tradeData.setQty(openTradeDataEntity.getQty());
+            tradeData.setSlPercentage(openTradeDataEntity.getSlPercentage());
+            tradeData.setEntryOrderId(openTradeDataEntity.getEntryOrderId());
+            tradeData.setSlOrderId(openTradeDataEntity.getSlOrderId());
+            tradeData.setStockId(openTradeDataEntity.getStockId());
+            if(openTradeDataEntity.getTradeStrategyKey()!=null) {
+                TradeStrategy tradeStrategy=tradeStrategyRepo.getStrategyByStrategyKey(openTradeDataEntity.getTradeStrategyKey());
+                tradeData.setTradeStrategy(tradeStrategy);
+            }
+
+        return tradeData;
+            //LOGGER.info("sucessfully saved trade data:"+new Gson().toJson(openTradeDataEntity));
+        } catch (Exception e) {
+            LOGGER.info(e.getMessage());
+        }return null;
 
     }
     public void saveTradeData(OpenTradeDataEntity openTradeDataEntity) {

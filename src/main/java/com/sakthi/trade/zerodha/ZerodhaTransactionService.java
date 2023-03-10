@@ -333,10 +333,10 @@ public class ZerodhaTransactionService {
             System.out.println(map.getKey()+":"+map.getValue());
         });*/
         System.out.println(bankNiftyWeeklyOptions.size());
-        sendMessage.sendToTelegram("Total BNF current week expiry strike count :" + bankNiftyWeeklyOptions.size(), telegramToken,"-646157933");
-        sendMessage.sendToTelegram("Total BNF Next Week expiry strike count :" + bankNiftyNextWeeklyOptions.size(), telegramToken,"-646157933");
-        sendMessage.sendToTelegram("Total Fin nifty expiry strike count:" + finNiftyWeeklyOptions.size(), telegramToken,"-646157933");
-        sendMessage.sendToTelegram("Total BNF Futures strike Count for monthly exp :" +monthlyExp+":"+ currentFutures.size(), telegramToken,"-646157933");
+        tradeSedaQueue.sendTelemgramSeda("Total BNF current week expiry strike count :" + bankNiftyWeeklyOptions.size());
+        tradeSedaQueue.sendTelemgramSeda("Total BNF Next Week expiry strike count :" + bankNiftyNextWeeklyOptions.size());
+        tradeSedaQueue.sendTelemgramSeda("Total Fin nifty expiry strike count:" + finNiftyWeeklyOptions.size());
+        tradeSedaQueue.sendTelemgramSeda("Total BNF Futures strike Count for monthly exp :" +monthlyExp+":"+ currentFutures.size());
         try {
             tradeSedaQueue.sendTelemgramSeda("Total BNF current week expiry strike count :" + bankNiftyWeeklyOptions.size());
         }catch (Exception e){
@@ -423,12 +423,12 @@ public class ZerodhaTransactionService {
 
        }
        // System.out.println(bankNiftyWeeklyOptions.size());
-       sendMessage.sendToTelegram("Total Dhan BNF current week expiry strike count :" + dhanBankNiftyWeeklyOptions.size(), telegramToken,"-646157933");
-       sendMessage.sendToTelegram("Total Dhan BNF Next Week expiry strike count :" + dhanBankNiftyNextWeeklyOptions.size(), telegramToken,"-646157933");
-       sendMessage.sendToTelegram("Total Dhan FN Week expiry strike count :" + dhanFNiftyWeeklyOptions.size(), telegramToken,"-646157933");
+       tradeSedaQueue.sendTelemgramSeda("Total Dhan BNF current week expiry strike count :" + dhanBankNiftyWeeklyOptions.size());
+       tradeSedaQueue.sendTelemgramSeda("Total Dhan BNF Next Week expiry strike count :" + dhanBankNiftyNextWeeklyOptions.size());
+       tradeSedaQueue.sendTelemgramSeda("Total Dhan FN Week expiry strike count :" + dhanFNiftyWeeklyOptions.size());
        //  sendMessage.sendToTelegram("Total Dhan BNF Futures strike Count for monthly exp :" +monthlyExp+":"+ currentFutures.size(), telegramToken,"-713214125");
-       sendMessage.sendToTelegram("Total Dhan NF current week expiry strike count :" + dhanNiftyWeeklyOptions.size(), telegramToken,"-646157933");
-       sendMessage.sendToTelegram("Total Dhan NF Next Week expiry strike count :" + dhanNiftyNextWeeklyOptions.size(), telegramToken,"-646157933");
+       tradeSedaQueue.sendTelemgramSeda("Total Dhan NF current week expiry strike count :" + dhanNiftyWeeklyOptions.size());
+       tradeSedaQueue.sendTelemgramSeda("Total Dhan NF Next Week expiry strike count :" + dhanNiftyNextWeeklyOptions.size());
        //   sendMessage.sendToTelegram("Total Dhan NF Futures strike Count for monthly exp :" +monthlyExp+":"+ currentFutures.size(), telegramToken,"-713214125");
        Map<String,Map<String,StrikeData>> strikeFNLevelMap=new HashMap<>();
 

@@ -9,6 +9,7 @@ import com.sakthi.trade.domain.strategy.ValueType;
 import com.sakthi.trade.entity.OpenTradeDataEntity;
 import com.sakthi.trade.entity.TradeStrategy;
 import com.sakthi.trade.mapper.TradeDataMapper;
+import com.sakthi.trade.repo.OpenTradeDataBackupRepo;
 import com.sakthi.trade.repo.OpenTradeDataRepo;
 import com.sakthi.trade.repo.TradeStrategyRepo;
 import com.sakthi.trade.seda.TradeSedaQueue;
@@ -36,7 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
+import com.sakthi.trade.entity.OpenTradeDataBackupEntity;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -100,7 +101,7 @@ public class TradeEngine {
     public String getAlgoName() {
         return "TRADE_ENGINE";
     }
-    @Scheduled(cron="${tradeEngine.load.strategy}")
+    //@Scheduled(cron="${tradeEngine.load.strategy}")
     public void loadStrategy() {
       //  strategyMap = new ConcurrentHashMap<>();
         Date date = new Date();
@@ -155,11 +156,51 @@ public class TradeEngine {
         });
         System.out.println(new Gson().toJson(strategyMap));
     }
+    @Autowired
+    OpenTradeDataBackupRepo openTradeDataBackupRepo;
+    //@Scheduled(cron = "${tradeEngine.load.open.data}")
+    public void loadNrmlPositions() {
+        Iterable<OpenTradeDataEntity> openTradeDataEntities1 = openTradeDataRepo.findAll();
+        openTradeDataEntities1.forEach(openTradeDataEntity -> {
+            if (openTradeDataEntity.getAlgoName().equals(this.getAlgoName())) {
+                if (!openTradeDataEntity.isExited && !openTradeDataEntity.isErrored &&!openTradeDataEntity.isSLHit) {
+                    User user = userList.getUser().stream().filter(user1 -> user1.getName().equals(openTradeDataEntity.getUserId())).findFirst().get();
+                    BrokerWorker brokerWorker= workerFactory.getWorker(user);
+                    List<Position> positions = brokerWorker.getPositions(user);
 
+                    positions.stream().filter(position -> "NRML".equals(position.product) && openTradeDataEntity.getStockName().equals(position.tradingSymbol) && (position.netQuantity != 0)).findFirst().ifPresent(position -> {
+                        int positionQty = Math.abs(position.netQuantity);
+                        if (positionQty != openTradeDataEntity.getQty()) {
+                            //   openTradeDataEntity.setQty(positionQty);
+                                tradeSedaQueue.sendTelemgramSeda("Position qty mismatch for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ", over riding position qty as trade qty."+":"+getAlgoName());
+                                LOGGER.info("Position qty mismatch for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ", over riding position qty as trade qty.");
+
+                        }
+                        openTradeDataEntity.isSlPlaced = false;
+                        openTradeDataEntity.setSlOrderId(null);
+
+                        TradeData tradeData=tradeDataMapper.mapTradeDataEntityToTradeData(openTradeDataEntity);
+                        List<TradeData> tradeDataList = openTrade.get(user.getName());
+                        if (tradeDataList == null) {
+                            tradeDataList = new ArrayList<>();
+                        }
+                        tradeDataList.add(tradeData);
+                        openTrade.put(user.getName(), tradeDataList);
+                        tradeSedaQueue.sendTelemgramSeda("Open Position: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId()+":"+getAlgoName());
+                    });
+                } else {
+                    String openStr = gson.toJson(openTradeDataEntity);
+                    OpenTradeDataBackupEntity openTradeDataBackupEntity = gson.fromJson(openStr, OpenTradeDataBackupEntity.class);
+                    openTradeDataBackupRepo.save(openTradeDataBackupEntity);
+                    openTradeDataRepo.deleteById(openTradeDataEntity.getDataKey());
+                }
+            }
+        });
+    }
     @Autowired
     TradeSedaQueue tradeSedaQueue;
 
-    @Scheduled(cron="${tradeEngine.execute.strategy}")
+    //@Scheduled(cron="${tradeEngine.execute.strategy}")
     public void executeStrategy() {
         Date date = new Date();
   //      MDC.put("run_time",candleDateTimeFormat.format(date));
@@ -648,7 +689,7 @@ public class TradeEngine {
                             }
                             orderParams.transactionType = strategy.getOrderType();
                             orderParams.validity = "DAY";
-                            orderParams.orderType = "SL";
+                            orderParams.orderType = "MARKET";
                             LocalDate localDate = LocalDate.now();
                             DayOfWeek dow = localDate.getDayOfWeek();
                             String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
