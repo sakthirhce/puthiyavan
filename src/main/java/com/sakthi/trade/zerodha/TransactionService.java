@@ -24,7 +24,7 @@ public class TransactionService {
     @Qualifier("createOkHttpClient")
         OkHttpClient okHttpClient;
 
-    TokenBucket tokenBucket=new TokenBucket(3,3,1000);
+    TokenBucket tokenBucket=new TokenBucket(5,5,1000);
 
     @Autowired
     GlobalContextCache globalContextCache;
