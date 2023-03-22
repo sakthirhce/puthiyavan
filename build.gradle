@@ -25,7 +25,8 @@ plugins {
 apply plugin: 'jsonschema2pojo'
 group 'com.sakthi.trade'
 version '1.0-SNAPSHOT'
-
+sourceCompatibility = '11'
+targetCompatibility = '11'
 repositories {
     mavenCentral()
     maven{
