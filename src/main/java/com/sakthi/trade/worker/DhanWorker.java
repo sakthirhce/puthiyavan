@@ -191,6 +191,11 @@ public class DhanWorker implements BrokerWorker {
     }
 
     @Override
+    public List<Position> getRateLimitedPositions(User user) {
+        return null;
+    }
+
+    @Override
     public Order cancelOrder(String orderId, User user) {
         String url = this.routes.get("orders.cancel").replace(":order_id", orderId);
         Request request= transactionService.createDeleteRequest(url,user.getAccessToken());

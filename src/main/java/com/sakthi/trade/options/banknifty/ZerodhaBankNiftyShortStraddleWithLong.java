@@ -89,7 +89,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
     BrokerWorkerFactory workerFactory;
     @Autowired
     MathUtils mathUtils;
-    @Scheduled(cron = "${banknifty.nrml.straddle.schedule}")
+   // @Scheduled(cron = "${banknifty.nrml.straddle.schedule}")
     public void zerodhaBankNifty() {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -225,7 +225,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
     OpenTradeDataBackupRepo openTradeDataBackupRepo;
     Gson gson = new Gson();
 
-    @Scheduled(cron = "${straddle.nrml.sl.immediate.scheduler}")
+  //  @Scheduled(cron = "${straddle.nrml.sl.immediate.scheduler}")
     public void sLMonitorSchedulerImmediate() {
         userList.getUser().forEach(user -> {
             if(user.getStraddleConfig() != null && user.getStraddleConfig().isNrmlEnabled()) {
@@ -360,7 +360,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
         });
     }
 
-    @Scheduled(cron = "${straddle.nrml.sl.scheduler}")
+ //   @Scheduled(cron = "${straddle.nrml.sl.scheduler}")
     public void sLMonitorScheduler() {
         //  LOGGER.info("short straddle SLMonitor scheduler started");
 
@@ -649,7 +649,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
 
     }
 
-    @Scheduled(cron = "${banknifty.nrml.nextday.position.load.schedule}")
+  //  @Scheduled(cron = "${banknifty.nrml.nextday.position.load.schedule}")
     public void loadNrmlPositions() {
         Iterable<OpenTradeDataEntity> openTradeDataEntities1 = openTradeDataRepo.findAll();
         openTradeDataEntities1.forEach(openTradeDataEntity -> {
@@ -693,7 +693,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
         });
     }
 
-    @Scheduled(cron = "${banknifty.nrml.nextday.exit.price.schedule}")
+   // @Scheduled(cron = "${banknifty.nrml.nextday.exit.price.schedule}")
     public void exitPriceNrmlPositions() {
         userList.getUser().stream().filter(user -> user.getStraddleConfig() != null && user.getStraddleConfig().isNrmlEnabled()).forEach(user -> {
             try {
@@ -760,7 +760,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
         });
     }
 
-    @Scheduled(cron = "${banknifty.intraday.buy.exit.schedule}")
+  //  @Scheduled(cron = "${banknifty.intraday.buy.exit.schedule}")
     public void buyIntradayExit() {
         userList.getUser().stream().filter(user -> user.getStraddleConfig() != null && user.getStraddleConfig().isNrmlEnabled()).forEach(user -> {
             try {
@@ -868,7 +868,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
         });
     }
 
-    @Scheduled(cron = "${banknifty.intraday.buy.exit.price}")
+  //  @Scheduled(cron = "${banknifty.intraday.buy.exit.price}")
     public void exitPriceIntradayPositions() {
         userList.getUser().stream().filter(user -> user.getStraddleConfig() != null && user.getStraddleConfig().isNrmlEnabled()).forEach(user -> {
             try {
@@ -935,7 +935,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
         });
     }
 
-    @Scheduled(cron = "${banknifty.buy.late.entry}")
+   // @Scheduled(cron = "${banknifty.buy.late.entry}")
     public void optionBuy325() {
         userList.getUser().stream().filter(user -> user.getStraddleConfig() != null && user.getStraddleConfig().isNrmlEnabled()).forEach(user -> {
             try {
@@ -1044,7 +1044,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
         });
     }
 
-    @Scheduled(cron = "${straddle.nrml.sl.buy1535.scheduler}")
+   // @Scheduled(cron = "${straddle.nrml.sl.buy1535.scheduler}")
     public void sLMonitorScheduler1525() {
         userList.getUser().forEach(user -> {
             BrokerWorker brokerWorker = workerFactory.getWorker(user);
@@ -1160,7 +1160,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
             }
         });
     }
-    @Scheduled(cron = "${banknifty.nrml.nextday.sl.place.schedule}")
+  //  @Scheduled(cron = "${banknifty.nrml.nextday.sl.place.schedule}")
     public void placeSLNrmlPositions() {
         openTradeDataEntities.stream().filter(openTradeDataEntity -> !openTradeDataEntity.isSlPlaced && !openTradeDataEntity.isExited).forEach(openTradeDataEntity -> {
             try {
@@ -1268,7 +1268,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
     }
 
 
-    @Scheduled(cron = "${banknifty.nrml.nextday.exit.schedule}")
+   // @Scheduled(cron = "${banknifty.nrml.nextday.exit.schedule}")
     public void exitNrmlPositions() {
         userList.getUser().stream().filter(user -> user.getStraddleConfig() != null && user.getStraddleConfig().isNrmlEnabled()).forEach(user -> {
             try {
@@ -1343,7 +1343,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
         });
     }
 
-    @Scheduled(cron = "${banknifty.nrml.nextday.sl.monitor.schedule}")
+   // @Scheduled(cron = "${banknifty.nrml.nextday.sl.monitor.schedule}")
     public void sLNrmlMonitorPositions() {
         openTradeDataEntities.stream().filter(openTradeDataEntity -> openTradeDataEntity.isSlPlaced && !openTradeDataEntity.isExited).forEach(openTradeDataEntity -> {
             User user = userList.getUser().stream().filter(user1 -> user1.getName().equals(openTradeDataEntity.getUserId())).findFirst().get();

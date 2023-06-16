@@ -67,7 +67,7 @@ public class BNFFuturesTrendFollowing {
         return "BNF_FUTURE_930";
     }
 
-    @Scheduled(cron = "${banknifty.futures.schedule}")
+  //  @Scheduled(cron = "${banknifty.futures.schedule}")
     public void bnfFutures() {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -209,7 +209,7 @@ public class BNFFuturesTrendFollowing {
         }
     }
 
-    @Scheduled(cron = "${banknifty.futures.sl.monitor}")
+   // @Scheduled(cron = "${banknifty.futures.sl.monitor}")
     public void sLMonitorScheduler() {
         // LOGGER.info("short straddle SLMonitor scheduler started");
 
@@ -317,7 +317,7 @@ public class BNFFuturesTrendFollowing {
         });
     }
 
-    @Scheduled(cron = "${banknifty.futures.cancel.order}")
+  //  @Scheduled(cron = "${banknifty.futures.cancel.order}")
     public void cancelEntry() {
         userList.getUser().forEach(user -> {
             if (user.getBnfFutures() != null && user.getBnfFutures().isNrmlEnabled()) {
@@ -352,7 +352,7 @@ public class BNFFuturesTrendFollowing {
         });
     }
     public List<OpenTradeDataEntity> openTradeDataEntities1 = new ArrayList<>();
-    @Scheduled(cron = "${banknifty.futures.nextday.load.data}")
+   // @Scheduled(cron = "${banknifty.futures.nextday.load.data}")
     public void loadNrmlPositions() {
         openTradeDataEntities1 = openTradeDataRepo.findAll();
         openTradeDataEntities1.forEach(openTradeDataEntity -> {
@@ -392,7 +392,7 @@ public class BNFFuturesTrendFollowing {
         });
     }
 
-    @Scheduled(cron = "${banknifty.futures.nextday.sl.place}")
+  //  @Scheduled(cron = "${banknifty.futures.nextday.sl.place}")
     public void placeSLNrmlPositions() {
         openTradeDataEntities.stream().filter(openTradeDataEntity -> !openTradeDataEntity.isSlPlaced && !openTradeDataEntity.isExited).forEach(openTradeDataEntity -> {
             try {
@@ -489,7 +489,7 @@ public class BNFFuturesTrendFollowing {
 
     }
 
-    @Scheduled(cron = "${banknifty.futures.nextday.exit.price}")
+   // @Scheduled(cron = "${banknifty.futures.nextday.exit.price}")
     public void exitPriceNrmlPositions() {
         userList.getUser().stream().filter(user -> user.getStraddleConfig() != null && user.getStraddleConfig().isNrmlEnabled()).forEach(user -> {
             try {
@@ -554,7 +554,7 @@ public class BNFFuturesTrendFollowing {
             }
         });
     }
-    @Scheduled(cron = "${banknifty.futures.nextday.exit.schedule}")
+  //  @Scheduled(cron = "${banknifty.futures.nextday.exit.schedule}")
     public void exitNrmlPositions() {
         userList.getUser().stream().filter(user -> user.getStraddleConfig() != null && user.getStraddleConfig().isNrmlEnabled()).forEach(user -> {
             try {
@@ -623,7 +623,7 @@ public class BNFFuturesTrendFollowing {
     }
 
 
-    @Scheduled(cron = "${banknifty.futures.nextday.sl.monitor}")
+   // @Scheduled(cron = "${banknifty.futures.nextday.sl.monitor}")
     public void sLNrmlMonitorPositions() {
         openTradeDataEntities.stream().filter(openTradeDataEntity -> openTradeDataEntity.isSlPlaced && !openTradeDataEntity.isExited).forEach(openTradeDataEntity -> {
             User user = userList.getUser().stream().filter(user1 -> user1.getName().equals(openTradeDataEntity.getUserId())).findFirst().get();

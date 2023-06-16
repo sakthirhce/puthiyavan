@@ -1,3 +1,4 @@
+/*
 package com.sakthi.trade.options.nifty.buy;
 
 import com.sakthi.trade.domain.TradeData;
@@ -47,7 +48,7 @@ public class NiftyORB {
     public String getAlgoName() {
         return "NIFTY_BUY_935";
     }
-    @Scheduled(cron = "${niftyORB.orb.range.schedule}")
+   // @Scheduled(cron = "${niftyORB.orb.range.schedule}")
     public void ORB() throws IOException {
         Date date = new Date();
             String currentDate = format.format(date);
@@ -75,7 +76,7 @@ public class NiftyORB {
     }
     @Autowired
     MathUtils mathUtils;
-    @Scheduled(cron = "${niftyORB.orb.range.entry.check}")
+ //   @Scheduled(cron = "${niftyORB.orb.range.entry.check}")
     public void ORBEntryCheck() throws IOException, ParseException {
         Date date = new Date();
         String currentDate = format.format(date);
@@ -96,8 +97,10 @@ public class NiftyORB {
                     double low = orbHighLow.get("LOW");
                     double high = orbHighLow.get("HIGH");
 
-                   /* We will start by tracking the Selected Strike price between 9:16 and 09:23:59 .
-                   We will take entry after 09:23:59 once the High price of the Selected Strike in the range is breached. */
+                   */
+/* We will start by tracking the Selected Strike price between 9:16 and 09:23:59 .
+                   We will take entry after 09:23:59 once the High price of the Selected Strike in the range is breached. *//*
+
                     if (lastElement.close < low && !pePlaced) {
                         pePlaced=true;
                         Calendar calendar = Calendar.getInstance();
@@ -140,7 +143,8 @@ public class NiftyORB {
                         String message="option orb range high broke, strike selected :"+finalSelected.getValue().getZerodhaSymbol();
                         sendMessage.sendToTelegram(message, telegramToken);
                     }
-                /*
+                */
+/*
                 historicalData.dataArrayList.forEach(historicalData1 -> {
                     try {
                         Date openDatetime = sdf.parse(historicalData1.timeStamp);
@@ -166,7 +170,8 @@ public class NiftyORB {
                         String message="option orb range error:"+e.getMessage();
                         sendMessage.sendToTelegram(message, telegramToken);
                     }
-                });*/
+                });*//*
+
                 }
             }
         }
@@ -196,3 +201,4 @@ public class NiftyORB {
 
 
 }
+*/

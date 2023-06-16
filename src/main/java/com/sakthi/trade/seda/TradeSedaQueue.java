@@ -18,6 +18,8 @@ public class TradeSedaQueue {
 
     @Autowired
     TelegramSedaProcessor telegramSedaProcessor;
+    @Autowired
+    PriorityTelegramSedaProcessor priorityTelegramSedaProcessor;
     @PostConstruct
     @Qualifier("camelContextRoute")
     public CamelContext init() throws Exception {
@@ -25,6 +27,7 @@ public class TradeSedaQueue {
         sedaComponent.setQueueSize(3);
         camelContext.addComponent("telegramQueue", camelContext.getComponent("seda"));
         camelContext.addComponent("placeOrderQueue", camelContext.getComponent("seda"));
+        camelContext.addComponent("priorityTelegramQueue", camelContext.getComponent("seda"));
         camelContext.addRoutes(new RouteBuilder() {
             public void configure() throws Exception {
                 from("seda:telegramQueue")
@@ -39,11 +42,21 @@ public class TradeSedaQueue {
                         .end();
             }
         });
+        camelContext.addRoutes(new RouteBuilder() {
+            public void configure() throws Exception {
+                from("seda:priorityTelegramQueue")
+                        .process(priorityTelegramSedaProcessor)
+                        .end();
+            }
+        });
         camelContext.start();
         return camelContext;
     }
 
     public void sendTelemgramSeda(String message){
         camelContext.createProducerTemplate().sendBody("seda:telegramQueue", message);
+    }
+    public void sendPriorityTelemgramSeda(String message){
+        camelContext.createProducerTemplate().sendBody("seda:priorityTelegramQueue", message);
     }
 }

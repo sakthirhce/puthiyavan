@@ -7,6 +7,7 @@ import com.sakthi.trade.domain.*;
 import com.sakthi.trade.entity.*;
 import com.sakthi.trade.futures.banknifty.BNFFuturesTrendFollowing;
 //import com.sakthi.trade.fyer.FyerTrendTest;
+import com.sakthi.trade.options.OptionDayViceTest;
 import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.options.WeeklyDataBackup;
@@ -58,14 +59,6 @@ public class AutomationController {
     String trendPath;
     /* @Autowired
      OrbScheduler orbScheduler;*/
-    @Value("${truedata.wss}")
-    String truedataWss;
-    @Value("${truedata.username}")
-    String truedataUsername;
-    @Value("${truedata.password}")
-    String truedataPassword;
-    @Value("${truedata.realtime.port}")
-    String truedataRealTimeDataPort;
     @Value("${fyers.order.place.api}")
     String orderPlaceURL;
     String truedataURL = null;
@@ -131,15 +124,7 @@ public class AutomationController {
     BankNiftyOptionRepository bankNiftyOptionRepository;
     @Autowired
     UserLoginRepository userLoginRepository;
-    @Value("${binance.sathiyaseelanrhce.v11.secret}")
-    private String binanceSecretKey;
-    @Value("${binance.sathiyaseelanrhce.v11.apikey}")
-    private String binanceApiKey;
 
-    @GetMapping("/zerodhatest")
-    public void zerodhaGenerateToken() throws Exception {
-        zerodhaAccount.generateToken();
-    }
 
     @GetMapping("/zerodhaTradeGet")
     public void zerodhaTradeGet(@RequestParam String orderId) throws Exception, KiteException {
@@ -395,10 +380,7 @@ String stockId;
     public void bNiftyOptionBuy935Test() throws Exception, KiteException {
         bNiftyOptionBuy935.buy();
     }
-    @GetMapping("/zerodhalogintest")
-    public void generateAccessToken() throws Exception {
-        zerodhaAccount.generateAccessToken();
-    }
+
     @Autowired
     Algotest algotest;
 
@@ -453,14 +435,13 @@ NiftyOptionBuy935 niftyOptionBuy935;
     }
 
 
-    @Autowired
-    NiftyORB niftyORB;
-    @GetMapping("/niftyORB")
-    public void niftyORB(@RequestParam int day) throws Exception, KiteException {
+
+    @GetMapping("/loadTradeEngineData")
+    public void loadTradeEngineData() throws Exception, KiteException {
 
        /* List<StockEntity> stockEntityList=stockRepository.findAll();
         stockEntityList.forEach(stockEntity -> {*/
-        niftyORB.ORB();
+        tradeEngine.loadNrmlPositions();
         /*  });*/
 
     }
@@ -480,7 +461,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
 
     @GetMapping("/zerodhaBN")
     public void zerodhaBN() throws Exception {
-        zerodhaAccount.generateAccessToken();
         instrumentService.getInstrument();
         zerodhaBankNiftyShortStraddle.zerodhaBankNifty();
 
@@ -641,6 +621,14 @@ NiftyOptionBuy935 niftyOptionBuy935;
         System.out.println(gson.toJson(tradeStrategies));
         tradeStrategyRepo.saveAll(tradeStrategies);
         tradeStrategyRepo.flush();
+        return new ResponseEntity<>(null,HttpStatus.OK);
+    }
+
+    @Autowired
+    OptionDayViceTest optionDayViceTest;
+    @GetMapping("/dayTrade")
+    public ResponseEntity<?> dayTrade(@RequestParam int day) throws Exception, KiteException {
+        optionDayViceTest.test(day);
         return new ResponseEntity<>(null,HttpStatus.OK);
     }
     @Autowired

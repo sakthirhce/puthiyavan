@@ -87,8 +87,6 @@ public class WeeklyDataBackup {
 
     @Autowired
     TelegramMessenger telegramClient;
-    @Value("${telegram.straddle.bot.token}")
-    String telegramToken;
     @Value("${telegram.orb.bot.token}")
     String telegramTokenGroup;
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
@@ -98,7 +96,7 @@ public class WeeklyDataBackup {
         String message="log export date:" + format.format(currentDate);
         LOGGER.info(message);
         telegramClient.sendToTelegram(message,telegramTokenGroup);
-        telegramClient.sendLogToTelegram("/home/ubuntu/application.log",format.format(currentDate));
+        telegramClient.sendLogToTelegram("/home/ubuntu/application1.log",format.format(currentDate));
     }
     @Scheduled(cron="${zerodha.data.backup}")
     public void dataBackUp() throws Exception {

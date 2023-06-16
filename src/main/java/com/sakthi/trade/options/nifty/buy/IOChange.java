@@ -61,7 +61,7 @@ public class IOChange implements Strategy {
     TelegramMessenger telegramClient;
     @Value("${telegram.orb.bot.token}")
     String telegramTokenGroup;
-    @Scheduled(cron = "${exp.oi.atm.get.time}")
+ //   @Scheduled(cron = "${exp.oi.atm.get.time}")
     public void getAtm(){
         Date date = new Date();
         String currentDate = format.format(date);
@@ -138,7 +138,7 @@ public class IOChange implements Strategy {
             }
         });}
     }
-    @Scheduled(cron = "${exp.oi.atm.monitor.time}")
+//    @Scheduled(cron = "${exp.oi.atm.monitor.time}")
     public void expOIMonitorSchedule(){
         Date date = new Date();
         String currentDate = format.format(date);

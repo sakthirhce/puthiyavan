@@ -53,7 +53,7 @@ public class ExpBuy implements Strategy {
     @Autowired
     OrderUtil orderUtil;
     @Override
-    @Scheduled(cron = "${exp.buy.entry.time}")
+  //  @Scheduled(cron = "${exp.buy.entry.time}")
     public void entry() {
 
         //NIFTY FIN SERVICE

@@ -310,6 +310,7 @@ public class TradeDataMapper {
             tradeData.isSLHit = openTradeDataEntity.isSLHit;
             tradeData.setBuyTradedPrice(openTradeDataEntity.getBuyTradedPrice());
             tradeData.setSellTradedPrice(openTradeDataEntity.getSellTradedPrice());
+            tradeData.setTradeDate(openTradeDataEntity.getTradeDate());
             tradeData.setExitOrderId(openTradeDataEntity.getExitOrderId());
             tradeData.setBuyPrice(openTradeDataEntity.getBuyPrice());
             tradeData.setSellPrice(openTradeDataEntity.getSellPrice());

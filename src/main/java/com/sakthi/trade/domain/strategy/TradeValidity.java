@@ -1,7 +1,7 @@
 package com.sakthi.trade.domain.strategy;
 
 public enum TradeValidity {
-    INTRADAY("INTRADAY"),POSITIONAL("POSITIONAL");
+    INTRADAY("INTRADAY"),BTST("BTST");
     String validity;
     TradeValidity(String validity){
         this.validity=validity;

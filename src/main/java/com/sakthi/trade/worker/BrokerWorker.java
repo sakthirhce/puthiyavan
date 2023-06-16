@@ -15,6 +15,7 @@ public interface BrokerWorker {
     public String broker();
     List<Order> getOrders(User user) throws IOException, KiteException;
     List<Position>  getPositions(User user);
+    List<Position>  getRateLimitedPositions(User user);
     Order cancelOrder(String orderId,User user) throws IOException, KiteException;
 
     Order modifyOrder(String orderId,OrderParams orderPlacementRequest,User user,TradeData tradeData);

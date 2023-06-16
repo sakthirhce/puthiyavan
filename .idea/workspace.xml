@@ -23,7 +23,38 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4596dda3-5bac-4456-8a3f-6eaf35c4c141" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/zerodha/TransactionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/zerodha/TransactionService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/OptionDayViceTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/6.2.2/executionHistory/executionHistory.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/6.2.2/executionHistory/executionHistory.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/6.2.2/executionHistory/executionHistory.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/6.2.2/executionHistory/executionHistory.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/6.2.2/fileHashes/fileHashes.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/6.2.2/fileHashes/fileHashes.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/6.2.2/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/6.2.2/fileHashes/fileHashes.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/6.2.2/javaCompile/classAnalysis.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/6.2.2/javaCompile/classAnalysis.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/6.2.2/javaCompile/javaCompile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/6.2.2/javaCompile/javaCompile.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/checksums/checksums.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/checksums/checksums.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/checksums/sha1-checksums.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/checksums/sha1-checksums.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/domain/strategy/StrikeSelectionType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/domain/strategy/StrikeSelectionType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/domain/strategy/TradeValidity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/domain/strategy/TradeValidity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/futures/banknifty/BNFFuturesTrendFollowing.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/futures/banknifty/BNFFuturesTrendFollowing.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/mapper/TradeDataMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/mapper/TradeDataMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/WeeklyDataBackup.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/WeeklyDataBackup.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/banknifty/ZerodhaBankNiftyShortStraddleWithLong.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/banknifty/ZerodhaBankNiftyShortStraddleWithLong.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/banknifty/buy/BNiftyOptionBuy917.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/banknifty/buy/BNiftyOptionBuy917.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/banknifty/buy/BNiftyOptionBuy925.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/banknifty/buy/BNiftyOptionBuy925.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/banknifty/buy/BNiftyOptionBuy935.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/banknifty/buy/BNiftyOptionBuy935.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/nifty/buy/ExpBuy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/nifty/buy/ExpBuy.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/nifty/buy/IOChange.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/nifty/buy/IOChange.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/nifty/buy/NiftyORB.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/nifty/buy/NiftyORB.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/nifty/buy/NiftyOptionBuy935.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/nifty/buy/NiftyOptionBuy935.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/seda/TradeSedaQueue.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/seda/TradeSedaQueue.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/telegram/TelegramMessenger.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/telegram/TelegramMessenger.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/util/MathUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/util/MathUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/worker/BrokerWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/worker/BrokerWorker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/worker/DhanWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/worker/DhanWorker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/worker/ZerodhaWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/worker/ZerodhaWorker.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -214,6 +245,19 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="TradeEngine" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.sakthi.trade.TradeEngine" />
+      <module name="Squant.main" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.sakthi.trade.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="WeeklyDataBackup" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="com.sakthi.trade.options.WeeklyDataBackup" />
       <module name="Squant.main" />
@@ -227,34 +271,21 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="finexp" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="com.sakthi.trade.zerodha.finexp" />
-      <module name="Squant.main" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.sakthi.trade.telegram.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
     <list>
       <item itemvalue="Application.SquantAutomation" />
+      <item itemvalue="Application.TradeEngine" />
       <item itemvalue="Application.TelegramRouteBuilder" />
       <item itemvalue="Application.ExpBuy" />
       <item itemvalue="Application.DataBot" />
       <item itemvalue="Application.WeeklyDataBackup" />
-      <item itemvalue="Application.finexp" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.TradeEngine" />
         <item itemvalue="Application.TelegramRouteBuilder" />
         <item itemvalue="Application.ExpBuy" />
         <item itemvalue="Application.WeeklyDataBackup" />
         <item itemvalue="Application.DataBot" />
-        <item itemvalue="Application.finexp" />
       </list>
     </recent_temporary>
   </component>
@@ -468,7 +499,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>524</line>
+          <line>504</line>
           <option name="timeStamp" value="35" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -482,18 +513,13 @@
           <option name="timeStamp" value="59" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/zerodha/account/ZerodhaAccount.java</url>
-          <line>158</line>
-          <option name="timeStamp" value="65" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/banknifty/ZerodhaBankNiftyShortStraddle.java</url>
           <line>91</line>
           <option name="timeStamp" value="112" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>146</line>
+          <line>131</line>
           <option name="timeStamp" value="116" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -518,22 +544,22 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>145</line>
+          <line>130</line>
           <option name="timeStamp" value="124" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>158</line>
+          <line>143</line>
           <option name="timeStamp" value="125" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>165</line>
+          <line>150</line>
           <option name="timeStamp" value="126" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>195</line>
+          <line>180</line>
           <option name="timeStamp" value="127" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -558,7 +584,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>484</line>
+          <line>464</line>
           <option name="timeStamp" value="174" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -573,7 +599,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>597</line>
+          <line>577</line>
           <option name="timeStamp" value="186" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -808,18 +834,13 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>708</line>
+          <line>696</line>
           <option name="timeStamp" value="449" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/util/MathUtils.java</url>
-          <line>65</line>
+          <line>68</line>
           <option name="timeStamp" value="450" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>jar://$PROJECT_DIR$/../kiteconnect.jar!/com/zerodhatech/kiteconnect/KiteConnect.class</url>
-          <line>600</line>
-          <option name="timeStamp" value="472" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>jar://$PROJECT_DIR$/../kiteconnect.jar!/com/zerodhatech/kiteconnect/KiteConnect.class</url>
@@ -833,17 +854,17 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>286</line>
+          <line>271</line>
           <option name="timeStamp" value="482" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>289</line>
+          <line>274</line>
           <option name="timeStamp" value="483" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>343</line>
+          <line>328</line>
           <option name="timeStamp" value="484" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -863,12 +884,12 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/worker/DhanWorker.java</url>
-          <line>297</line>
+          <line>302</line>
           <option name="timeStamp" value="503" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/worker/DhanWorker.java</url>
-          <line>298</line>
+          <line>303</line>
           <option name="timeStamp" value="504" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -878,7 +899,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>433</line>
+          <line>415</line>
           <option name="timeStamp" value="512" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -888,63 +909,103 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/util/MathUtils.java</url>
-          <line>405</line>
+          <line>522</line>
           <option name="timeStamp" value="530" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/util/MathUtils.java</url>
-          <line>46</line>
+          <line>49</line>
           <option name="timeStamp" value="540" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>658</line>
+          <line>646</line>
           <option name="timeStamp" value="566" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>152</line>
+          <line>137</line>
           <option name="timeStamp" value="603" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/util/MathUtils.java</url>
-          <line>497</line>
+          <line>614</line>
           <option name="timeStamp" value="606" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/util/MathUtils.java</url>
-          <line>274</line>
+          <line>277</line>
           <option name="timeStamp" value="620" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>890</line>
+          <line>1089</line>
           <option name="timeStamp" value="626" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>872</line>
+          <line>1071</line>
           <option name="timeStamp" value="627" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/util/MathUtils.java</url>
-          <line>408</line>
+          <line>525</line>
           <option name="timeStamp" value="640" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>528</line>
-          <option name="timeStamp" value="658" />
+          <line>296</line>
+          <option name="timeStamp" value="670" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>487</line>
-          <option name="timeStamp" value="660" />
+          <line>339</line>
+          <option name="timeStamp" value="676" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/zerodha/TransactionService.java</url>
+          <line>145</line>
+          <option name="timeStamp" value="678" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>520</line>
-          <option name="timeStamp" value="661" />
+          <line>254</line>
+          <option name="timeStamp" value="679" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
+          <line>299</line>
+          <option name="timeStamp" value="680" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/cache/GlobalContextCache.java</url>
+          <line>46</line>
+          <option name="timeStamp" value="682" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
+          <line>319</line>
+          <option name="timeStamp" value="686" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/zerodha/TransactionService.java</url>
+          <line>31</line>
+          <option name="timeStamp" value="693" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/options/OptionDayViceTest.java</url>
+          <line>78</line>
+          <option name="timeStamp" value="694" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/zerodha/account/ZerodhaAccount.java</url>
+          <line>389</line>
+          <option name="timeStamp" value="695" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/zerodha/account/ZerodhaAccount.java</url>
+          <line>382</line>
+          <option name="timeStamp" value="696" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-field">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/entity/TradeStrategy.java</url>

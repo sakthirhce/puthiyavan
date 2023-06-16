@@ -52,7 +52,7 @@ public class TelegramMessenger {
                         String response = sb.toString();
                         long finish = System.currentTimeMillis();
                         long timeElapsed = finish - start;
-                LOGGER.info("telegram message sent in:"+timeElapsed);
+              //  LOGGER.info("telegram message sent in:"+timeElapsed);
              //       meterRegistry.counter("")
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -61,7 +61,7 @@ public class TelegramMessenger {
 
             long end = System.currentTimeMillis();
                 long timeElapsed1 = end - start1;
-            LOGGER.info("telegram call completed in :"+timeElapsed1);
+           // LOGGER.info("telegram call completed in :"+timeElapsed1);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -94,7 +94,7 @@ public class TelegramMessenger {
 
             long end = System.currentTimeMillis();
             long timeElapsed1 = end - start1;
-            LOGGER.info("telegram call completed in :"+timeElapsed1);
+        //    LOGGER.info("telegram call completed in :"+timeElapsed1);
         } catch (Exception e) {
             e.printStackTrace();
         }

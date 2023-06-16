@@ -81,7 +81,7 @@ public class BNiftyOptionBuy935 {
         return "BNIFTY_BUY_935";
     }
     public static final Logger LOGGER = LoggerFactory.getLogger(BNiftyOptionBuy935.class);
-    @Scheduled(cron = "${bniftyBuy935.schedule.entry}")
+    //@Scheduled(cron = "${bniftyBuy935.schedule.entry}")
     public void buy() throws ParseException, KiteException, IOException {
         sendMessage.sendToTelegram("bniftyBuy935 execution startede", telegramToken);
         StopWatch stopWatch = new StopWatch();
@@ -215,7 +215,7 @@ public class BNiftyOptionBuy935 {
         //}
     }
 
-    @Scheduled(cron = "${bniftyBuy935.schedule.slMonitor}")
+   // @Scheduled(cron = "${bniftyBuy935.schedule.slMonitor}")
     public void sLMonitorScheduler() {
         //  LOGGER.info("short straddle SLMonitor scheduler started");
 
@@ -345,7 +345,7 @@ public class BNiftyOptionBuy935 {
             }
         });
     }
-    @Scheduled(cron = "${banknifty.intraday.buy.exit.schedule}")
+  //  @Scheduled(cron = "${banknifty.intraday.buy.exit.schedule}")
     public void buyIntradayExit() {
         userList.getUser().stream().filter(user -> user.getBniftyBuy935() != null && user.getBniftyBuy935().isNrmlEnabled()).forEach(user -> {
             try {
@@ -448,7 +448,7 @@ public class BNiftyOptionBuy935 {
         });
     }
     public List<OpenTradeDataEntity> openTradeDataEntities1 = new ArrayList<>();
-    @Scheduled(cron = "${bniftyBuy935.schedule.nextday.load}")
+   // @Scheduled(cron = "${bniftyBuy935.schedule.nextday.load}")
     public void loadNrmlPositions() {
         openTradeDataEntities1 = openTradeDataRepo.findAll();
         openTradeDataEntities1.forEach(openTradeDataEntity -> {
@@ -550,7 +550,7 @@ public class BNiftyOptionBuy935 {
         });
     }
 
-    @Scheduled(cron = "${bniftyBuy935.schedule.nextday.slPlace}")
+   // @Scheduled(cron = "${bniftyBuy935.schedule.nextday.slPlace}")
     public void placeSLNrmlPositions() {
         openTradeDataEntities.stream().filter(openTradeDataEntity -> !openTradeDataEntity.isSlPlaced && !openTradeDataEntity.isExited).forEach(openTradeDataEntity -> {
             try {
@@ -659,7 +659,7 @@ public class BNiftyOptionBuy935 {
     }
 
 
-    @Scheduled(cron = "${bniftyBuy935.schedule.nextday.exit}")
+  //  @Scheduled(cron = "${bniftyBuy935.schedule.nextday.exit}")
     public void exitNrmlPositions() {
         userList.getUser().stream().filter(user -> user.getBniftyBuy935() != null && user.getBniftyBuy935().isNrmlEnabled()).forEach(user -> {
             try {
@@ -734,7 +734,7 @@ public class BNiftyOptionBuy935 {
         });
     }
 
-    @Scheduled(cron = "${bniftyBuy935.schedule.nextday.slMonitor}")
+  //  @Scheduled(cron = "${bniftyBuy935.schedule.nextday.slMonitor}")
     public void sLNrmlMonitorPositions() {
         openTradeDataEntities.stream().filter(openTradeDataEntity -> openTradeDataEntity.isSlPlaced && !openTradeDataEntity.isExited).forEach(openTradeDataEntity -> {
             User user = userList.getUser().stream().filter(user1 -> user1.getName().equals(openTradeDataEntity.getUserId())).findFirst().get();

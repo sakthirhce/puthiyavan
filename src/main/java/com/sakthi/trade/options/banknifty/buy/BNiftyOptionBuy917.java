@@ -260,7 +260,7 @@ public class BNiftyOptionBuy917 {
         //}
     }
 
-    @Scheduled(cron = "${bniftyBuy917.schedule.slMonitor}")
+   // @Scheduled(cron = "${bniftyBuy917.schedule.slMonitor}")
     public void sLMonitorScheduler() {
         //  LOGGER.info("short straddle SLMonitor scheduler started");
 
@@ -394,7 +394,7 @@ public class BNiftyOptionBuy917 {
     }
 
     public List<OpenTradeDataEntity> openTradeDataEntities1 = new ArrayList<>();
-    @Scheduled(cron = "${bniftyBuy917.schedule.nextday.load}")
+   // @Scheduled(cron = "${bniftyBuy917.schedule.nextday.load}")
     public void loadNrmlPositions() {
         openTradeDataEntities1 = openTradeDataRepo.findAll();
         openTradeDataEntities1.forEach(openTradeDataEntity -> {
@@ -495,7 +495,7 @@ public class BNiftyOptionBuy917 {
         });
     }
 
-    @Scheduled(cron = "${bniftyBuy917.schedule.nextday.slPlace}")
+   // @Scheduled(cron = "${bniftyBuy917.schedule.nextday.slPlace}")
     public void placeSLNrmlPositions() {
         openTradeDataEntities.stream().filter(openTradeDataEntity -> !openTradeDataEntity.isSlPlaced && !openTradeDataEntity.isExited).forEach(openTradeDataEntity -> {
             try {
@@ -603,7 +603,7 @@ public class BNiftyOptionBuy917 {
     }
 
 
-    @Scheduled(cron = "${bniftyBuy917.schedule.nextday.exit}")
+  //  @Scheduled(cron = "${bniftyBuy917.schedule.nextday.exit}")
     public void exitNrmlPositions() {
         userList.getUser().stream().filter(user -> user.getBniftyBuy917() != null && user.getBniftyBuy917().isNrmlEnabled()).forEach(user -> {
             BrokerWorker brokerWorker= workerFactory.getWorker(user);
@@ -678,7 +678,7 @@ public class BNiftyOptionBuy917 {
         });
     }
 
-    @Scheduled(cron = "${bniftyBuy917.schedule.nextday.slMonitor}")
+   // @Scheduled(cron = "${bniftyBuy917.schedule.nextday.slMonitor}")
     public void sLNrmlMonitorPositions() {
         openTradeDataEntities.stream().filter(openTradeDataEntity -> openTradeDataEntity.isSlPlaced && !openTradeDataEntity.isExited).forEach(openTradeDataEntity -> {
             User user = userList.getUser().stream().filter(user1 -> user1.getName().equals(openTradeDataEntity.getUserId())).findFirst().get();

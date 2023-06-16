@@ -1,5 +1,6 @@
 package com.sakthi.trade;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.sakthi.trade.domain.TradeData;
@@ -47,6 +48,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.TextStyle;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -72,8 +74,6 @@ public class TradeEngine {
     Map<String, List<TradeData>> openTrade = new ConcurrentHashMap<>(); // stock_id: List of trades
     ExecutorService executorThread = java.util.concurrent.Executors.newFixedThreadPool(2);
     ExecutorService executorThreadIndex = java.util.concurrent.Executors.newFixedThreadPool(2);
-    ExecutorService executorThreadRange = java.util.concurrent.Executors.newFixedThreadPool(2);
-    ExecutorService executorRangeThreadSt = java.util.concurrent.Executors.newFixedThreadPool(3);
     ExecutorService sLMonitor = java.util.concurrent.Executors.newFixedThreadPool(1);
     ExecutorService exitThread = java.util.concurrent.Executors.newFixedThreadPool(1);
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -154,6 +154,15 @@ public class TradeEngine {
                 }
             }
         });
+        strategyMap.entrySet().forEach(stringMapEntry -> {
+            Map<String,List<TradeStrategy>> stringTradeStrategyMap=stringMapEntry.getValue();
+            stringTradeStrategyMap.entrySet().forEach(tradeStrategyMap->{
+                List<TradeStrategy> list=tradeStrategyMap.getValue();
+                list.forEach(strategy -> {
+                    tradeSedaQueue.sendTelemgramSeda(stringMapEntry.getKey() + ":" + tradeStrategyMap.getKey() +":"+strategy.getUserId()+":"+strategy.getAliasName()+":"+strategy.getLotSize());
+                });
+            });
+        });
         System.out.println(new Gson().toJson(strategyMap));
     }
     @Autowired
@@ -161,41 +170,51 @@ public class TradeEngine {
     @Scheduled(cron = "${tradeEngine.load.open.data}")
     public void loadNrmlPositions() {
         Iterable<OpenTradeDataEntity> openTradeDataEntities1 = openTradeDataRepo.findAll();
+        List<OpenTradeDataEntity> openList=new ArrayList<>();
         openTradeDataEntities1.forEach(openTradeDataEntity -> {
             if (openTradeDataEntity.getAlgoName().equals(this.getAlgoName())) {
-                if (!openTradeDataEntity.isExited && !openTradeDataEntity.isErrored &&!openTradeDataEntity.isSLHit) {
-                    User user = userList.getUser().stream().filter(user1 -> user1.getName().equals(openTradeDataEntity.getUserId())).findFirst().get();
-                    BrokerWorker brokerWorker= workerFactory.getWorker(user);
-                    List<Position> positions = brokerWorker.getPositions(user);
+                if (!openTradeDataEntity.isExited && !openTradeDataEntity.isErrored && !openTradeDataEntity.isSLHit) {
+                    openList.add(openTradeDataEntity);
+                }
+            }});
+        if(openList.size()>0 && openTrade.size()==0) {
+            openList.forEach(openTradeDataEntity -> {
+              //  if (openTradeDataEntity.getAlgoName().equals(this.getAlgoName())) {
+                    if (!openTradeDataEntity.isExited && !openTradeDataEntity.isErrored && !openTradeDataEntity.isSLHit) {
+                        User user = userList.getUser().stream().filter(user1 -> user1.getName().equals(openTradeDataEntity.getUserId())).findFirst().get();
+                        BrokerWorker brokerWorker = workerFactory.getWorker(user);
+                        List<Position> positions = brokerWorker.getRateLimitedPositions(user);
 
-                    positions.stream().filter(position -> "NRML".equals(position.product) && openTradeDataEntity.getStockName().equals(position.tradingSymbol) && (position.netQuantity != 0)).findFirst().ifPresent(position -> {
-                        int positionQty = Math.abs(position.netQuantity);
-                        if (positionQty != openTradeDataEntity.getQty()) {
-                            //   openTradeDataEntity.setQty(positionQty);
-                                tradeSedaQueue.sendTelemgramSeda("Position qty mismatch for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ", over riding position qty as trade qty."+":"+getAlgoName());
+                        positions.stream().filter(position -> "NRML".equals(position.product) && openTradeDataEntity.getStockName().equals(position.tradingSymbol) && (position.netQuantity != 0)).findFirst().ifPresent(position -> {
+                            int positionQty = Math.abs(position.netQuantity);
+                            if (positionQty != openTradeDataEntity.getQty()) {
+                                //   openTradeDataEntity.setQty(positionQty);
+                                tradeSedaQueue.sendTelemgramSeda("Position qty mismatch for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ", over riding position qty as trade qty." + ":" + getAlgoName());
                                 LOGGER.info("Position qty mismatch for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ", over riding position qty as trade qty.");
 
-                        }
-                        openTradeDataEntity.isSlPlaced = false;
-                        openTradeDataEntity.setSlOrderId(null);
+                            }
+                            openTradeDataEntity.isSlPlaced = false;
+                            openTradeDataEntity.setSlOrderId(null);
 
-                        TradeData tradeData=tradeDataMapper.mapTradeDataEntityToTradeData(openTradeDataEntity);
-                        List<TradeData> tradeDataList = openTrade.get(user.getName());
-                        if (tradeDataList == null) {
-                            tradeDataList = new ArrayList<>();
-                        }
-                        tradeDataList.add(tradeData);
-                        openTrade.put(user.getName(), tradeDataList);
-                        tradeSedaQueue.sendTelemgramSeda("Open Position: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId()+":"+getAlgoName());
-                    });
-                } else {
-                    String openStr = gson.toJson(openTradeDataEntity);
-                    OpenTradeDataBackupEntity openTradeDataBackupEntity = gson.fromJson(openStr, OpenTradeDataBackupEntity.class);
-                    openTradeDataBackupRepo.save(openTradeDataBackupEntity);
-                    openTradeDataRepo.deleteById(openTradeDataEntity.getDataKey());
-                }
-            }
-        });
+                            TradeData tradeData = tradeDataMapper.mapTradeDataEntityToTradeData(openTradeDataEntity);
+                            List<TradeData> tradeDataList = openTrade.get(user.getName());
+                            if (tradeDataList == null) {
+                                tradeDataList = new ArrayList<>();
+                            }
+                            tradeDataList.add(tradeData);
+                            openTrade.put(user.getName(), tradeDataList);
+                            tradeSedaQueue.sendTelemgramSeda("Open Position: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ":" + getAlgoName());
+                        });
+                    } else {
+                        String openStr = gson.toJson(openTradeDataEntity);
+                        OpenTradeDataBackupEntity openTradeDataBackupEntity = gson.fromJson(openStr, OpenTradeDataBackupEntity.class);
+                        openTradeDataBackupRepo.save(openTradeDataBackupEntity);
+                        openTradeDataRepo.deleteById(openTradeDataEntity.getDataKey());
+                    }
+               // }
+            });
+        }
+        System.out.println(gson.toJson(openTrade));
     }
     @Autowired
     TradeSedaQueue tradeSedaQueue;
@@ -215,13 +234,12 @@ public class TradeEngine {
         Date candleCurrentMinDate = candleCalenderMin.getTime();
         String candleHourMinStr=hourMinFormat.format(candleCurrentMinDate);
 
-     //  String candleHourMinStr="09:16";
+   //    String candleHourMinStr="09:34";
        // System.out.println(candleHourMinStr);
         String currentHourMinStr=hourMinFormat.format(currentMinDate);
-
-     //   String currentHourMinStr="09:17";
+   //    String currentHourMinStr="09:35";
        // System.out.println(currentHourMinStr);
-        //LOGGER.info("trade engine: " + currentDateStr+":"+currentHourMinStr);
+
         executorThread.submit(() -> {
             //ORB range break code starts
             rangeStrategyMap.forEach((index,strategyList)->{
@@ -266,6 +284,7 @@ public class TradeEngine {
             });
             //ORB range break code End
             strategyMap.forEach((index, timeStrategyListMap) -> {
+
                 executorThreadIndex.submit(() -> {
                 String stockId = null;
                 if ("BNF".equals(index)) {
@@ -297,6 +316,7 @@ public class TradeEngine {
                         List<TradeStrategy> strategies = timeStrategyListMap.get(currentHourMinStr);
 
                         if (strategies.size() > 0) {
+                            LOGGER.info("trade engine: " + gson.toJson(strategies));
                             strategies.forEach(strategy -> {
                                // executorThreadStrategy.submit(() -> {
                                     LOGGER.info("strategy name:" + strategy.getAliasName());
@@ -308,37 +328,56 @@ public class TradeEngine {
 
 
                                     LOGGER.info(strategy.getAliasName()+":"+rangeStrikes);
-                                    rangeStrikes.forEach((strikePrice, strikeDataEntry) -> {
+                                    rangeStrikes.forEach((indexStrikePrice, strikeDataEntry) -> {
                                         strikeDataEntry.entrySet().stream().forEach(strikeDataEntry1 -> {
                                             StrikeData strikeData = strikeDataEntry1.getValue();
                                             OrderParams orderParams = new OrderParams();
-                                            TradeData tradeData = new TradeData();
+                                            AtomicDouble triggerPriceTemp = new AtomicDouble();
+                                            double strikePrice = indexStrikePrice.doubleValue();
                                             if (strategy.isSimpleMomentum()) {
-                                                orderParams.orderType = "SL";
-                                                BigDecimal triggerPriceTemp=new BigDecimal(0);
-                                                if (strategy.getSimpleMomentumType().equals(ValueType.PERCENT_UP.getType())) {
-                                                     triggerPriceTemp = (MathUtils.percentageValueOfAmount(strategy.getSimpleMomentumValue(), new BigDecimal(strikePrice)).add(new BigDecimal(strikePrice))).setScale(0, RoundingMode.HALF_UP);
+                                             if (strategy.getStrikeSelectionType().equals(StrikeSelectionType.ATM.getType())) {
+                                                 String historicURL1 = "https://api.kite.trade/instruments/historical/" + strikeData.getZerodhaId() + "/minute?from=" + currentDateStr + "+09:00:00&to=" + currentDateStr + "+15:35:00";
+                                                 String priceResponse = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL1), strikeData.getZerodhaId(), currentHourMinStr);
+                                                 HistoricalData historicalStrikeData = new HistoricalData();
+                                                 JSONObject strikeJson = new JSONObject(priceResponse);
+                                                 Optional<HistoricalData> historicalStrikeDataLastData = Optional.empty();
+                                                 String strikeStatus = strikeJson.getString("status");
+                                                 if (!strikeStatus.equals("error")) {
+                                                     historicalStrikeData.parseResponse(strikeJson);
+
+                                                     historicalStrikeDataLastData = historicalStrikeData.dataArrayList.stream().filter(candle -> {
+                                                         try {
+                                                             Date candleDateTime = candleDateTimeFormat.parse(candle.timeStamp);
+                                                             return hourMinFormat.format(candleDateTime).equals(candleHourMinStr);
+                                                         } catch (ParseException e) {
+                                                             throw new RuntimeException(e);
+                                                         }
+                                                     }).findFirst();
+                                                      strikePrice = historicalStrikeDataLastData.get().close;
+                                                 }
                                                 }
-                                                if (strategy.getSimpleMomentumType().equals(ValueType.PERCENT_DOWN.getType())) {
-                                                     triggerPriceTemp = (new BigDecimal(strikePrice)).subtract(MathUtils.percentageValueOfAmount(strategy.getSimpleMomentumValue(), new BigDecimal(strikePrice))).setScale(0, RoundingMode.HALF_UP);
-                                                }
-                                                if (strategy.getSimpleMomentumType().equals(ValueType.POINTS_UP.getType())) {
-                                                     triggerPriceTemp = new BigDecimal(strikePrice).add(strategy.getSimpleMomentumValue()).setScale(0, RoundingMode.HALF_UP);
-                                                }
-                                                if (strategy.getSimpleMomentumType().equals(ValueType.POINTS_DOWN.getType())) {
-                                                     triggerPriceTemp = new BigDecimal(strikePrice).subtract(strategy.getSimpleMomentumValue()).setScale(0, RoundingMode.HALF_UP);
+                                                    orderParams.orderType = "SL";
+
+                                                    if (strategy.getSimpleMomentumType().equals(ValueType.PERCENT_UP.getType())) {
+                                                        triggerPriceTemp.getAndSet((MathUtils.percentageValueOfAmount(strategy.getSimpleMomentumValue(), new BigDecimal(strikePrice)).add(new BigDecimal(strikePrice))).setScale(0, RoundingMode.HALF_UP).doubleValue());
+                                                    }
+                                                    if (strategy.getSimpleMomentumType().equals(ValueType.PERCENT_DOWN.getType())) {
+                                                        triggerPriceTemp.getAndSet((new BigDecimal(strikePrice)).subtract(MathUtils.percentageValueOfAmount(strategy.getSimpleMomentumValue(), new BigDecimal(strikePrice))).setScale(0, RoundingMode.HALF_UP).doubleValue());
+                                                    }
+                                                    if (strategy.getSimpleMomentumType().equals(ValueType.POINTS_UP.getType())) {
+                                                        triggerPriceTemp.getAndSet(new BigDecimal(strikePrice).add(strategy.getSimpleMomentumValue()).setScale(0, RoundingMode.HALF_UP).doubleValue());
+                                                    }
+                                                    if (strategy.getSimpleMomentumType().equals(ValueType.POINTS_DOWN.getType())) {
+                                                         triggerPriceTemp.getAndSet(new BigDecimal(strikePrice).subtract(strategy.getSimpleMomentumValue())
+                                                                .setScale(0, RoundingMode.HALF_UP).doubleValue());
+
+                                                    }
+                                                    System.out.println(triggerPriceTemp);
+                                                    orderParams.triggerPrice = triggerPriceTemp.doubleValue();
+                                                    BigDecimal price = new BigDecimal(triggerPriceTemp.get()).add(new BigDecimal(triggerPriceTemp.get()).setScale(0, RoundingMode.HALF_UP).divide(new BigDecimal(100))).setScale(0, RoundingMode.HALF_UP);
+                                                    orderParams.price = price.doubleValue();
 
                                                 }
-                                                System.out.println(triggerPriceTemp);
-                                                orderParams.triggerPrice=triggerPriceTemp.doubleValue();
-                                                BigDecimal price =triggerPriceTemp.add(triggerPriceTemp.setScale(0, RoundingMode.HALF_UP).divide(new BigDecimal(100))).setScale(0, RoundingMode.HALF_UP);
-                                                orderParams.price=price.doubleValue();
-                                                if( "SELL".equals(strategy.getOrderType())) {
-                                                    tradeData.setSellPrice(triggerPriceTemp);
-                                                }else {
-                                                    tradeData.setBuyPrice(triggerPriceTemp);
-                                                }
-                                            }
                                             else {
                                                 orderParams.orderType = "MARKET";
                                             }
@@ -357,13 +396,23 @@ public class TradeEngine {
                                             DayOfWeek dow = localDate.getDayOfWeek();
                                             String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
                                             //TODO get all users subsribed to this.
+                                            String[] userIdAr=strategy.getUserId().split(",");
+                                            Arrays.stream(userIdAr).forEach(userId->{
+                                                String[] userQuantity=strategy.getUserId().split("-");
                                             userList.getUser().stream().filter(
-                                                    user -> user.getName().equals(strategy.getUserId())
+                                                    user -> user.getName().equals(userQuantity[0])
                                             ).forEach(user -> {
+                                                TradeData tradeData = new TradeData();
+                                                if ("SELL".equals(strategy.getOrderType())) {
+                                                    tradeData.setSellPrice(new BigDecimal(triggerPriceTemp.get()));
+                                                } else {
+                                                    tradeData.setBuyPrice(new BigDecimal(triggerPriceTemp.get()));
+                                                }
                                                 BrokerWorker brokerWorker = workerFactory.getWorker(user);
 
                                                 Order order = null;
-                                                orderParams.quantity = strategy.getLotSize();
+                                                int lot= strategy.getLotSize()*Integer.valueOf(userQuantity[0]);
+                                                orderParams.quantity = lot;
 
                                                 String dataKey = UUID.randomUUID().toString();
                                                 tradeData.setDataKey(dataKey);
@@ -371,7 +420,7 @@ public class TradeEngine {
                                                 tradeData.setStockName(strikeData.getZerodhaSymbol());
                                                 try {
                                                     //TODO set sl price, entry price, exit date
-                                                    tradeData.setQty(strategy.getLotSize());
+                                                    tradeData.setQty(lot);
                                                     tradeData.setEntryType(strategy.getOrderType());
                                                     tradeData.setUserId(user.getName());
                                                     tradeData.setTradeDate(currentDateStr);
@@ -389,7 +438,8 @@ public class TradeEngine {
                                                     tradeDataList.add(tradeData);
                                                     openTrade.put(user.getName(), tradeDataList);
                                                     LOGGER.info("trade data" + new Gson().toJson(tradeData));
-                                                    sendMessage.sendToTelegram("Options traded for user:" + user.getName() + " strike: " + strikeData.getZerodhaSymbol() + ":" + strategy.getAliasName(), telegramToken);
+                                                    tradeSedaQueue.sendTelemgramSeda("Options traded for user:" + user.getName() + " strike: "
+                                                            + strikeData.getZerodhaSymbol() + ":" + strategy.getAliasName());
                                                 } catch (Exception e) {
                                                     List<TradeData> tradeDataList = openTrade.get(user.getName());
                                                     if (tradeDataList == null) {
@@ -400,13 +450,13 @@ public class TradeEngine {
                                                     tradeData.isErrored = true;
                                                     LOGGER.info("Error while placing straddle order: " + e);
                                                     e.printStackTrace();
-                                                    sendMessage.sendToTelegram("Error while placing straddle order: " + strikeData.getZerodhaSymbol() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName(), telegramToken);
+                                                    tradeSedaQueue.sendTelemgramSeda("Error while placing straddle order: " + strikeData.getZerodhaSymbol() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName()+":"+strategy.getAliasName());
 
                                                 } catch (KiteException e) {
                                                     throw new RuntimeException(e);
                                                 }
                                             });
-
+                                            });
                                         });
 
                                     });
@@ -419,14 +469,98 @@ public class TradeEngine {
             });
         });
         });
-        sLMonitor.submit(() -> {
-          //  Type type = new TypeToken<List<TradeData>>(){}.getType();
-           // String data="[{\"stockName\":\"NIFTY2331617500PE\",\"tradeDate\":\"2023-03-10\",\"qty\":50,\"dataKey\":\"959a60d1-cb97-4006-850e-50653f62008a\",\"buyPrice\":168,\"buyTradedPrice\":168,\"stockId\":14236418,\"userId\":\"LTK728\",\"isOrderPlaced\":true,\"isSLCancelled\":false,\"isCancelled\":false,\"isSLHit\":false,\"isReverseSLHit\":false,\"isSlPlaced\":true,\"isReverseTradePlaced\":false,\"isReverseSLPlaced\":false,\"isExited\":false,\"entryOrderId\":\"230310000131603\",\"slOrderId\":\"230310000161496\",\"slPrice\":138,\"entryType\":\"BUY\",\"strike\":0,\"isErrored\":false,\"pyramidCount\":0,\"pyramidQty\":0,\"stopLossCount\":0,\"isSLModified\":false,\"rentryCount\":0,\"modifyDate\":\"2023-03-10\",\"tradeStrategy\":{\"tradeStrategyKey\":\"NFBCD15117btst\",\"index\":\"NF\",\"entryTime\":\"09:17\",\"tradeValidity\":\"BTST\",\"exitTime\":\"09:23\",\"tradeDays\":\"All\",\"userId\":\"LTK728\",\"strikeSelectionType\":\"PRICE_RANGE\",\"strikePriceRangeLow\":150.00,\"strikePriceRangeHigh\":200.00,\"orderType\":\"BUY\",\"strikeType\":\"PE,CE\",\"entryOrderType\":\"LIMIT\",\"exitOrderType\":\"MARKET\",\"simpleMomentum\":true,\"simpleMomentumType\":\"POINTS_UP\",\"simpleMomentumValue\":10.00,\"rangeBreak\":false,\"strategyEnabled\":true,\"reentry\":false,\"intradayLotSiz\":0,\"intradayLotSize\":1,\"lotSize\":50,\"positionalLotSize\":1,\"slType\":\"POINTS\",\"slValue\":30.00,\"slOrderType\":\"LIMIT\",\"target\":false,\"aliasName\":\"nifty buy 09:17 points 10 sl 30 CNC\"}},{\"stockName\":\"NIFTY2331617350CE\",\"tradeDate\":\"2023-03-10\",\"qty\":50,\"dataKey\":\"f11cade6-bea7-4a66-873f-58dfc63f568f\",\"buyPrice\":165,\"stockId\":14234626,\"userId\":\"LTK728\",\"isOrderPlaced\":false,\"isSLCancelled\":false,\"isCancelled\":false,\"isSLHit\":false,\"isReverseSLHit\":false,\"isSlPlaced\":false,\"isReverseTradePlaced\":false,\"isReverseSLPlaced\":false,\"isExited\":false,\"entryOrderId\":\"230310000131648\",\"entryType\":\"BUY\",\"strike\":0,\"isErrored\":false,\"pyramidCount\":0,\"pyramidQty\":0,\"stopLossCount\":0,\"isSLModified\":false,\"rentryCount\":0,\"tradeStrategy\":{\"tradeStrategyKey\":\"NFBCD15117btst\",\"index\":\"NF\",\"entryTime\":\"09:17\",\"tradeValidity\":\"BTST\",\"exitTime\":\"09:23\",\"tradeDays\":\"All\",\"userId\":\"LTK728\",\"strikeSelectionType\":\"PRICE_RANGE\",\"strikePriceRangeLow\":150.00,\"strikePriceRangeHigh\":200.00,\"orderType\":\"BUY\",\"strikeType\":\"PE,CE\",\"entryOrderType\":\"LIMIT\",\"exitOrderType\":\"MARKET\",\"simpleMomentum\":true,\"simpleMomentumType\":\"POINTS_UP\",\"simpleMomentumValue\":10.00,\"rangeBreak\":false,\"strategyEnabled\":true,\"reentry\":false,\"intradayLotSiz\":0,\"intradayLotSize\":1,\"lotSize\":50,\"positionalLotSize\":1,\"slType\":\"POINTS\",\"slValue\":30.00,\"slOrderType\":\"LIMIT\",\"target\":false,\"aliasName\":\"nifty buy 09:17 points 10 sl 30 CNC\"}},{\"stockName\":\"NIFTY2331617500PE\",\"tradeDate\":\"2023-03-10\",\"qty\":50,\"dataKey\":\"68f5c02b-9913-418b-a5d0-255201e5cf06\",\"sellPrice\":17372.95000000000072759576141834259033203125,\"stockId\":14236418,\"userId\":\"LTK728\",\"isOrderPlaced\":true,\"isSLCancelled\":false,\"isCancelled\":false,\"isSLHit\":false,\"isReverseSLHit\":false,\"isSlPlaced\":false,\"isReverseTradePlaced\":false,\"isReverseSLPlaced\":false,\"isExited\":false,\"entryType\":\"BUY\",\"strike\":0,\"isErrored\":true,\"pyramidCount\":0,\"pyramidQty\":0,\"stopLossCount\":0,\"isSLModified\":false,\"rentryCount\":0,\"tradeStrategy\":{\"tradeStrategyKey\":\"NORF23\",\"index\":\"NF\",\"entryTime\":\"09:23\",\"tradeValidity\":\"MIS\",\"exitTime\":\"15:10\",\"intradayExitTime\":\"15:10\",\"tradeDays\":\"All\",\"userId\":\"LTK728\",\"strikeSelectionType\":\"PRICE_RANGE\",\"strikePriceRangeLow\":150.00,\"strikePriceRangeHigh\":200.00,\"orderType\":\"BUY\",\"strikeType\":\"PE,CE\",\"entryOrderType\":\"LIMIT\",\"exitOrderType\":\"MARKET\",\"simpleMomentum\":false,\"rangeBreak\":true,\"strategyEnabled\":true,\"rangeBreakTime\":\"09:23\",\"rangeStartTime\":\"09:16\",\"rangeBreakSide\":\"High,Low\",\"rangeBreakInstrument\":\"INDEX\",\"reentry\":false,\"intradayLotSiz\":0,\"intradayLotSize\":1,\"lotSize\":50,\"positionalLotSize\":0,\"slType\":\"POINTS\",\"slValue\":30.00,\"slOrderType\":\"LIMIT\",\"target\":false,\"aliasName\":\"nifty buy 09-16 to 09:23 ORB sl 30\",\"rangeLow\":0,\"rangeHigh\":17413.9000000000014551915228366851806640625}},{\"stockName\":\"BANKNIFTY2331640700CE\",\"tradeDate\":\"2023-03-10\",\"qty\":25,\"dataKey\":\"22c3f32c-503c-494c-aff4-55fbe5343bfa\",\"sellPrice\":222.2,\"sellTradedPrice\":222.2,\"stockId\":14149378,\"userId\":\"LTK728\",\"isOrderPlaced\":true,\"isSLCancelled\":false,\"isCancelled\":false,\"isSLHit\":false,\"isReverseSLHit\":false,\"isSlPlaced\":false,\"isReverseTradePlaced\":false,\"isReverseSLPlaced\":false,\"isExited\":false,\"entryOrderId\":\"230310000542149\",\"entryType\":\"SELL\",\"strike\":0,\"isErrored\":false,\"pyramidCount\":0,\"pyramidQty\":0,\"stopLossCount\":0,\"isSLModified\":false,\"rentryCount\":0,\"tradeStrategy\":{\"tradeStrategyKey\":\"BNFABOST135\",\"index\":\"BNF\",\"entryTime\":\"09:35\",\"tradeValidity\":\"BTST\",\"exitTime\":\"09:34\",\"tradeDays\":\"All\",\"userId\":\"LTK728\",\"strikeSelectionType\":\"OTM2\",\"orderType\":\"SELL\",\"strikeType\":\"PE,CE\",\"entryOrderType\":\"MARKET\",\"exitOrderType\":\"MARKET\",\"simpleMomentum\":false,\"rangeBreak\":false,\"strategyEnabled\":true,\"reentry\":false,\"intradayLotSiz\":0,\"intradayLotSize\":0,\"lotSize\":25,\"positionalLotSize\":0,\"slType\":\"PERCENT\",\"slValue\":50.00,\"slOrderType\":\"LIMIT\",\"target\":false,\"aliasName\":\"bnf stbt sell 9:35 CNC sl 50 OTM2\"}},{\"stockName\":\"BANKNIFTY2331640300PE\",\"tradeDate\":\"2023-03-10\",\"qty\":25,\"dataKey\":\"5b0da0b2-5240-461f-8b72-a02b2867a969\",\"sellPrice\":252.5,\"sellTradedPrice\":252.5,\"stockId\":14147586,\"userId\":\"LTK728\",\"isOrderPlaced\":true,\"isSLCancelled\":false,\"isCancelled\":false,\"isSLHit\":false,\"isReverseSLHit\":false,\"isSlPlaced\":false,\"isReverseTradePlaced\":false,\"isReverseSLPlaced\":false,\"isExited\":false,\"entryOrderId\":\"230310000542164\",\"entryType\":\"SELL\",\"strike\":0,\"isErrored\":false,\"pyramidCount\":0,\"pyramidQty\":0,\"stopLossCount\":0,\"isSLModified\":false,\"rentryCount\":0,\"tradeStrategy\":{\"tradeStrategyKey\":\"BNFABOST135\",\"index\":\"BNF\",\"entryTime\":\"09:35\",\"tradeValidity\":\"BTST\",\"exitTime\":\"09:34\",\"tradeDays\":\"All\",\"userId\":\"LTK728\",\"strikeSelectionType\":\"OTM2\",\"orderType\":\"SELL\",\"strikeType\":\"PE,CE\",\"entryOrderType\":\"MARKET\",\"exitOrderType\":\"MARKET\",\"simpleMomentum\":false,\"rangeBreak\":false,\"strategyEnabled\":true,\"reentry\":false,\"intradayLotSiz\":0,\"intradayLotSize\":0,\"lotSize\":25,\"positionalLotSize\":0,\"slType\":\"PERCENT\",\"slValue\":50.00,\"slOrderType\":\"LIMIT\",\"target\":false,\"aliasName\":\"bnf stbt sell 9:35 CNC sl 50 OTM2\"}}]";
-            //List<TradeData> prodList = gson.fromJson(data, type);
-          //  openTrade.put("LTK728",prodList);
+        slCode(currentDateStr,currentHourMinStr,candleHourMinStr);
+        exitCode(currentDateStr,currentHourMinStr);
+    }
+    public void exitCode(String currentDateStr,String currentHourMinStr){
+        exitThread.submit(() -> {
             openTrade.entrySet().stream().forEach(userTradeData -> {
                 String userId=userTradeData.getKey();
-                LOGGER.info("Insde SL:"+userId);
+                List<TradeData> tradeDataList = userTradeData.getValue();
+                User user = userList.getUser().stream().filter(
+                        user1 ->  user1.getName().equals(userId)
+                ).findFirst().get();
+                BrokerWorker brokerWorker = workerFactory.getWorker(user);
+                try {
+                    List<Order> orders = brokerWorker.getOrders(user);
+                    List<Position> positions = brokerWorker.getPositions(user);
+                    tradeDataList.forEach(tradeData -> {
+                        TradeStrategy strategy = tradeData.getTradeStrategy();
+                        try {
+                            if ((tradeData.getTradeDate().equals(currentDateStr) && strategy != null && strategy.getTradeValidity().equals("MIS")) ||
+                                    (dateFormat.parse(tradeData.getTradeDate()).before(dateFormat.parse(currentDateStr)) && strategy != null && strategy.getTradeValidity().equals("BTST"))) {
+                                if (currentHourMinStr.equals(strategy.getExitTime())) {
+                                    orders.stream().filter(order -> ("OPEN".equals(order.status) || "TRIGGER PENDING".equals(order.status)) && order.orderId.equals(tradeData.getSlOrderId())).forEach(orderr -> {
+                                        try {
+                                            Order order = brokerWorker.cancelOrder(orderr.orderId, user);
+                                            tradeSedaQueue.sendTelemgramSeda("sl buy qty modified for nrml:" + tradeData.getUserId() + ": new sl qty:" + tradeData.getQty() + ":" + getAlgoName());
+                                        } catch (Exception e) {
+                                            LOGGER.info(e.getMessage());
+                                        } catch (KiteException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    });
+                                    positions.stream().filter(position -> (tradeData.getStockName().equals(position.tradingSymbol) && (position.netQuantity != 0)
+                                            && (("MIS".equals(position.product)&&strategy.getTradeValidity().equals("MIS")) || ("NRML".equals(position.product)&&strategy.getTradeValidity().equals("BTST"))))).forEach(position -> {
+                                        OrderParams orderParams = new OrderParams();
+                                        orderParams.tradingsymbol = position.tradingSymbol;
+                                        orderParams.exchange = "NFO";
+                                        orderParams.quantity = tradeData.getQty();
+                                        orderParams.orderType = "MARKET";
+                                        if("MIS".equals(strategy.getTradeValidity())){
+                                            orderParams.product = "MIS";
+                                        }else{
+                                            orderParams.product = "NRML";
+                                        }
+                                        if (position.netQuantity > 0 && "BUY".equals(tradeData.getEntryType())) {
+                                            orderParams.transactionType = "SELL";
+                                        }else {
+                                            orderParams.transactionType = "BUY";
+                                        }
+                                        orderParams.validity = "DAY";
+                                        com.zerodhatech.models.Order orderResponse = null;
+                                        try {
+                                            orderResponse = brokerWorker.placeOrder(orderParams, user, tradeData);
+                                            LOGGER.info(new Gson().toJson(orderResponse));
+                                            String message = MessageFormat.format("Closed Intraday Buy Position {0}", orderParams.tradingsymbol+":"+strategy.getAliasName());
+                                            LOGGER.info(message);
+                                            tradeData.isExited = true;
+                                            mapTradeDataToSaveOpenTradeDataEntity(tradeData, false);
+                                            tradeSedaQueue.sendTelemgramSeda(message + ":" + tradeData.getUserId() + ":" + getAlgoName());
+
+                                        } catch (Exception e) {
+                                            LOGGER.info("Error while exiting straddle order: " + e.getMessage());
+                                            tradeSedaQueue.sendTelemgramSeda("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.getMessage() + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position) + ":" + getAlgoName());
+                                            e.printStackTrace();
+                                        } catch (KiteException e) {
+                                            throw new RuntimeException(e);
+                                        }
+
+                                    });
+                                }
+                            }
+
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    });
+                } catch (IOException | KiteException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+        });
+    }
+    public void slCode(String currentDateStr,String currentHourMinStr,String candleHourMinStr){
+        sLMonitor.submit(() -> {
+            //  Type type = new TypeToken<List<TradeData>>(){}.getType();
+            // String data="[{\"stockName\":\"NIFTY2331617500PE\",\"tradeDate\":\"2023-03-10\",\"qty\":50,\"dataKey\":\"959a60d1-cb97-4006-850e-50653f62008a\",\"buyPrice\":168,\"buyTradedPrice\":168,\"stockId\":14236418,\"userId\":\"LTK728\",\"isOrderPlaced\":true,\"isSLCancelled\":false,\"isCancelled\":false,\"isSLHit\":false,\"isReverseSLHit\":false,\"isSlPlaced\":true,\"isReverseTradePlaced\":false,\"isReverseSLPlaced\":false,\"isExited\":false,\"entryOrderId\":\"230310000131603\",\"slOrderId\":\"230310000161496\",\"slPrice\":138,\"entryType\":\"BUY\",\"strike\":0,\"isErrored\":false,\"pyramidCount\":0,\"pyramidQty\":0,\"stopLossCount\":0,\"isSLModified\":false,\"rentryCount\":0,\"modifyDate\":\"2023-03-10\",\"tradeStrategy\":{\"tradeStrategyKey\":\"NFBCD15117btst\",\"index\":\"NF\",\"entryTime\":\"09:17\",\"tradeValidity\":\"BTST\",\"exitTime\":\"09:23\",\"tradeDays\":\"All\",\"userId\":\"LTK728\",\"strikeSelectionType\":\"PRICE_RANGE\",\"strikePriceRangeLow\":150.00,\"strikePriceRangeHigh\":200.00,\"orderType\":\"BUY\",\"strikeType\":\"PE,CE\",\"entryOrderType\":\"LIMIT\",\"exitOrderType\":\"MARKET\",\"simpleMomentum\":true,\"simpleMomentumType\":\"POINTS_UP\",\"simpleMomentumValue\":10.00,\"rangeBreak\":false,\"strategyEnabled\":true,\"reentry\":false,\"intradayLotSiz\":0,\"intradayLotSize\":1,\"lotSize\":50,\"positionalLotSize\":1,\"slType\":\"POINTS\",\"slValue\":30.00,\"slOrderType\":\"LIMIT\",\"target\":false,\"aliasName\":\"nifty buy 09:17 points 10 sl 30 CNC\"}},{\"stockName\":\"NIFTY2331617350CE\",\"tradeDate\":\"2023-03-10\",\"qty\":50,\"dataKey\":\"f11cade6-bea7-4a66-873f-58dfc63f568f\",\"buyPrice\":165,\"stockId\":14234626,\"userId\":\"LTK728\",\"isOrderPlaced\":false,\"isSLCancelled\":false,\"isCancelled\":false,\"isSLHit\":false,\"isReverseSLHit\":false,\"isSlPlaced\":false,\"isReverseTradePlaced\":false,\"isReverseSLPlaced\":false,\"isExited\":false,\"entryOrderId\":\"230310000131648\",\"entryType\":\"BUY\",\"strike\":0,\"isErrored\":false,\"pyramidCount\":0,\"pyramidQty\":0,\"stopLossCount\":0,\"isSLModified\":false,\"rentryCount\":0,\"tradeStrategy\":{\"tradeStrategyKey\":\"NFBCD15117btst\",\"index\":\"NF\",\"entryTime\":\"09:17\",\"tradeValidity\":\"BTST\",\"exitTime\":\"09:23\",\"tradeDays\":\"All\",\"userId\":\"LTK728\",\"strikeSelectionType\":\"PRICE_RANGE\",\"strikePriceRangeLow\":150.00,\"strikePriceRangeHigh\":200.00,\"orderType\":\"BUY\",\"strikeType\":\"PE,CE\",\"entryOrderType\":\"LIMIT\",\"exitOrderType\":\"MARKET\",\"simpleMomentum\":true,\"simpleMomentumType\":\"POINTS_UP\",\"simpleMomentumValue\":10.00,\"rangeBreak\":false,\"strategyEnabled\":true,\"reentry\":false,\"intradayLotSiz\":0,\"intradayLotSize\":1,\"lotSize\":50,\"positionalLotSize\":1,\"slType\":\"POINTS\",\"slValue\":30.00,\"slOrderType\":\"LIMIT\",\"target\":false,\"aliasName\":\"nifty buy 09:17 points 10 sl 30 CNC\"}},{\"stockName\":\"NIFTY2331617500PE\",\"tradeDate\":\"2023-03-10\",\"qty\":50,\"dataKey\":\"68f5c02b-9913-418b-a5d0-255201e5cf06\",\"sellPrice\":17372.95000000000072759576141834259033203125,\"stockId\":14236418,\"userId\":\"LTK728\",\"isOrderPlaced\":true,\"isSLCancelled\":false,\"isCancelled\":false,\"isSLHit\":false,\"isReverseSLHit\":false,\"isSlPlaced\":false,\"isReverseTradePlaced\":false,\"isReverseSLPlaced\":false,\"isExited\":false,\"entryType\":\"BUY\",\"strike\":0,\"isErrored\":true,\"pyramidCount\":0,\"pyramidQty\":0,\"stopLossCount\":0,\"isSLModified\":false,\"rentryCount\":0,\"tradeStrategy\":{\"tradeStrategyKey\":\"NORF23\",\"index\":\"NF\",\"entryTime\":\"09:23\",\"tradeValidity\":\"MIS\",\"exitTime\":\"15:10\",\"intradayExitTime\":\"15:10\",\"tradeDays\":\"All\",\"userId\":\"LTK728\",\"strikeSelectionType\":\"PRICE_RANGE\",\"strikePriceRangeLow\":150.00,\"strikePriceRangeHigh\":200.00,\"orderType\":\"BUY\",\"strikeType\":\"PE,CE\",\"entryOrderType\":\"LIMIT\",\"exitOrderType\":\"MARKET\",\"simpleMomentum\":false,\"rangeBreak\":true,\"strategyEnabled\":true,\"rangeBreakTime\":\"09:23\",\"rangeStartTime\":\"09:16\",\"rangeBreakSide\":\"High,Low\",\"rangeBreakInstrument\":\"INDEX\",\"reentry\":false,\"intradayLotSiz\":0,\"intradayLotSize\":1,\"lotSize\":50,\"positionalLotSize\":0,\"slType\":\"POINTS\",\"slValue\":30.00,\"slOrderType\":\"LIMIT\",\"target\":false,\"aliasName\":\"nifty buy 09-16 to 09:23 ORB sl 30\",\"rangeLow\":0,\"rangeHigh\":17413.9000000000014551915228366851806640625}},{\"stockName\":\"BANKNIFTY2331640700CE\",\"tradeDate\":\"2023-03-10\",\"qty\":25,\"dataKey\":\"22c3f32c-503c-494c-aff4-55fbe5343bfa\",\"sellPrice\":222.2,\"sellTradedPrice\":222.2,\"stockId\":14149378,\"userId\":\"LTK728\",\"isOrderPlaced\":true,\"isSLCancelled\":false,\"isCancelled\":false,\"isSLHit\":false,\"isReverseSLHit\":false,\"isSlPlaced\":false,\"isReverseTradePlaced\":false,\"isReverseSLPlaced\":false,\"isExited\":false,\"entryOrderId\":\"230310000542149\",\"entryType\":\"SELL\",\"strike\":0,\"isErrored\":false,\"pyramidCount\":0,\"pyramidQty\":0,\"stopLossCount\":0,\"isSLModified\":false,\"rentryCount\":0,\"tradeStrategy\":{\"tradeStrategyKey\":\"BNFABOST135\",\"index\":\"BNF\",\"entryTime\":\"09:35\",\"tradeValidity\":\"BTST\",\"exitTime\":\"09:34\",\"tradeDays\":\"All\",\"userId\":\"LTK728\",\"strikeSelectionType\":\"OTM2\",\"orderType\":\"SELL\",\"strikeType\":\"PE,CE\",\"entryOrderType\":\"MARKET\",\"exitOrderType\":\"MARKET\",\"simpleMomentum\":false,\"rangeBreak\":false,\"strategyEnabled\":true,\"reentry\":false,\"intradayLotSiz\":0,\"intradayLotSize\":0,\"lotSize\":25,\"positionalLotSize\":0,\"slType\":\"PERCENT\",\"slValue\":50.00,\"slOrderType\":\"LIMIT\",\"target\":false,\"aliasName\":\"bnf stbt sell 9:35 CNC sl 50 OTM2\"}},{\"stockName\":\"BANKNIFTY2331640300PE\",\"tradeDate\":\"2023-03-10\",\"qty\":25,\"dataKey\":\"5b0da0b2-5240-461f-8b72-a02b2867a969\",\"sellPrice\":252.5,\"sellTradedPrice\":252.5,\"stockId\":14147586,\"userId\":\"LTK728\",\"isOrderPlaced\":true,\"isSLCancelled\":false,\"isCancelled\":false,\"isSLHit\":false,\"isReverseSLHit\":false,\"isSlPlaced\":false,\"isReverseTradePlaced\":false,\"isReverseSLPlaced\":false,\"isExited\":false,\"entryOrderId\":\"230310000542164\",\"entryType\":\"SELL\",\"strike\":0,\"isErrored\":false,\"pyramidCount\":0,\"pyramidQty\":0,\"stopLossCount\":0,\"isSLModified\":false,\"rentryCount\":0,\"tradeStrategy\":{\"tradeStrategyKey\":\"BNFABOST135\",\"index\":\"BNF\",\"entryTime\":\"09:35\",\"tradeValidity\":\"BTST\",\"exitTime\":\"09:34\",\"tradeDays\":\"All\",\"userId\":\"LTK728\",\"strikeSelectionType\":\"OTM2\",\"orderType\":\"SELL\",\"strikeType\":\"PE,CE\",\"entryOrderType\":\"MARKET\",\"exitOrderType\":\"MARKET\",\"simpleMomentum\":false,\"rangeBreak\":false,\"strategyEnabled\":true,\"reentry\":false,\"intradayLotSiz\":0,\"intradayLotSize\":0,\"lotSize\":25,\"positionalLotSize\":0,\"slType\":\"PERCENT\",\"slValue\":50.00,\"slOrderType\":\"LIMIT\",\"target\":false,\"aliasName\":\"bnf stbt sell 9:35 CNC sl 50 OTM2\"}}]";
+            //List<TradeData> prodList = gson.fromJson(data, type);
+            //  openTrade.put("LTK728",prodList);
+            openTrade.entrySet().stream().forEach(userTradeData -> {
+                String userId=userTradeData.getKey();
+                //   LOGGER.info("Insde SL:"+userId);
 
                 List<TradeData> tradeData=userTradeData.getValue();
                 User user = userList.getUser().stream().filter(
@@ -437,8 +571,8 @@ public class TradeEngine {
 
                 try {
                     List<Order> orderList = brokerWorker.getOrders(user);
-                   LOGGER.info("OrderList:"+gson.toJson(orderList));
-                    LOGGER.info("TradeList:"+gson.toJson(tradeData));
+                    //     LOGGER.info("OrderList:"+gson.toJson(orderList));
+                    //  LOGGER.info("TradeList:"+gson.toJson(tradeData));
                     tradeData.stream().filter(order -> order.getEntryOrderId() != null && !order.isExited).forEach(trendTradeData -> {
                         TradeStrategy strategy=trendTradeData.getTradeStrategy();
                         orderList.forEach(order -> {
@@ -447,10 +581,10 @@ public class TradeEngine {
                                     if ("CANCELLED".equals(order.status)) {
                                         trendTradeData.isSLCancelled = true;
 
-                                        String message = MessageFormat.format("Broker Cancelled SL Order for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName());
+                                        String message = MessageFormat.format("Broker Cancelled SL Order for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName()+":"+strategy.getAliasName());
                                         LOGGER.info(message);
                                         try {
-                                            sendMessage.sendToTelegram(message, telegramToken);
+                                            tradeSedaQueue.sendTelemgramSeda(message);
                                         } catch (Exception e) {
                                             LOGGER.info("error:" + e);
                                         }
@@ -473,107 +607,227 @@ public class TradeEngine {
                                                 trendTradeData.setSellTradedPrice(new BigDecimal(order.averagePrice));
                                             }
                                             //BigDecimal slipage = (trendTradeData.getBuyPrice().subtract(trendTradeData.getBuyTradedPrice())).multiply(new BigDecimal(50)).setScale(0, RoundingMode.UP);
-                                            String message = MessageFormat.format("Order Executed for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName());
+                                            String message = MessageFormat.format("Order Executed for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName()+":"+strategy.getAliasName());
                                             LOGGER.info(message);
-                                            sendMessage.sendToTelegram(message, telegramToken);
+                                            tradeSedaQueue.sendTelemgramSeda(message);
                                         } catch (Exception e) {
                                             e.printStackTrace();
                                         }
                                     }
-                                }
-                                if (!trendTradeData.isSlPlaced && trendTradeData.isOrderPlaced && trendTradeData.getEntryOrderId().equals(order.orderId)) {
-                                //    if (("COMPLETE".equals(order.status) || "TRADED".equals(order.status))) {
-                                            try {
-                                                // mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, true);
-                                                OrderParams orderParams = new OrderParams();
-                                                orderParams.tradingsymbol = trendTradeData.getStockName();
-                                                orderParams.exchange = "NFO";
-                                                orderParams.quantity = trendTradeData.getQty();
-                                                orderParams.orderType = "SL";
-                                                if("MIS".equals(strategy.getTradeValidity())){
-                                                    orderParams.product = "MIS";
-                                                }else{
-                                                    orderParams.product = "NRML";
-                                                }
-                                                orderParams.validity = "DAY";
-                                                com.zerodhatech.models.Order orderd = null;
-                                                BigDecimal price;
-                                                BigDecimal triggerPriceTemp;
-                                                String slType=strategy.getSlType();
-                                                BigDecimal slValue=strategy.getSlValue();
-                                                if ("BUY".equals(order.transactionType)) {
-                                                    if ("POINTS".equals(slType)) {
-                                                        triggerPriceTemp = (trendTradeData.getBuyPrice().subtract(slValue)).setScale(0, RoundingMode.HALF_UP);
-                                                    }else {
-                                                        BigDecimal slPoints=MathUtils.percentageValueOfAmount(slValue,trendTradeData.getBuyPrice());
-                                                        triggerPriceTemp = (trendTradeData.getBuyPrice().subtract(slPoints)).setScale(0, RoundingMode.HALF_UP);
-                                                    }
-                                                     price = triggerPriceTemp.subtract(triggerPriceTemp.divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP);
-                                                     orderParams.transactionType = "SELL";
-                                                    LOGGER.info("buy price:" + trendTradeData.getBuyPrice().doubleValue() + " sl price: " + triggerPriceTemp.doubleValue());
-                                                }else{
-                                                    if ("POINTS".equals(slType)) {
-                                                        triggerPriceTemp = (trendTradeData.getSellPrice().add(slValue)).setScale(0, RoundingMode.HALF_UP);
-                                                    }else {
-                                                        BigDecimal slPoints=MathUtils.percentageValueOfAmount(slValue,trendTradeData.getSellPrice());
-                                                        triggerPriceTemp = (trendTradeData.getSellPrice().add(slPoints)).setScale(0, RoundingMode.HALF_UP);
-                                                    }
-                                                     price = triggerPriceTemp.add(triggerPriceTemp.divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP);
-                                                    orderParams.transactionType = "BUY";
-                                                    LOGGER.info("sell price:" + trendTradeData.getSellPrice().doubleValue() + " sl price: " + triggerPriceTemp.doubleValue());
-                                                }
-                                                orderParams.triggerPrice = triggerPriceTemp.doubleValue();
-                                                orderParams.price = price.doubleValue();
-                                                trendTradeData.setSlPrice(triggerPriceTemp);
-                                                try {
-                                                    LOGGER.info("input:" + gson.toJson(orderParams));
-                                                    orderd =brokerWorker.placeOrder(orderParams,user,trendTradeData);
-                                                    trendTradeData.isSlPlaced = true;
-                                                    trendTradeData.setSlOrderId(orderd.orderId);
-                                                    mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, false);
-                                                    try {
-                                                        LOGGER.info("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL");
-                                                        sendMessage.sendToTelegram("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL" + ":" + getAlgoName(), telegramToken);
-                                                    } catch (Exception e) {
-                                                        LOGGER.info("error:" + e);
-                                                    }
-                                                } catch (Exception e) {
-                                                    // tradeData.isErrored = true;
-                                                    LOGGER.info("Nifty option order: " + e.getMessage() + ":" + user.getName());
-                                                    sendMessage.sendToTelegram("Nifty option order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + order.statusMessage + ":" + getAlgoName(), telegramToken);
-                                                    //e.printStackTrace();
-                                                } catch (KiteException e) {
-                                                    throw new RuntimeException(e);
-                                                }
+                                    if(strategy.isReentry()){
 
-                                            } catch (Exception e) {
-                                                LOGGER.info("error while placing sl:" + e.getMessage() + trendTradeData.getEntryOrderId() + ":" + trendTradeData.getStockName());
+                                    }
+                                    if(strategy.isReentry()){
+
+                                    }
+                                }
+                                if ( trendTradeData.isOrderPlaced && trendTradeData.getEntryOrderId().equals(order.orderId)) {
+                                    if(!trendTradeData.isSlPlaced){
+                                        //    if (("COMPLETE".equals(order.status) || "TRADED".equals(order.status))) {
+                                        try {
+                                            // mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, true);
+                                            OrderParams orderParams = new OrderParams();
+                                            orderParams.tradingsymbol = trendTradeData.getStockName();
+                                            orderParams.exchange = "NFO";
+                                            orderParams.quantity = trendTradeData.getQty();
+                                            orderParams.orderType = "SL";
+                                            if("MIS".equals(strategy.getTradeValidity())){
+                                                orderParams.product = "MIS";
+                                            }else{
+                                                orderParams.product = "NRML";
                                             }
-                                      //  }
+                                            orderParams.validity = "DAY";
+                                            com.zerodhatech.models.Order orderd = null;
+                                            BigDecimal price;
+                                            BigDecimal triggerPriceTemp;
+                                            String slType=strategy.getSlType();
+                                            BigDecimal slValue=strategy.getSlValue();
+                                            if ("BUY".equals(order.transactionType)) {
+                                                if ("POINTS".equals(slType)) {
+                                                    triggerPriceTemp = (trendTradeData.getBuyPrice().subtract(slValue)).setScale(0, RoundingMode.HALF_UP);
+                                                }else {
+                                                    BigDecimal slPoints=MathUtils.percentageValueOfAmount(slValue,trendTradeData.getBuyPrice());
+                                                    triggerPriceTemp = (trendTradeData.getBuyPrice().subtract(slPoints)).setScale(0, RoundingMode.HALF_UP);
+                                                }
+                                                price = triggerPriceTemp.subtract(triggerPriceTemp.divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP);
+                                                orderParams.transactionType = "SELL";
+                                                LOGGER.info("buy price:" + trendTradeData.getBuyPrice().doubleValue() + " sl price: " + triggerPriceTemp.doubleValue());
+                                            }else{
+                                                if ("POINTS".equals(slType)) {
+                                                    triggerPriceTemp = (trendTradeData.getSellPrice().add(slValue)).setScale(0, RoundingMode.HALF_UP);
+                                                }else {
+                                                    BigDecimal slPoints=MathUtils.percentageValueOfAmount(slValue,trendTradeData.getSellPrice());
+                                                    triggerPriceTemp = (trendTradeData.getSellPrice().add(slPoints)).setScale(0, RoundingMode.HALF_UP);
+                                                }
+                                                price = triggerPriceTemp.add(triggerPriceTemp.divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP);
+                                                orderParams.transactionType = "BUY";
+                                                LOGGER.info("sell price:" + trendTradeData.getSellPrice().doubleValue() + " sl price: " + triggerPriceTemp.doubleValue());
+                                            }
+                                            orderParams.triggerPrice = triggerPriceTemp.doubleValue();
+                                            orderParams.price = price.doubleValue();
+                                            trendTradeData.setSlPrice(triggerPriceTemp);
+                                            try {
+                                                LOGGER.info("input:" + gson.toJson(orderParams));
+                                                orderd =brokerWorker.placeOrder(orderParams,user,trendTradeData);
+                                                trendTradeData.isSlPlaced = true;
+                                                trendTradeData.setSlOrderId(orderd.orderId);
+                                                mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, false);
+                                                try {
+                                                    LOGGER.info("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL");
+                                                    tradeSedaQueue.sendTelemgramSeda("Nifty option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL" + ":" + getAlgoName()+":"+strategy.getAliasName());
+                                                } catch (Exception e) {
+                                                    LOGGER.info("error:" + e);
+                                                }
+                                            } catch (Exception e) {
+                                                // tradeData.isErrored = true;
+                                                LOGGER.info("rror while placing sl order: " + e.getMessage() + ":" + user.getName());
+                                                tradeSedaQueue.sendTelemgramSeda("Error while placing sl order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + e.getMessage() + ":" + getAlgoName()+":"+strategy.getAliasName());
+                                                //e.printStackTrace();
+                                            } catch (KiteException e) {
+                                                throw new RuntimeException(e);
+                                            }
+
+                                        } catch (Exception e) {
+                                            LOGGER.info("error while placing sl:" + e.getMessage() + trendTradeData.getEntryOrderId() + ":" + trendTradeData.getStockName());
+                                        }
+                                    }/*else {
+                                        //TODO: add time check
+                                        tradeSedaQueue.sendTelemgramSeda("Error while placing sl order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + e.getMessage() + ":" + getAlgoName()+":"+strategy.getAliasName());
+                                    }*/
 
                                 }
-                                if (("COMPLETE".equals(order.status) || "TRADED".equals(order.status)) && "SELL".equals(order.transactionType) && order.orderId.equals(trendTradeData.getSlOrderId()) && !trendTradeData.isExited && trendTradeData.isSlPlaced) {
+                                if (("COMPLETE".equals(order.status) || "TRADED".equals(order.status))  && order.orderId.equals(trendTradeData.getSlOrderId()) && !trendTradeData.isExited && trendTradeData.isSlPlaced) {
                                     trendTradeData.isSLHit = true;
                                     trendTradeData.isExited = true;
                                     trendTradeData.setExitOrderId(order.orderId);
                                     trendTradeData.setSellPrice(trendTradeData.getSlPrice());
                                     trendTradeData.setSellTradedPrice(new BigDecimal(order.averagePrice));
                                     BigDecimal slipage = (trendTradeData.getSellTradedPrice().subtract(trendTradeData.getSellPrice())).multiply(new BigDecimal(25)).setScale(0, RoundingMode.UP);
-                                    String message = MessageFormat.format("SL Hit for {0}" + ": sl sell slipage" + slipage.toString(), trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName());
+                                    String message = MessageFormat.format("SL Hit for {0}" + ": sl sell slipage" + slipage.toString(), trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName()+":"+strategy.getAliasName()+":"+strategy.getAliasName());
                                     LOGGER.info(message);
-                                    sendMessage.sendToTelegram(message, telegramToken);
-                                         mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, false);
+                                    tradeSedaQueue.sendTelemgramSeda(message);
+                                    mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, false);
                                 }
 
                             } else if ("REJECTED".equals(order.status) && !trendTradeData.isErrored && order.orderId.equals(trendTradeData.getSlOrderId())) {
-                                String message = MessageFormat.format("SL order placement rejected for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + order.status + ":" + order.statusMessage + ":" + getAlgoName());
+                                String message = MessageFormat.format("SL order placement rejected for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + order.status + ":" + order.statusMessage + ":" + getAlgoName()+":"+strategy.getAliasName());
                                 LOGGER.info(message);
                                 trendTradeData.isErrored = true;
-                                sendMessage.sendToTelegram(message, telegramToken);
+                                tradeSedaQueue.sendTelemgramSeda(message);
                             }
 
 
                         });
+                        try {
+                            LocalTime currentTime = LocalTime.now();
+                            LocalTime cncSLTime = LocalTime.of(9, 16);
+                            if(dateFormat.parse(trendTradeData.getTradeDate()).before(dateFormat.parse(currentDateStr)) && strategy != null && strategy.getTradeValidity().equals("BTST")
+                                    && isTimeGreaterThan(currentTime, cncSLTime)){
+                                if (!trendTradeData.isSlPlaced && trendTradeData.isOrderPlaced) {
+                                    //    if (("COMPLETE".equals(order.status) || "TRADED".equals(order.status))) {
+                                    try {
+                                        // mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, true);
+                                        double strikePrice=0;
+                                        try {
+                                            String historicURL1 = "https://api.kite.trade/instruments/historical/" + trendTradeData.getStockId() + "/minute?from=" + currentDateStr + "+09:00:00&to=" + currentDateStr + "+15:35:00";
+                                            String priceResponse = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL1), String.valueOf(trendTradeData.getStockId()), currentHourMinStr);
+                                            HistoricalData historicalStrikeData = new HistoricalData();
+                                            JSONObject strikeJson = new JSONObject(priceResponse);
+                                            Optional<HistoricalData> historicalStrikeDataLastData = Optional.empty();
+                                            String strikeStatus = strikeJson.getString("status");
+                                            if (!strikeStatus.equals("error")) {
+                                                historicalStrikeData.parseResponse(strikeJson);
+
+                                                historicalStrikeDataLastData = historicalStrikeData.dataArrayList.stream().filter(candle -> {
+                                                    try {
+                                                        Date candleDateTime = candleDateTimeFormat.parse(candle.timeStamp);
+                                                        return hourMinFormat.format(candleDateTime).equals(candleHourMinStr);
+                                                    } catch (ParseException e) {
+                                                        throw new RuntimeException(e);
+                                                    }
+                                                }).findFirst();
+                                                strikePrice = historicalStrikeDataLastData.get().close;
+                                            }
+                                        }catch (Exception e){
+                                            LOGGER.error("error while getting current price of script:"+trendTradeData.getStockName());
+                                        }
+                                        OrderParams orderParams = new OrderParams();
+                                        orderParams.tradingsymbol = trendTradeData.getStockName();
+                                        orderParams.exchange = "NFO";
+                                        orderParams.quantity = trendTradeData.getQty();
+                                        orderParams.orderType = "SL";
+                                        if("MIS".equals(strategy.getTradeValidity())){
+                                            orderParams.product = "MIS";
+                                        }else{
+                                            orderParams.product = "NRML";
+                                        }
+                                        orderParams.validity = "DAY";
+                                        com.zerodhatech.models.Order orderd = null;
+                                        BigDecimal price;
+                                        BigDecimal triggerPriceTemp;
+                                        String slType=strategy.getSlType();
+                                        BigDecimal slValue=strategy.getSlValue();
+                                        if ("BUY".equals(trendTradeData.getEntryType())) {
+                                            if ("POINTS".equals(slType)) {
+                                                triggerPriceTemp = (trendTradeData.getBuyPrice().subtract(slValue)).setScale(0, RoundingMode.HALF_UP);
+                                            }else {
+                                                BigDecimal slPoints=MathUtils.percentageValueOfAmount(slValue,trendTradeData.getBuyPrice());
+                                                triggerPriceTemp = (trendTradeData.getBuyPrice().subtract(slPoints)).setScale(0, RoundingMode.HALF_UP);
+                                            }
+                                            price = triggerPriceTemp.subtract(triggerPriceTemp.divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP);
+                                            orderParams.transactionType = "SELL";
+                                            LOGGER.info("buy price:" + trendTradeData.getBuyPrice().doubleValue() + " sl price: " + triggerPriceTemp.doubleValue());
+                                            if(strikePrice >0 && strikePrice<triggerPriceTemp.doubleValue()){
+                                                orderParams.orderType = "MARKET";
+                                            }
+                                        }else{
+                                            if ("POINTS".equals(slType)) {
+                                                triggerPriceTemp = (trendTradeData.getSellPrice().add(slValue)).setScale(0, RoundingMode.HALF_UP);
+                                            }else {
+                                                BigDecimal slPoints=MathUtils.percentageValueOfAmount(slValue,trendTradeData.getSellPrice());
+                                                triggerPriceTemp = (trendTradeData.getSellPrice().add(slPoints)).setScale(0, RoundingMode.HALF_UP);
+                                            }
+                                            price = triggerPriceTemp.add(triggerPriceTemp.divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP);
+                                            orderParams.transactionType = "BUY";
+                                            LOGGER.info("sell price:" + trendTradeData.getSellPrice().doubleValue() + " sl price: " + triggerPriceTemp.doubleValue());
+                                            if(strikePrice >0 && triggerPriceTemp.doubleValue()<strikePrice){
+                                                orderParams.orderType = "MARKET";
+                                            }
+                                        }
+                                        orderParams.triggerPrice = triggerPriceTemp.doubleValue();
+                                        orderParams.price = price.doubleValue();
+                                        trendTradeData.setSlPrice(triggerPriceTemp);
+                                        try {
+                                            LOGGER.info("input:" + gson.toJson(orderParams));
+                                            orderd =brokerWorker.placeOrder(orderParams,user,trendTradeData);
+                                            trendTradeData.isSlPlaced = true;
+                                            trendTradeData.setSlOrderId(orderd.orderId);
+                                            mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, false);
+                                            try {
+                                                LOGGER.info("placing sl for option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL");
+                                                tradeSedaQueue.sendTelemgramSeda("option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL" + ":" + getAlgoName()+":"+strategy.getAliasName());
+                                            } catch (Exception e) {
+                                                LOGGER.info("error:" + e);
+                                            }
+                                        } catch (Exception e) {
+                                            // tradeData.isErrored = true;
+                                            LOGGER.info("error while placing sl option order: " + e.getMessage() + ":" + user.getName());
+                                            tradeSedaQueue.sendTelemgramSeda("option order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status:" +e.getMessage()+": algo:"+ getAlgoName()+":"+strategy.getAliasName());
+                                            //e.printStackTrace();
+                                        } catch (KiteException e) {
+                                            throw new RuntimeException(e);
+                                        }
+
+                                    } catch (Exception e) {
+                                        LOGGER.info("error while placing sl:" + e.getMessage() + trendTradeData.getEntryOrderId() + ":" + trendTradeData.getStockName());
+                                    }
+                                    //  }
+
+                                }
+                            }
+                        } catch (ParseException e) {
+                            throw new RuntimeException(e);
+                        }
                     });
                 }catch (Exception e){
                     e.printStackTrace();
@@ -583,85 +837,15 @@ public class TradeEngine {
             });
 
         });
-
-        exitThread.submit(() -> {
-            openTrade.entrySet().stream().forEach(userTradeData -> {
-                String userId=userTradeData.getKey();
-                List<TradeData> tradeDataList = userTradeData.getValue();
-                User user = userList.getUser().stream().filter(
-                        user1 ->  user1.getName().equals(userId)
-                ).findFirst().get();
-                BrokerWorker brokerWorker = workerFactory.getWorker(user);
-                try {
-                    List<Order> orders = brokerWorker.getOrders(user);
-                    List<Position> positions = brokerWorker.getPositions(user);
-                    tradeDataList.forEach(tradeData -> {
-                        TradeStrategy strategy = tradeData.getTradeStrategy();
-                        try {
-                            if ((tradeData.getTradeDate().equals(currentDateStr) && strategy != null && strategy.getTradeValidity().equals("MIS")) || (dateFormat.parse(tradeData.getTradeDate()).before(dateFormat.parse(currentDateStr)) && strategy != null && strategy.getTradeValidity().equals("BTST"))) {
-                                if (currentHourMinStr.equals(strategy.getExitTime())) {
-                                                            orders.stream().filter(order -> ("OPEN".equals(order.status) || "TRIGGER PENDING".equals(order.status)) && order.orderId.equals(tradeData.getSlOrderId())).forEach(orderr -> {
-                                                                try {
-                                                                    Order order = brokerWorker.cancelOrder(orderr.orderId, user);
-                                                                    sendMessage.sendToTelegram("sl buy qty modified for nrml:" + tradeData.getUserId() + ": new sl qty:" + tradeData.getQty() + ":" + getAlgoName(), telegramToken);
-                                                                } catch (Exception e) {
-                                                                    LOGGER.info(e.getMessage());
-                                                                } catch (KiteException e) {
-                                                                    throw new RuntimeException(e);
-                                                                }
-                                                            });
-                                                            positions.stream().filter(position -> (tradeData.getStockName().equals(position.tradingSymbol) && (position.netQuantity != 0))).forEach(position -> {
-                                                                OrderParams orderParams = new OrderParams();
-                                                                orderParams.tradingsymbol = position.tradingSymbol;
-                                                                orderParams.exchange = "NFO";
-                                                                orderParams.quantity = tradeData.getQty();
-                                                                orderParams.orderType = "MARKET";
-                                                                if("MIS".equals(strategy.getTradeValidity())){
-                                                                    orderParams.product = "MIS";
-                                                                }else{
-                                                                    orderParams.product = "NRML";
-                                                                }
-                                                                if (position.netQuantity > 0 && "BUY".equals(tradeData.getEntryType())) {
-                                                                    orderParams.transactionType = "SELL";
-                                                                }else {
-                                                                    orderParams.transactionType = "BUY";
-                                                                }
-                                                                    orderParams.validity = "DAY";
-                                                                    com.zerodhatech.models.Order orderResponse = null;
-                                                                    try {
-                                                                           orderResponse = brokerWorker.placeOrder(orderParams, user, tradeData);
-                                                                        LOGGER.info(new Gson().toJson(orderResponse));
-                                                                        String message = MessageFormat.format("Closed Intraday Buy Position {0}", orderParams.tradingsymbol);
-                                                                        LOGGER.info(message);
-                                                                        tradeData.isExited = true;
-                                                                        mapTradeDataToSaveOpenTradeDataEntity(tradeData, false);
-                                                                        sendMessage.sendToTelegram(message + ":" + tradeData.getUserId() + ":" + getAlgoName(), telegramToken);
-
-                                                                    } catch (Exception e) {
-                                                                        LOGGER.info("Error while exiting straddle order: " + e.getMessage());
-                                                                        sendMessage.sendToTelegram("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.getMessage() + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position) + ":" + getAlgoName(), telegramToken);
-                                                                        e.printStackTrace();
-                                                                    } catch (KiteException e) {
-                                                                        throw new RuntimeException(e);
-                                                                    }
-
-                                                                        });
-                                                        }
-                                }
-
-
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    });
-                } catch (IOException | KiteException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-
-        });
     }
-
+    public static boolean isTimeGreaterThan(LocalTime time, LocalTime compareTo) {
+        return time.isAfter(compareTo) ||  time.equals(compareTo);
+    }
+    public static void main(String[] args){
+        LocalTime currentTime = LocalTime.now();
+        LocalTime cncSLTime = LocalTime.of(21, 27);
+        System.out.println(isTimeGreaterThan(currentTime,cncSLTime));
+    }
     public void  orbRangeBreak(TradeStrategy strategy,HistoricalData historicalData,String currentDateStr,String currentHourMinStr,String candleHourMinStr,HistoricalData lastHistoricData) throws Exception {
 
         Map<String, Double> orbHighLow = new HashMap<>();
@@ -676,13 +860,16 @@ public class TradeEngine {
                         if (lastHistoricData.close < strategy.getRangeLow().doubleValue()) {
                             Map<String, StrikeData> rangeSelected;
                             rangeSelected = mathUtils.getPriceRangeSortedWithLowRangeNifty(currentDateStr, strategy.getStrikePriceRangeHigh().intValue(), strategy.getStrikePriceRangeLow().intValue(), candleHourMinStr, strategy.getIndex());
-                            Map.Entry<String, StrikeData> finalSelected = rangeSelected.entrySet().stream().filter(stringStrikeDataEntry -> stringStrikeDataEntry.getKey().equals("PE")).findFirst().get();
+                            Map.Entry<String, StrikeData> finalSelected;
+                            if("SELL".equals(strategy.getOrderType())) {
+                                finalSelected = rangeSelected.entrySet().stream().filter(stringStrikeDataEntry -> stringStrikeDataEntry.getKey().equals("CE")).findFirst().get();
+                            }else {
+                                finalSelected = rangeSelected.entrySet().stream().filter(stringStrikeDataEntry -> stringStrikeDataEntry.getKey().equals("PE")).findFirst().get();
+                            }
                             TradeData tradeData = new TradeData();
-                            tradeData.setEntryType("BUY");
-                            tradeData.isOrderPlaced = true;
-                            tradeData.setQty(strategy.getLotSize());
+
                         //    tradeData.setSellTime(candleDateTimeFormat.format(lastHistoricData.timeStamp));
-                            tradeData.setSellPrice(new BigDecimal(lastHistoricData.close));
+                           // tradeData.setSellPrice(new BigDecimal(lastHistoricData.close));
                             tradeData.setStockId(Integer.parseInt(finalSelected.getValue().getZerodhaId()));
                             OrderParams orderParams=new OrderParams();
                             orderParams.tradingsymbol = finalSelected.getValue().getZerodhaSymbol();
@@ -699,57 +886,61 @@ public class TradeEngine {
                             DayOfWeek dow = localDate.getDayOfWeek();
                             String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
                             //TODO get all users subsribed to this.
-                            userList.getUser().stream().filter(
-                                    user -> user.getName().equals(strategy.getUserId())
-                            ).forEach(user -> {
-                                BrokerWorker brokerWorker = workerFactory.getWorker(user);
+                            String[] userIdAr=strategy.getUserId().split(",");
+                            Arrays.stream(userIdAr).forEach(userId->{
+                                String[] userQuantity=strategy.getUserId().split("-");
+                                userList.getUser().stream().filter(
+                                        user -> user.getName().equals(userQuantity[0])
+                                ).forEach(user -> {
+                                            BrokerWorker brokerWorker = workerFactory.getWorker(user);
 
-                                Order order = null;
-                                orderParams.quantity = strategy.getLotSize();
+                                            Order order = null;
+                                            int lot=strategy.getLotSize()*Integer.valueOf(userQuantity[1]);
+                                            orderParams.quantity = lot;
+                                            String dataKey = UUID.randomUUID().toString();
+                                            tradeData.setDataKey(dataKey);
 
-                                String dataKey = UUID.randomUUID().toString();
-                                tradeData.setDataKey(dataKey);
+                                            tradeData.setStockName(finalSelected.getValue().getZerodhaSymbol());
+                                            try {
+                                                //TODO set sl price, entry price, exit date
+                                                tradeData.setQty(lot);
+                                                tradeData.setEntryType(strategy.getOrderType());
+                                                tradeData.setUserId(user.getName());
+                                                tradeData.setTradeDate(currentDateStr);
+                                                tradeData.setStockId(Integer.valueOf(finalSelected.getValue().getZerodhaId()));
+                                                tradeData.setTradeStrategy(strategy);
+                                                order = brokerWorker.placeOrder(orderParams, user, tradeData);
+                                                if (order != null) tradeData.setEntryOrderId(order.orderId);
+                                                //  tradeData.isOrderPlaced = true;
 
-                                tradeData.setStockName(finalSelected.getValue().getZerodhaSymbol());
-                                try {
-                                    //TODO set sl price, entry price, exit date
-                                    tradeData.setQty(strategy.getLotSize());
-                                    tradeData.setEntryType(strategy.getOrderType());
-                                    tradeData.setUserId(user.getName());
-                                    tradeData.setTradeDate(currentDateStr);
-                                    tradeData.setStockId(Integer.valueOf(finalSelected.getValue().getZerodhaId()));
-                                    tradeData.setTradeStrategy(strategy);
-                                    order = brokerWorker.placeOrder(orderParams, user, tradeData);
-                                    if (order != null) tradeData.setEntryOrderId(order.orderId);
-                                    //  tradeData.isOrderPlaced = true;
+                                                mapTradeDataToSaveOpenTradeDataEntity(tradeData, true);
+                                                List<TradeData> tradeDataList = openTrade.get(user.getName());
+                                                if (tradeDataList == null) {
+                                                    tradeDataList = new ArrayList<>();
+                                                }
+                                                tradeDataList.add(tradeData);
+                                                openTrade.put(user.getName(), tradeDataList);
+                                                LOGGER.info("trade data" + new Gson().toJson(tradeData));
+                                                tradeSedaQueue.sendTelemgramSeda("Options traded for user:" + user.getName() + " strike: " + finalSelected.getValue().getZerodhaSymbol() + ":" + strategy.getAliasName());
+                                            } catch (Exception e) {
+                                                List<TradeData> tradeDataList = openTrade.get(user.getName());
+                                                if (tradeDataList == null) {
+                                                    tradeDataList = new ArrayList<>();
+                                                }
+                                                tradeDataList.add(tradeData);
+                                                openTrade.put(user.getName(), tradeDataList);
+                                                tradeData.isErrored = true;
+                                                LOGGER.info("Error while placing straddle order: " + e);
+                                                e.printStackTrace();
+                                                tradeSedaQueue.sendTelemgramSeda("Error while placing straddle order: " + finalSelected.getValue().getZerodhaSymbol() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName());
 
-                                    mapTradeDataToSaveOpenTradeDataEntity(tradeData, true);
-                                    List<TradeData> tradeDataList = openTrade.get(user.getName());
-                                    if (tradeDataList == null) {
-                                        tradeDataList = new ArrayList<>();
-                                    }
-                                    tradeDataList.add(tradeData);
-                                    openTrade.put(user.getName(), tradeDataList);
-                                    LOGGER.info("trade data" + new Gson().toJson(tradeData));
-                                    sendMessage.sendToTelegram("Options traded for user:" + user.getName() + " strike: " + finalSelected.getValue().getZerodhaSymbol() + ":" + strategy.getAliasName(), telegramToken);
-                                } catch (Exception e) {
-                                    List<TradeData> tradeDataList = openTrade.get(user.getName());
-                                    if (tradeDataList == null) {
-                                        tradeDataList = new ArrayList<>();
-                                    }
-                                    tradeDataList.add(tradeData);
-                                    openTrade.put(user.getName(), tradeDataList);
-                                    tradeData.isErrored = true;
-                                    LOGGER.info("Error while placing straddle order: " + e);
-                                    e.printStackTrace();
-                                    sendMessage.sendToTelegram("Error while placing straddle order: " + finalSelected.getValue().getZerodhaSymbol() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName(), telegramToken);
-
-                                } catch (KiteException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            });
+                                            } catch (KiteException e) {
+                                                throw new RuntimeException(e);
+                                            }
+                                        });
+                                    });
                             String message = "TradeEngine:"+strategy.getAliasName()+":"+currentHourMinStr+"option orb range low broke, strike selected :" + finalSelected.getValue().getZerodhaSymbol();
-                            sendMessage.sendToTelegram(message, telegramToken);
+                            tradeSedaQueue.sendTelemgramSeda(message);
                             strategy.setRangeLow(new BigDecimal(0));
                         }
 
@@ -758,19 +949,22 @@ public class TradeEngine {
                     if (lastHistoricData.close > strategy.getRangeHigh().doubleValue()) {
                         Map<String, StrikeData> rangeSelected;
                         rangeSelected = mathUtils.getPriceRangeSortedWithLowRangeNifty(currentDateStr, strategy.getStrikePriceRangeHigh().intValue(), strategy.getStrikePriceRangeLow().intValue(), candleHourMinStr, strategy.getIndex());
-                        Map.Entry<String, StrikeData> finalSelected = rangeSelected.entrySet().stream().filter(stringStrikeDataEntry -> stringStrikeDataEntry.getKey().equals("CE")).findFirst().get();
+                        Map.Entry<String, StrikeData> finalSelected;
+                        if("SELL".equals(strategy.getOrderType())) {
+                            finalSelected = rangeSelected.entrySet().stream().filter(stringStrikeDataEntry -> stringStrikeDataEntry.getKey().equals("PE")).findFirst().get();
+                        }else {
+                            finalSelected = rangeSelected.entrySet().stream().filter(stringStrikeDataEntry -> stringStrikeDataEntry.getKey().equals("CE")).findFirst().get();
+                        }
                         TradeData tradeData = new TradeData();
-                        tradeData.setEntryType("BUY");
-                        tradeData.isOrderPlaced = true;
                         tradeData.setQty(strategy.getLotSize());
                       //  tradeData.setSellTime(candleDateTimeFormat.format(lastHistoricData.timeStamp));
-                        tradeData.setSellPrice(new BigDecimal(lastHistoricData.close));
+                      //  tradeData.setSellPrice(new BigDecimal(lastHistoricData.close));
                         tradeData.setStockId(Integer.parseInt(finalSelected.getValue().getZerodhaId()));
                         tradeData.setTradeStrategy(strategy);
                         OrderParams orderParams=new OrderParams();
                         orderParams.tradingsymbol = finalSelected.getValue().getZerodhaSymbol();
                         orderParams.exchange = "NFO";
-                        orderParams.orderType = "SL";
+                        orderParams.orderType = "MARKET";
                         if("MIS".equals(strategy.getTradeValidity())){
                             orderParams.product = "MIS";
                         }else{
@@ -782,56 +976,61 @@ public class TradeEngine {
                         DayOfWeek dow = localDate.getDayOfWeek();
                         String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
                         //TODO get all users subsribed to this.
-                        userList.getUser().stream().filter(
-                                user -> user.getName().equals(strategy.getUserId())
-                        ).forEach(user -> {
-                            BrokerWorker brokerWorker = workerFactory.getWorker(user);
+                        String[] userIdAr=strategy.getUserId().split(",");
+                        Arrays.stream(userIdAr).forEach(userId->{
+                            String[] userQuantity=strategy.getUserId().split("-");
+                            userList.getUser().stream().filter(
+                                    user -> user.getName().equals(userQuantity[0])
+                            ).forEach(user -> {
+                                        int lot=strategy.getLotSize()*Integer.valueOf(userQuantity[1]);
+                                        orderParams.quantity = lot;
+                                        BrokerWorker brokerWorker = workerFactory.getWorker(user);
 
-                            Order order = null;
-                            orderParams.quantity = strategy.getLotSize();
+                                        Order order = null;
 
-                            String dataKey = UUID.randomUUID().toString();
-                            tradeData.setDataKey(dataKey);
+                                        String dataKey = UUID.randomUUID().toString();
+                                        tradeData.setDataKey(dataKey);
 
-                            tradeData.setStockName(finalSelected.getValue().getZerodhaSymbol());
-                            try {
-                                //TODO set sl price, entry price, exit date
-                                tradeData.setQty(strategy.getLotSize());
-                                tradeData.setEntryType(strategy.getOrderType());
-                                tradeData.setUserId(user.getName());
-                                tradeData.setTradeDate(currentDateStr);
-                                tradeData.setStockId(Integer.valueOf(finalSelected.getValue().getZerodhaId()));
-                                order = brokerWorker.placeOrder(orderParams, user, tradeData);
-                                if (order != null) tradeData.setEntryOrderId(order.orderId);
-                                //  tradeData.isOrderPlaced = true;
+                                        tradeData.setStockName(finalSelected.getValue().getZerodhaSymbol());
+                                        try {
+                                            //TODO set sl price, entry price, exit date
+                                            tradeData.setQty(lot);
+                                            tradeData.setEntryType(strategy.getOrderType());
+                                            tradeData.setUserId(user.getName());
+                                            tradeData.setTradeDate(currentDateStr);
+                                            tradeData.setStockId(Integer.valueOf(finalSelected.getValue().getZerodhaId()));
+                                            order = brokerWorker.placeOrder(orderParams, user, tradeData);
+                                            if (order != null) tradeData.setEntryOrderId(order.orderId);
+                                            //  tradeData.isOrderPlaced = true;
 
-                                mapTradeDataToSaveOpenTradeDataEntity(tradeData, true);
-                                List<TradeData> tradeDataList = openTrade.get(user.getName());
-                                if (tradeDataList == null) {
-                                    tradeDataList = new ArrayList<>();
-                                }
-                                tradeDataList.add(tradeData);
-                                openTrade.put(user.getName(), tradeDataList);
-                                LOGGER.info("trade data" + new Gson().toJson(tradeData));
-                                sendMessage.sendToTelegram("Options traded for user:" + user.getName() + " strike: " + finalSelected.getValue().getZerodhaSymbol() + ":" + strategy.getAliasName(), telegramToken);
-                            } catch (Exception e) {
-                                List<TradeData> tradeDataList = openTrade.get(user.getName());
-                                if (tradeDataList == null) {
-                                    tradeDataList = new ArrayList<>();
-                                }
-                                tradeDataList.add(tradeData);
-                                openTrade.put(user.getName(), tradeDataList);
-                                tradeData.isErrored = true;
-                                LOGGER.info("Error while placing straddle order: " + e);
-                                e.printStackTrace();
-                                sendMessage.sendToTelegram("Error while placing straddle order: " + finalSelected.getValue().getZerodhaSymbol() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName(), telegramToken);
+                                            mapTradeDataToSaveOpenTradeDataEntity(tradeData, true);
+                                            List<TradeData> tradeDataList = openTrade.get(user.getName());
+                                            if (tradeDataList == null) {
+                                                tradeDataList = new ArrayList<>();
+                                            }
+                                            tradeDataList.add(tradeData);
+                                            openTrade.put(user.getName(), tradeDataList);
+                                            LOGGER.info("trade data" + new Gson().toJson(tradeData));
+                                            tradeSedaQueue.sendTelemgramSeda("Options traded for user:" + user.getName() + " strike: " + finalSelected.getValue().getZerodhaSymbol() + ":" + strategy.getAliasName());
+                                        } catch (Exception e) {
+                                            List<TradeData> tradeDataList = openTrade.get(user.getName());
+                                            if (tradeDataList == null) {
+                                                tradeDataList = new ArrayList<>();
+                                            }
+                                            tradeDataList.add(tradeData);
+                                            openTrade.put(user.getName(), tradeDataList);
+                                            tradeData.isErrored = true;
+                                            LOGGER.info("Error while placing straddle order: " + e);
+                                            e.printStackTrace();
+                                            tradeSedaQueue.sendTelemgramSeda("Error while placing straddle order: " + finalSelected.getValue().getZerodhaSymbol() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName());
 
-                            } catch (KiteException e) {
-                                throw new RuntimeException(e);
-                            }
-                        });
-                        String message = "TradeEngine:"+strategy.getAliasName()+":"+currentHourMinStr+"option orb range low broke, strike selected :" + finalSelected.getValue().getZerodhaSymbol();
-                        sendMessage.sendToTelegram(message, telegramToken);
+                                        } catch (KiteException e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    });
+                                });
+                        String message = "TradeEngine:"+strategy.getAliasName()+":"+currentHourMinStr+"option orb range high broke, strike selected :" + finalSelected.getValue().getZerodhaSymbol();
+                        tradeSedaQueue.sendTelemgramSeda(message);
                         strategy.setRangeHigh(new BigDecimal(0));
                     }
                 }
@@ -897,7 +1096,7 @@ public class TradeEngine {
        // String checkTime = strategy.getCandleCheckTime();
         String index = strategy.getIndex();
         Map<String, Map<String, StrikeData>> strikeMasterMap = new HashMap<>();
-        if (zerodhaTransactionService.expDate.equals(currentDate) && strategy.getTradeValidity().equals(TradeValidity.POSITIONAL.getValidity())) {
+        if (zerodhaTransactionService.expDate.equals(currentDate) && strategy.getTradeValidity().equals(TradeValidity.BTST.getValidity())) {
             if ("BNF".equals(index)) {
                 strikeMasterMap = zerodhaTransactionService.globalOptionsInfo.get(Expiry.BNF_NEXT.expiryName);
             } else if ("NF".equals(index)) {
@@ -943,6 +1142,29 @@ public class TradeEngine {
             }
             return stringMapMap;
         }
+        if (strikeSelectionType.contains(StrikeSelectionType.ITM.getType())) {
+            Map<Double, Map<String, StrikeData>> stringMapMap = new HashMap<>();
+            String otmStrikeVale=strikeSelectionType.substring(3);
+            // String sub=otmStrikeVale.substring(3);
+            int itmValue=Integer.valueOf(otmStrikeVale)*100;
+            int ceValue=atmStrike-itmValue;
+            int peValue=atmStrike+itmValue;
+            Optional<Map.Entry<String, StrikeData>> strikeDataMapCeOp = strikeMasterMap.get(String.valueOf(ceValue)).entrySet().stream().filter(map -> map.getKey().contains("CE")).findFirst();
+            if (strikeDataMapCeOp.isPresent()){
+                Map.Entry<String, StrikeData> strikeDataMapCe =strikeDataMapCeOp.get();
+                Map<String, StrikeData> stringMapCE = new HashMap<>();
+                stringMapCE.put(strikeDataMapCe.getKey(),strikeDataMapCe.getValue());
+                stringMapMap.put(Double.parseDouble(String.valueOf(ceValue)), stringMapCE);
+            }
+            Optional<Map.Entry<String, StrikeData>> strikeDataMapPeOp = strikeMasterMap.get(String.valueOf(peValue)).entrySet().stream().filter(map -> map.getKey().contains("PE")).findFirst();
+            if (strikeDataMapPeOp.isPresent()){
+                Map.Entry<String, StrikeData> strikeDataMapPe =strikeDataMapPeOp.get();
+                Map<String, StrikeData> stringMapPE = new HashMap<>();
+                stringMapPE.put(strikeDataMapPe.getKey(),strikeDataMapPe.getValue());
+                stringMapMap.put(Double.parseDouble(String.valueOf(peValue)), stringMapPE);
+            }
+            return stringMapMap;
+        }
         if (strikeSelectionType.equals(StrikeSelectionType.CLOSE_PREMUIM.getType())) {
             int closePremium = strategy.getStrikeClosestPremium().intValue();
             Map<Double, Map<String, StrikeData>> strikes = mathUtils.getPriceCloseToPremium(currentDate, closePremium, checkTime, index);
@@ -953,7 +1175,7 @@ public class TradeEngine {
             int low = strategy.getStrikePriceRangeLow().intValue();
             Map<Double, Map<String, StrikeData>> stringMapMap = new HashMap<>();
             Map<String, StrikeData> rangeSelected;
-            rangeSelected = mathUtils.getPriceRangeSortedWithLowRange(currentDate, high, low, checkTime, index);
+            rangeSelected = mathUtils.getPriceRangeSortedWithLowRange(currentDate, high, low, checkTime, index,strategy);
             rangeSelected.entrySet().stream().forEach(atmNiftyStrikeMap -> {
                 String historicPriceURL = "https://api.kite.trade/instruments/historical/" + atmNiftyStrikeMap.getValue().getZerodhaId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:30:00";
                 String priceResponse = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicPriceURL),atmNiftyStrikeMap.getValue().getZerodhaId(),checkTime);
