@@ -11,6 +11,7 @@ import com.sakthi.trade.dhan.schema.PositionResponseDTO;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.zerodha.account.User;
+import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
 import com.zerodhatech.models.Order;
 import com.zerodhatech.models.OrderParams;
 import com.zerodhatech.models.Position;
@@ -19,6 +20,7 @@ import okhttp3.Request;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -170,6 +172,11 @@ public class DhanWorker implements BrokerWorker {
         log.info("dhan order respnse after conversion:"+new Gson().toJson(orderList));
     return orderList;
 
+    }
+
+    @Override
+    public Order getOrder(User user, String orderId) throws IOException, KiteException {
+        return null;
     }
 
     @Override

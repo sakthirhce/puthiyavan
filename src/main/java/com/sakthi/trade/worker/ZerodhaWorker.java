@@ -77,6 +77,26 @@ public class ZerodhaWorker implements BrokerWorker {
         }
     }
 
+    @Override
+    public Order getOrder(User user, String orderId) throws IOException, KiteException {
+        try {
+            long start = System.currentTimeMillis();
+            List<Order> orderList = user.getKiteConnect().getOrders();
+            Order order =orderList.stream().filter(order1 -> order1.orderId.equals(orderId)).findFirst().get();
+            long finish = System.currentTimeMillis();
+            long timeElapsed = finish - start;
+//            LOGGER.info("get order time:"+timeElapsed);
+            return order;
+        } catch (KiteException e) {
+            log.error(e.message + ":" + e.code);
+            String message = e.message + ":" + e.code;
+            telegramClient.sendToTelegram(message, telegramTokenGroup);
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     @Override
     public List<Position> getRateLimitedPositions(User user) {

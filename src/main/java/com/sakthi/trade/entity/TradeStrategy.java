@@ -62,6 +62,8 @@ public class TradeStrategy {
     BigDecimal targetValue ;
     String targetOrderType ;//market/limit
     String aliasName;
+    @Column(name="trail_to_cost", nullable=true)
+    boolean trailToCost;
     BigDecimal rangeLow ;
     BigDecimal rangeHigh ;
 }
