@@ -458,6 +458,21 @@ NiftyOptionBuy935 niftyOptionBuy935;
         /*  });*/
 
     }
+    @GetMapping("/slcode")
+    public void slcode() throws Exception, KiteException {
+
+       /* List<StockEntity> stockEntityList=stockRepository.findAll();
+        stockEntityList.forEach(stockEntity -> {*/
+        String currentDateStr="2023-06-16";
+        String candleHourMinStr="09:34";
+        // System.out.println(candleHourMinStr);
+        //String currentHourMinStr = hourMinFormat.format(currentMinDate);
+        String currentHourMinStr="09:35";
+        oneTradeExecutor.slCode(currentDateStr,currentHourMinStr,candleHourMinStr);
+     //   oneTradeExecutor.executeStrategy();
+        /*  });*/
+
+    }
 
     @GetMapping("/zerodhaBN")
     public void zerodhaBN() throws Exception {

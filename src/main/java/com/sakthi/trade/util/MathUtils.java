@@ -330,19 +330,27 @@ public class MathUtils {
         //     String historicURL = "https://api.kite.trade/instruments/historical/" + niftyBank + "/5minute?from=2021-01-01+09:00:00&to=2021-01-01+11:15:00";
         Map<String,Map<String, StrikeData>>  strikeMasterMap1=new HashMap<>();
         String stockId=null;
-        if("BNF".equals(index)) {
-            stockId = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
-            if (zerodhaTransactionService.expDate.equals(currentDate) && strategy.getTradeValidity().equals(TradeValidity.BTST.getValidity())) {
+        if (zerodhaTransactionService.expDate.equals(currentDate) && strategy.getTradeValidity().equals(TradeValidity.BTST.getValidity())) {
+            if ("BNF".equals(index)) {
+                stockId = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
                 strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.BNF_NEXT.expiryName);
-            } else {
-                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.BNF_CURRENT.expiryName);
+            } else if ("NF".equals(index)) {
+                stockId = zerodhaTransactionService.niftyIndics.get("NIFTY 50");
+                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.NF_NEXT.expiryName);
+            } else if ("FN".equals(index)) {
+                stockId = zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE");
+                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.NF_NEXT.expiryName);
             }
-        }else if("NF".equals(index)){
-            stockId = zerodhaTransactionService.niftyIndics.get("NIFTY 50");
-            if (zerodhaTransactionService.expDate.equals(currentDate) && strategy.getTradeValidity().equals(TradeValidity.BTST.getValidity())) {
-                strikeMasterMap1= zerodhaTransactionService.globalOptionsInfo.get(Expiry.NF_NEXT.expiryName);
-            } else {
+        } else {
+            if ("BNF".equals(index)) {
+                stockId = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
+                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.BNF_CURRENT.expiryName);
+            } else if ("NF".equals(index)) {
+                stockId = zerodhaTransactionService.niftyIndics.get("NIFTY 50");
                 strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.NF_CURRENT.expiryName);
+            } else if ("FN".equals(index)) {
+                stockId = zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE");
+                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.FN_CURRENT.expiryName);
             }
         }
         Map<Double,Map.Entry<String, StrikeData>> ce=new HashMap<>();
@@ -375,7 +383,7 @@ public class MathUtils {
                                 if(index.equals("BNF")) {
                                     tempStrike1 = assessRangeWithRange("CE", closePrice, upperRange, lowerRange, tempStrikeCE, atmStrike, atmStrikesStraddle, ce);
                                 }
-                                else if (index.equals("NF")) {
+                                else if (index.equals("NF") || index.equals("FN")) {
                                     tempStrike1 = assessRangeWithRange50("CE", closePrice, upperRange, lowerRange, tempStrikeCE, atmStrike, atmStrikesStraddle, ce);
                                 }
                                 if (tempStrike1 == tempStrikeCE) {
@@ -406,7 +414,7 @@ public class MathUtils {
                                 if(index.equals("BNF")) {
                                     tempStrike1 = assessRangeWithRange("PE", closePrice, upperRange, lowerRange, tempStrikePE, atmStrike, atmStrikesStraddle, pe);
                                 }
-                                else if (index.equals("NF")) {
+                                else if (index.equals("NF") || index.equals("FN")) {
                                     tempStrike1 = assessRangeWithRange50("PE", closePrice, upperRange, lowerRange, tempStrikePE, atmStrike, atmStrikesStraddle, pe);
                                 }
                                 if (tempStrike1 == tempStrikePE) {
