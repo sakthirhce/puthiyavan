@@ -173,7 +173,7 @@ public class TradeEngine {
             stringTradeStrategyMap.entrySet().forEach(tradeStrategyMap -> {
                 List<TradeStrategy> list = tradeStrategyMap.getValue();
                 list.forEach(strategy -> {
-                    tradeSedaQueue.sendTelemgramSeda(stringMapEntry.getKey() + ":" + tradeStrategyMap.getKey() + ":" + strategy.getUserId() + ":" + strategy.getAliasName() + ":" + strategy.getLotSize());
+                    tradeSedaQueue.sendTelemgramSeda(stringMapEntry.getKey() + ":" + tradeStrategyMap.getKey() + ":" + strategy.getUserId() + ":" + strategy.getTradeStrategyKey() + ":" + strategy.getLotSize());
                 });
             });
         });
@@ -203,8 +203,8 @@ public class TradeEngine {
                         int positionQty = Math.abs(position.netQuantity);
                         if (positionQty != openTradeDataEntity.getQty()) {
                             //   openTradeDataEntity.setQty(positionQty);
-                            tradeSedaQueue.sendTelemgramSeda("Position qty mismatch for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ", over riding position qty as trade qty." + ":" + getAlgoName());
-                            LOGGER.info("Position qty mismatch for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ", over riding position qty as trade qty.");
+                            tradeSedaQueue.sendTelemgramSeda("Position qty mismatch for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ", over riding position qty as trade qty." + ":" + getAlgoName(),user.telegramBot.getGroupId());
+                            LOGGER.info("Position qty mismatch for: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ", over riding position qty as trade qty.",user.telegramBot.getGroupId());
 
                         }
                         openTradeDataEntity.isSlPlaced = false;
@@ -217,7 +217,7 @@ public class TradeEngine {
                         }
                         tradeDataList.add(tradeData);
                         openTrade.put(user.getName(), tradeDataList);
-                        tradeSedaQueue.sendTelemgramSeda("Open Position: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ":" + getAlgoName());
+                        tradeSedaQueue.sendTelemgramSeda("Open Position: " + openTradeDataEntity.getStockName() + ":" + openTradeDataEntity.getUserId() + ":" + getAlgoName(),user.telegramBot.getGroupId());
                     });
                 } else {
                     String openStr = gson.toJson(openTradeDataEntity);
@@ -331,7 +331,7 @@ public class TradeEngine {
                                 LOGGER.info("trade engine: " + gson.toJson(strategies));
                                 strategies.forEach(strategy -> {
                                     // executorThreadStrategy.submit(() -> {
-                                    LOGGER.info("strategy name:" + strategy.getAliasName());
+                                    LOGGER.info("strategy name:" + strategy.getTradeStrategyKey());
                                     Map<Double, Map<String, StrikeData>> rangeStrikes = new HashMap<>();
 
                                     if (strategy.getEntryTime().equals(currentHourMinStr)) {
@@ -339,7 +339,7 @@ public class TradeEngine {
                                     }
 
 
-                                    LOGGER.info(strategy.getAliasName() + ":" + rangeStrikes);
+                                    LOGGER.info(strategy.getTradeStrategyKey() + ":" + rangeStrikes);
                                     rangeStrikes.forEach((indexStrikePrice, strikeDataEntry) -> {
                                         strikeDataEntry.entrySet().stream().forEach(strikeDataEntry1 -> {
                                             StrikeData strikeData = strikeDataEntry1.getValue();
@@ -392,7 +392,7 @@ public class TradeEngine {
                                             } else {
                                                 orderParams.orderType = "MARKET";
                                             }
-                                            LOGGER.info(strategy.getAliasName() + "placing order for:" + strikeData.getZerodhaSymbol());
+                                            LOGGER.info(strategy.getTradeStrategyKey() + "placing order for:" + strikeData.getZerodhaSymbol());
 
                                             orderParams.tradingsymbol = strikeData.getZerodhaSymbol();
                                             orderParams.exchange = "NFO";
@@ -450,7 +450,7 @@ public class TradeEngine {
                                                         openTrade.put(user.getName(), tradeDataList);
                                                         LOGGER.info("trade data" + new Gson().toJson(tradeData));
                                                         tradeSedaQueue.sendTelemgramSeda("Options traded for user:" + user.getName() + " strike: "
-                                                                + strikeData.getZerodhaSymbol() + ":" + strategy.getAliasName());
+                                                                + strikeData.getZerodhaSymbol() + ":" + strategy.getTradeStrategyKey(),user.telegramBot.getGroupId());
                                                     } catch (Exception e) {
                                                         List<TradeData> tradeDataList = openTrade.get(user.getName());
                                                         if (tradeDataList == null) {
@@ -461,7 +461,7 @@ public class TradeEngine {
                                                         tradeData.isErrored = true;
                                                         LOGGER.info("Error while placing straddle order: " + e);
                                                         e.printStackTrace();
-                                                        tradeSedaQueue.sendTelemgramSeda("Error while placing straddle order: " + strikeData.getZerodhaSymbol() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName() + ":" + strategy.getAliasName());
+                                                        tradeSedaQueue.sendTelemgramSeda("Error while placing straddle order: " + strikeData.getZerodhaSymbol() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":"  + strategy.getTradeStrategyKey(),user.telegramBot.getGroupId());
 
                                                     } catch (KiteException e) {
                                                         throw new RuntimeException(e);
@@ -505,7 +505,7 @@ public class TradeEngine {
                                     orders.stream().filter(order -> ("OPEN".equals(order.status) || "TRIGGER PENDING".equals(order.status)) && order.orderId.equals(tradeData.getSlOrderId())).forEach(orderr -> {
                                         try {
                                             Order order = brokerWorker.cancelOrder(orderr.orderId, user);
-                                            tradeSedaQueue.sendTelemgramSeda("sl buy qty modified for nrml:" + tradeData.getUserId() + ": new sl qty:" + tradeData.getQty() + ":" + getAlgoName());
+                                            tradeSedaQueue.sendTelemgramSeda("sl buy qty modified for nrml:" + tradeData.getUserId() + ": new sl qty:" + tradeData.getQty() + ":" + getAlgoName(),user.telegramBot.getGroupId());
                                         } catch (Exception e) {
                                             LOGGER.info(e.getMessage());
                                         } catch (KiteException e) {
@@ -534,15 +534,15 @@ public class TradeEngine {
                                         try {
                                             orderResponse = brokerWorker.placeOrder(orderParams, user, tradeData);
                                             LOGGER.info(new Gson().toJson(orderResponse));
-                                            String message = MessageFormat.format("Closed Intraday Buy Position {0}", orderParams.tradingsymbol + ":" + strategy.getAliasName());
+                                            String message = MessageFormat.format("Closed Intraday Buy Position {0}", orderParams.tradingsymbol + ":" + strategy.getTradeStrategyKey());
                                             LOGGER.info(message);
                                             tradeData.isExited = true;
                                             mapTradeDataToSaveOpenTradeDataEntity(tradeData, false);
-                                            tradeSedaQueue.sendTelemgramSeda(message + ":" + tradeData.getUserId() + ":" + getAlgoName());
+                                            tradeSedaQueue.sendTelemgramSeda(message + ":" + tradeData.getUserId() + ":" + getAlgoName(),user.telegramBot.getGroupId());
 
                                         } catch (Exception e) {
                                             LOGGER.info("Error while exiting straddle order: " + e.getMessage());
-                                            tradeSedaQueue.sendTelemgramSeda("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.getMessage() + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position) + ":" + getAlgoName());
+                                            tradeSedaQueue.sendTelemgramSeda("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.getMessage() + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position) + ":" + getAlgoName(),user.telegramBot.getGroupId());
                                             e.printStackTrace();
                                         } catch (KiteException e) {
                                             throw new RuntimeException(e);
@@ -594,10 +594,10 @@ public class TradeEngine {
                                     if ("CANCELLED".equals(order.status)) {
                                         trendTradeData.isSLCancelled = true;
 
-                                        String message = MessageFormat.format("Broker Cancelled SL Order for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName() + ":" + strategy.getAliasName());
+                                        String message = MessageFormat.format("Broker Cancelled SL Order for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":"  + strategy.getTradeStrategyKey());
                                         LOGGER.info(message);
                                         try {
-                                            tradeSedaQueue.sendTelemgramSeda(message);
+                                            tradeSedaQueue.sendTelemgramSeda(message,user.telegramBot.getGroupId());
                                         } catch (Exception e) {
                                             LOGGER.info("error:" + e);
                                         }
@@ -620,9 +620,9 @@ public class TradeEngine {
                                                 trendTradeData.setSellTradedPrice(new BigDecimal(order.averagePrice));
                                             }
                                             //BigDecimal slipage = (trendTradeData.getBuyPrice().subtract(trendTradeData.getBuyTradedPrice())).multiply(new BigDecimal(50)).setScale(0, RoundingMode.UP);
-                                            String message = MessageFormat.format("Order Executed for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName() + ":" + strategy.getAliasName());
+                                            String message = MessageFormat.format("Order Executed for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":"  + strategy.getTradeStrategyKey());
                                             LOGGER.info(message);
-                                            tradeSedaQueue.sendTelemgramSeda(message);
+                                            tradeSedaQueue.sendTelemgramSeda(message,user.telegramBot.getGroupId());
                                         } catch (Exception e) {
                                             e.printStackTrace();
                                         }
@@ -681,15 +681,15 @@ public class TradeEngine {
                                                 trendTradeData.setSlOrderId(orderd.orderId);
                                                 mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, false);
                                                 try {
-                                                    LOGGER.info("Option " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL");
-                                                    tradeSedaQueue.sendTelemgramSeda("Option " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL" + ":" + getAlgoName() + ":" + strategy.getAliasName());
+                                                    LOGGER.info("Option " + trendTradeData.getStockName() + ":" + user.getName() + " traded and placed SL");
+                                                    tradeSedaQueue.sendTelemgramSeda("Option " + trendTradeData.getStockName() + ":" + user.getName() + " traded and placed SL" + ":"  + strategy.getTradeStrategyKey(),user.telegramBot.getGroupId());
                                                 } catch (Exception e) {
                                                     LOGGER.info("error:" + e);
                                                 }
                                             } catch (Exception e) {
                                                 // tradeData.isErrored = true;
-                                                LOGGER.info("rror while placing sl order: " + e.getMessage() + ":" + user.getName());
-                                                tradeSedaQueue.sendTelemgramSeda("Error while placing sl order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + e.getMessage() + ":" + getAlgoName() + ":" + strategy.getAliasName());
+                                                LOGGER.info("error while placing sl order: " + e.getMessage() + ":" + user.getName());
+                                                tradeSedaQueue.sendTelemgramSeda("Error while placing sl order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + e.getMessage() + ":"  + strategy.getTradeStrategyKey(),user.telegramBot.getGroupId());
                                                 //e.printStackTrace();
                                             } catch (KiteException e) {
                                                 throw new RuntimeException(e);
@@ -700,7 +700,7 @@ public class TradeEngine {
                                         }
                                     }/*else {
                                         //TODO: add time check
-                                        tradeSedaQueue.sendTelemgramSeda("Error while placing sl order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + e.getMessage() + ":" + getAlgoName()+":"+strategy.getAliasName());
+                                        tradeSedaQueue.sendTelemgramSeda("Error while placing sl order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + e.getMessage() + ":" + getAlgoName()+":"+strategy.getTradeStrategyKey());
                                     }*/
 
                                 }
@@ -711,9 +711,9 @@ public class TradeEngine {
                                     trendTradeData.setSellPrice(trendTradeData.getSlPrice());
                                     trendTradeData.setSellTradedPrice(new BigDecimal(order.averagePrice));
                                     BigDecimal slipage = (trendTradeData.getSellTradedPrice().subtract(trendTradeData.getSellPrice())).multiply(new BigDecimal(25)).setScale(0, RoundingMode.UP);
-                                    String message = MessageFormat.format("SL Hit for {0}" + ": sl sell slipage" + slipage.toString(), trendTradeData.getStockName() + ":" + user.getName() + ":" + getAlgoName() + ":" + strategy.getAliasName() + ":" + strategy.getAliasName());
+                                    String message = MessageFormat.format("SL Hit for {0}" + ": sl sell slipage" + slipage.toString(), trendTradeData.getStockName() + ":" + user.getName() + ":"  + strategy.getTradeStrategyKey() + ":" + strategy.getTradeStrategyKey());
                                     LOGGER.info(message);
-                                    tradeSedaQueue.sendTelemgramSeda(message);
+                                    tradeSedaQueue.sendTelemgramSeda(message,user.telegramBot.getGroupId());
                                     mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, false);
                                     if (strategy.isReentry()) {
                                         long tradeCount = userTradeData.getValue().stream().filter(tradeDataTemp ->
@@ -740,15 +740,15 @@ public class TradeEngine {
                                                 trendTradeData.setSlOrderId(orderd.orderId);
                                                 mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, false);
                                                 try {
-                                                    LOGGER.info("Option " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL");
-                                                    tradeSedaQueue.sendTelemgramSeda("Option " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL" + ":" + getAlgoName() + ":" + strategy.getAliasName());
+                                                    LOGGER.info("Option " + trendTradeData.getStockName() + ":" + user.getName() + " placed retry");
+                                                    tradeSedaQueue.sendTelemgramSeda("Option " + trendTradeData.getStockName() + ":" + user.getName() + " placed retry" + ":"  + strategy.getTradeStrategyKey(),user.telegramBot.getGroupId());
                                                 } catch (Exception e) {
                                                     LOGGER.info("error:" + e);
                                                 }
                                             } catch (Exception e) {
                                                 // tradeData.isErrored = true;
-                                                LOGGER.info("rror while placing sl order: " + e.getMessage() + ":" + user.getName());
-                                                tradeSedaQueue.sendTelemgramSeda("Error while placing sl order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + e.getMessage() + ":" + getAlgoName() + ":" + strategy.getAliasName());
+                                                LOGGER.info("error while placing retry order: " + e.getMessage() + ":" + user.getName());
+                                                tradeSedaQueue.sendTelemgramSeda("Error while placing retry order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + e.getMessage() + ":"  + strategy.getTradeStrategyKey(),user.telegramBot.getGroupId());
                                                 //e.printStackTrace();
                                             } catch (KiteException e) {
                                                 throw new RuntimeException(e);
@@ -769,9 +769,12 @@ public class TradeEngine {
                                                     orderParams.price=trendTradeData.getSellPrice().doubleValue();
                                                 }
                                                 brokerWorker.modifyOrder(order1.orderId,orderParams,user,trendTradeData);
+                                                tradeSedaQueue.sendTelemgramSeda("executed trail sl " + trendTradeData.getStockName() + ":" + user.getName()  + ":"  + strategy.getTradeStrategyKey(),user.telegramBot.getGroupId());
                                             } catch (IOException e) {
+                                                tradeSedaQueue.sendTelemgramSeda("error while modifying Option " + trendTradeData.getStockName() + ":" + user.getName()  + ":"  + strategy.getTradeStrategyKey(),user.telegramBot.getGroupId());
                                                 throw new RuntimeException(e);
                                             } catch (KiteException e) {
+                                                tradeSedaQueue.sendTelemgramSeda("error while modifying Option " + trendTradeData.getStockName() + ":" + user.getName() + " placed retry" + ":"  + strategy.getTradeStrategyKey(),user.telegramBot.getGroupId());
                                                 throw new RuntimeException(e);
                                             }
                                         });
@@ -779,10 +782,10 @@ public class TradeEngine {
                                 }
 
                             } else if ("REJECTED".equals(order.status) && !trendTradeData.isErrored && order.orderId.equals(trendTradeData.getSlOrderId())) {
-                                String message = MessageFormat.format("SL order placement rejected for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + order.status + ":" + order.statusMessage + ":" + getAlgoName() + ":" + strategy.getAliasName());
+                                String message = MessageFormat.format("SL order placement rejected for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + order.status + ":" + order.statusMessage + ":"  + strategy.getTradeStrategyKey());
                                 LOGGER.info(message);
                                 trendTradeData.isErrored = true;
-                                tradeSedaQueue.sendTelemgramSeda(message);
+                                tradeSedaQueue.sendTelemgramSeda(message,user.telegramBot.getGroupId());
                             }
 
 
@@ -874,14 +877,14 @@ public class TradeEngine {
                                             mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, false);
                                             try {
                                                 LOGGER.info("placing sl for option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL");
-                                                tradeSedaQueue.sendTelemgramSeda("option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL" + ":" + getAlgoName() + ":" + strategy.getAliasName());
+                                                tradeSedaQueue.sendTelemgramSeda("option : " + trendTradeData.getStockName() + ":" + user.getName() + " bought and placed SL" + ":"  + strategy.getTradeStrategyKey(),user.telegramBot.getGroupId());
                                             } catch (Exception e) {
                                                 LOGGER.info("error:" + e);
                                             }
                                         } catch (Exception e) {
                                             // tradeData.isErrored = true;
                                             LOGGER.info("error while placing sl option order: " + e.getMessage() + ":" + user.getName());
-                                            tradeSedaQueue.sendTelemgramSeda("option order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status:" + e.getMessage() + ": algo:" + getAlgoName() + ":" + strategy.getAliasName());
+                                            tradeSedaQueue.sendTelemgramSeda("option order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status:" + e.getMessage() + ": algo:"  + strategy.getTradeStrategyKey(),user.telegramBot.getGroupId());
                                             //e.printStackTrace();
                                         } catch (KiteException e) {
                                             throw new RuntimeException(e);
@@ -983,7 +986,7 @@ public class TradeEngine {
                                     tradeDataList.add(tradeData);
                                     openTrade.put(user.getName(), tradeDataList);
                                     LOGGER.info("trade data" + new Gson().toJson(tradeData));
-                                    tradeSedaQueue.sendTelemgramSeda("Options traded for user:" + user.getName() + " strike: " + finalSelected.getValue().getZerodhaSymbol() + ":" + strategy.getAliasName());
+                                    tradeSedaQueue.sendTelemgramSeda("Options traded for user:" + user.getName() + " strike: " + finalSelected.getValue().getZerodhaSymbol() + ":" + strategy.getTradeStrategyKey(),user.telegramBot.getGroupId());
                                 } catch (Exception e) {
                                     List<TradeData> tradeDataList = openTrade.get(user.getName());
                                     if (tradeDataList == null) {
@@ -994,14 +997,14 @@ public class TradeEngine {
                                     tradeData.isErrored = true;
                                     LOGGER.info("Error while placing straddle order: " + e);
                                     e.printStackTrace();
-                                    tradeSedaQueue.sendTelemgramSeda("Error while placing straddle order: " + finalSelected.getValue().getZerodhaSymbol() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName());
+                                    tradeSedaQueue.sendTelemgramSeda("Error while placing straddle order: " + finalSelected.getValue().getZerodhaSymbol() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName(),user.telegramBot.getGroupId());
 
                                 } catch (KiteException e) {
                                     throw new RuntimeException(e);
                                 }
                             });
                         });
-                        String message = "TradeEngine:" + strategy.getAliasName() + ":" + currentHourMinStr + "option orb range low broke, strike selected :" + finalSelected.getValue().getZerodhaSymbol();
+                        String message = "TradeEngine:" + strategy.getTradeStrategyKey() + ":" + currentHourMinStr + "option orb range low broke, strike selected :" + finalSelected.getValue().getZerodhaSymbol();
                         tradeSedaQueue.sendTelemgramSeda(message);
                         strategy.setRangeLow(new BigDecimal(0));
                     }
@@ -1073,7 +1076,7 @@ public class TradeEngine {
                                     tradeDataList.add(tradeData);
                                     openTrade.put(user.getName(), tradeDataList);
                                     LOGGER.info("trade data" + new Gson().toJson(tradeData));
-                                    tradeSedaQueue.sendTelemgramSeda("Options traded for user:" + user.getName() + " strike: " + finalSelected.getValue().getZerodhaSymbol() + ":" + strategy.getAliasName());
+                                    tradeSedaQueue.sendTelemgramSeda("Options traded for user:" + user.getName() + " strike: " + finalSelected.getValue().getZerodhaSymbol() + ":" + strategy.getTradeStrategyKey(),user.telegramBot.getGroupId());
                                 } catch (Exception e) {
                                     List<TradeData> tradeDataList = openTrade.get(user.getName());
                                     if (tradeDataList == null) {
@@ -1084,14 +1087,14 @@ public class TradeEngine {
                                     tradeData.isErrored = true;
                                     LOGGER.info("Error while placing straddle order: " + e);
                                     e.printStackTrace();
-                                    tradeSedaQueue.sendTelemgramSeda("Error while placing straddle order: " + finalSelected.getValue().getZerodhaSymbol() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName());
+                                    tradeSedaQueue.sendTelemgramSeda("Error while placing straddle order: " + finalSelected.getValue().getZerodhaSymbol() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + getAlgoName(),user.telegramBot.getGroupId());
 
                                 } catch (KiteException e) {
                                     throw new RuntimeException(e);
                                 }
                             });
                         });
-                        String message = "TradeEngine:" + strategy.getAliasName() + ":" + currentHourMinStr + "option orb range high broke, strike selected :" + finalSelected.getValue().getZerodhaSymbol();
+                        String message = "TradeEngine:" + strategy.getTradeStrategyKey() + ":" + currentHourMinStr + "option orb range high broke, strike selected :" + finalSelected.getValue().getZerodhaSymbol();
                         tradeSedaQueue.sendTelemgramSeda(message);
                         strategy.setRangeHigh(new BigDecimal(0));
                     }
@@ -1148,7 +1151,7 @@ public class TradeEngine {
         }
         orbHighLow.put("LOW", low);
         orbHighLow.put("HIGH", high);
-        LOGGER.info(strategy.getAliasName() + ":Low:" + String.valueOf(low) + ":high:" + String.valueOf(high));
+        LOGGER.info(strategy.getTradeStrategyKey() + ":Low:" + String.valueOf(low) + ":high:" + String.valueOf(high));
         strategy.setRangeLow(new BigDecimal(low));
         strategy.setRangeHigh(new BigDecimal(high));
     }

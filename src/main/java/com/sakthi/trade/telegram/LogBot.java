@@ -20,12 +20,16 @@ public class LogBot extends TelegramLongPollingBot {
     private static final String BOT_USERNAME = "YOUR_BOT_USERNAME";
     @Value("${telegram.log.bot.chatid}")
     public String chatId;
+    @Value("${telegram.log.bot.enabled:false}")
+    public boolean enabled;
     @PostConstruct
     public void registerBot() throws TelegramApiException {
 
         TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
         try {
-            botsApi.registerBot(this);
+            if(enabled) {
+                botsApi.registerBot(this);
+            }
           //  log.info("==================================TelegramBotService.afterPropertiesSet:registerBot finish");
         } catch (TelegramApiException e) {
             e.printStackTrace();

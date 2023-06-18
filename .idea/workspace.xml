@@ -23,12 +23,22 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="4596dda3-5bac-4456-8a3f-6eaf35c4c141" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.gradle/6.2.2/executionHistory/executionHistory.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/6.2.2/executionHistory/executionHistory.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/6.2.2/executionHistory/executionHistory.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/6.2.2/executionHistory/executionHistory.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/6.2.2/fileHashes/fileHashes.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/6.2.2/fileHashes/fileHashes.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/6.2.2/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/6.2.2/fileHashes/fileHashes.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/6.2.2/javaCompile/classAnalysis.bin" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/6.2.2/javaCompile/classAnalysis.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/6.2.2/javaCompile/javaCompile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/6.2.2/javaCompile/javaCompile.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/entity/TradeStrategy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/entity/TradeStrategy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/worker/BrokerWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/worker/BrokerWorker.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/worker/DhanWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/worker/DhanWorker.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/worker/ZerodhaWorker.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/worker/ZerodhaWorker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/seda/TelegramSedaProcessor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/seda/TelegramSedaProcessor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/seda/TradeSedaQueue.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/seda/TradeSedaQueue.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/telegram/DataBot.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/telegram/DataBot.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/telegram/LogBot.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/telegram/LogBot.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/zerodha/account/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/zerodha/account/User.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/zerodha/account/ZerodhaAccount.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sakthi/trade/zerodha/account/ZerodhaAccount.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,41 +58,7 @@
         </task>
         <projects_view>
           <tree_state>
-            <expand>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="Squant" type="f1a62948:ProjectNode" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="Squant" type="f1a62948:ProjectNode" />
-                <item name="Dependencies" type="6de06a37:ExternalSystemViewDefaultContributor$MyDependenciesNode" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="Squant" type="f1a62948:ProjectNode" />
-                <item name="Dependencies" type="6de06a37:ExternalSystemViewDefaultContributor$MyDependenciesNode" />
-                <item name="compileClasspath" type="62daadca:ExternalSystemViewDefaultContributor$DependencyScopeExternalSystemNode" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="Squant" type="f1a62948:ProjectNode" />
-                <item name="Dependencies" type="6de06a37:ExternalSystemViewDefaultContributor$MyDependenciesNode" />
-                <item name="runtimeClasspath" type="62daadca:ExternalSystemViewDefaultContributor$DependencyScopeExternalSystemNode" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="Squant" type="f1a62948:ProjectNode" />
-                <item name="Dependencies" type="6de06a37:ExternalSystemViewDefaultContributor$MyDependenciesNode" />
-                <item name="testCompileClasspath" type="62daadca:ExternalSystemViewDefaultContributor$DependencyScopeExternalSystemNode" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="Squant" type="f1a62948:ProjectNode" />
-                <item name="Dependencies" type="6de06a37:ExternalSystemViewDefaultContributor$MyDependenciesNode" />
-                <item name="testRuntimeClasspath" type="62daadca:ExternalSystemViewDefaultContributor$DependencyScopeExternalSystemNode" />
-              </path>
-            </expand>
+            <expand />
             <select />
           </tree_state>
         </projects_view>
@@ -473,7 +449,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>504</line>
+          <line>498</line>
           <option name="timeStamp" value="35" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -573,7 +549,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>577</line>
+          <line>571</line>
           <option name="timeStamp" value="186" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -808,7 +784,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>696</line>
+          <line>690</line>
           <option name="timeStamp" value="449" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -893,7 +869,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/AutomationController.java</url>
-          <line>646</line>
+          <line>640</line>
           <option name="timeStamp" value="566" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -913,12 +889,12 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>1151</line>
+          <line>1154</line>
           <option name="timeStamp" value="626" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/com/sakthi/trade/TradeEngine.java</url>
-          <line>1133</line>
+          <line>1136</line>
           <option name="timeStamp" value="627" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
