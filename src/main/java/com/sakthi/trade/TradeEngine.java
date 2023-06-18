@@ -6,13 +6,12 @@ import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.domain.strategy.StrikeSelectionType;
 import com.sakthi.trade.domain.strategy.TradeValidity;
 import com.sakthi.trade.domain.strategy.ValueType;
-import com.sakthi.trade.entity.OpenTradeDataBackupEntity;
-import com.sakthi.trade.entity.OpenTradeDataEntity;
-import com.sakthi.trade.entity.TradeStrategy;
+import com.sakthi.trade.entity.*;
 import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.repo.OpenTradeDataBackupRepo;
 import com.sakthi.trade.repo.OpenTradeDataRepo;
 import com.sakthi.trade.repo.TradeStrategyRepo;
+import com.sakthi.trade.repo.UserSubscriptionRepo;
 import com.sakthi.trade.seda.TradeSedaQueue;
 import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.CommonUtil;
@@ -62,6 +61,8 @@ public class TradeEngine {
     public OpenTradeDataRepo openTradeDataRepo;
     @Autowired
     TradeStrategyRepo tradeStrategyRepo;
+    @Autowired
+    UserSubscriptionRepo userSubscriptionRepo;
     @Autowired
     ZerodhaTransactionService zerodhaTransactionService;
     @Autowired
@@ -119,9 +120,16 @@ public class TradeEngine {
     public void loadStrategy() {
         //  strategyMap = new ConcurrentHashMap<>();
         Date date = new Date();
-        List<TradeStrategy> tradeStrategyList = tradeStrategyRepo.getActiveUsersActiveStrategy();
+        List<TradeStrategy> tradeStrategyList = tradeStrategyRepo.getActiveActiveStrategy();
         // System.out.println(new Gson().toJson(tradeStrategyList));
         tradeStrategyList.forEach(strategy -> {
+            List<UserSubscription> userSubscriptionList=userSubscriptionRepo.getUserSubs(strategy.getTradeStrategyKey());
+            if(userSubscriptionList!=null && !userSubscriptionList.isEmpty()){
+                System.out.println(gson.toJson(userSubscriptionList));
+                UserSubscriptions userSubscriptions=new UserSubscriptions();
+                userSubscriptions.setUserSubscriptionList(userSubscriptionList);
+                strategy.setUserSubscriptions(userSubscriptions);
+            }
             String index = strategy.getIndex();
             AtomicInteger lotA = new AtomicInteger(0);
             config.forEach(lot -> {
@@ -135,6 +143,7 @@ public class TradeEngine {
             strategy.setLotSize(strategy.getLotSize() * lotA.get());
             if (strategy.getTradeDays().contains(dayFormat.format(date).toUpperCase()) || Objects.equals(strategy.getTradeDays(), "All")) {
                 if (strategy.isRangeBreak()) {
+                    //TODO: this is outdated
                     List<TradeStrategy> indexTimeMap = rangeStrategyMap.get(index);
                     if (rangeStrategyMap.get(index) != null && indexTimeMap.size() > 0) {
                         indexTimeMap.add(strategy);
@@ -177,7 +186,7 @@ public class TradeEngine {
                 });
             });
         });
-        System.out.println(new Gson().toJson(strategyMap));
+        System.out.println("strategy config:"+new Gson().toJson(strategyMap));
     }
 
     @Scheduled(cron = "${tradeEngine.load.open.data}")
@@ -407,11 +416,11 @@ public class TradeEngine {
                                             DayOfWeek dow = localDate.getDayOfWeek();
                                             String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
                                             //TODO get all users subsribed to this.
-                                            String[] userIdAr = strategy.getUserId().split(",");
-                                            Arrays.stream(userIdAr).forEach(userId -> {
-                                                String[] userQuantity = strategy.getUserId().split("-");
+                                          //  String[] userIdAr = strategy.getUserId().split(",");
+                                          //  Arrays.stream(userIdAr).forEach(userId -> {
+                                            strategy.getUserSubscriptions().getUserSubscriptionList().stream().forEach( userSubscription -> {
                                                 userList.getUser().stream().filter(
-                                                        user -> user.getName().equals(userQuantity[0])
+                                                        user -> user.getName().equals(userSubscription.getUserId())
                                                 ).forEach(user -> {
                                                     TradeData tradeData = new TradeData();
                                                     if ("SELL".equals(strategy.getOrderType())) {
@@ -422,7 +431,7 @@ public class TradeEngine {
                                                     BrokerWorker brokerWorker = workerFactory.getWorker(user);
 
                                                     Order order = null;
-                                                    int lot = strategy.getLotSize() * Integer.valueOf(userQuantity[0]);
+                                                    int lot = strategy.getLotSize() * userSubscription.getLotSize();
                                                     orderParams.quantity = lot;
 
                                                     String dataKey = UUID.randomUUID().toString();
@@ -471,8 +480,8 @@ public class TradeEngine {
                                         });
 
                                     });
-                                    //  });
-                                });
+                                      });
+                              //  });
                             }
 
                         });
@@ -952,15 +961,14 @@ public class TradeEngine {
                         String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
                         //TODO get all users subsribed to this.
                         String[] userIdAr = strategy.getUserId().split(",");
-                        Arrays.stream(userIdAr).forEach(userId -> {
-                            String[] userQuantity = strategy.getUserId().split("-");
+                        strategy.getUserSubscriptions().getUserSubscriptionList().stream().forEach( userSubscription -> {
                             userList.getUser().stream().filter(
-                                    user -> user.getName().equals(userQuantity[0])
+                                    user -> user.getName().equals(userSubscription.getUserId())
                             ).forEach(user -> {
                                 BrokerWorker brokerWorker = workerFactory.getWorker(user);
 
                                 Order order = null;
-                                int lot = strategy.getLotSize() * Integer.valueOf(userQuantity[1]);
+                                int lot = strategy.getLotSize() * userSubscription.getLotSize();
                                 orderParams.quantity = lot;
                                 String dataKey = UUID.randomUUID().toString();
                                 tradeData.setDataKey(dataKey);
@@ -1041,13 +1049,11 @@ public class TradeEngine {
                         DayOfWeek dow = localDate.getDayOfWeek();
                         String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
                         //TODO get all users subsribed to this.
-                        String[] userIdAr = strategy.getUserId().split(",");
-                        Arrays.stream(userIdAr).forEach(userId -> {
-                            String[] userQuantity = strategy.getUserId().split("-");
+                        strategy.getUserSubscriptions().getUserSubscriptionList().stream().forEach( userSubscription -> {
                             userList.getUser().stream().filter(
-                                    user -> user.getName().equals(userQuantity[0])
+                                    user -> user.getName().equals(userSubscription.getUserId())
                             ).forEach(user -> {
-                                int lot = strategy.getLotSize() * Integer.valueOf(userQuantity[1]);
+                                int lot = strategy.getLotSize() * Integer.valueOf(userSubscription.getLotSize());
                                 orderParams.quantity = lot;
                                 BrokerWorker brokerWorker = workerFactory.getWorker(user);
 

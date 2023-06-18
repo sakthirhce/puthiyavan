@@ -6,8 +6,10 @@ import lombok.Setter;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Transient;
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -24,6 +26,7 @@ public class TradeStrategy {
     String exitTime;
     String intradayExitTime;
     String tradeDays;
+    @Transient
     String userId;
     String strikeSelectionType ;//ATM/Price Range
     BigDecimal strikePriceRangeLow ;//350
@@ -66,4 +69,6 @@ public class TradeStrategy {
     boolean trailToCost;
     BigDecimal rangeLow ;
     BigDecimal rangeHigh ;
+    @Transient
+    UserSubscriptions userSubscriptions;
 }
