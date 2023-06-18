@@ -245,8 +245,8 @@ public class TradeEngine {
     public void executeStrategy() {
         Date date = new Date();
         //      MDC.put("run_time",candleDateTimeFormat.format(date));
-      //  String currentDateStr = dateFormat.format(date);
-             String currentDateStr="2023-06-16";
+        String currentDateStr = dateFormat.format(date);
+        //     String currentDateStr="2023-06-16";
 
         //tradeSedaQueue.sendTelemgramSeda("started trade engine execution");
         Calendar candleCalenderMin = Calendar.getInstance();
@@ -254,12 +254,12 @@ public class TradeEngine {
         candleCalenderMin.add(Calendar.MINUTE, -1);
         Date currentMinDate = calendarCurrentMin.getTime();
         Date candleCurrentMinDate = candleCalenderMin.getTime();
-       // String candleHourMinStr = hourMinFormat.format(candleCurrentMinDate);
+        String candleHourMinStr = hourMinFormat.format(candleCurrentMinDate);
 
-           String candleHourMinStr="09:34";
+        //   String candleHourMinStr="09:34";
         // System.out.println(candleHourMinStr);
-        //String currentHourMinStr = hourMinFormat.format(currentMinDate);
-            String currentHourMinStr="09:35";
+        String currentHourMinStr = hourMinFormat.format(currentMinDate);
+         //   String currentHourMinStr="09:35";
         // System.out.println(currentHourMinStr);
 
         executorThread.submit(() -> {
