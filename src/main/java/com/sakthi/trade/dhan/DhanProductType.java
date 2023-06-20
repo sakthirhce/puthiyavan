@@ -1,9 +1,8 @@
 package com.sakthi.trade.dhan;
 
 public enum DhanProductType {
-    CNC("CNC"),
-    INTRADAY("INTRADAY"),
-    NRML("MARGIN"),
+    NRML("CNC"),
+    MIS("INTRADAY"),
     CO("CO"),
     BO("BO");
     private String productType;

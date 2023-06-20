@@ -454,7 +454,7 @@ NiftyOptionBuy935 niftyOptionBuy935;
        /* List<StockEntity> stockEntityList=stockRepository.findAll();
         stockEntityList.forEach(stockEntity -> {*/
         oneTradeExecutor.loadStrategy();
-        oneTradeExecutor.executeStrategy();
+      //  oneTradeExecutor.executeStrategy();
         /*  });*/
 
     }
