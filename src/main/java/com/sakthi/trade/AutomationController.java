@@ -6,7 +6,6 @@ import com.sakthi.trade.algotest.backtest.data.Algotest;
 import com.sakthi.trade.domain.*;
 import com.sakthi.trade.entity.*;
 import com.sakthi.trade.futures.banknifty.BNFFuturesTrendFollowing;
-//import com.sakthi.trade.fyer.FyerTrendTest;
 import com.sakthi.trade.options.OptionDayViceTest;
 import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.mapper.TradeDataMapper;
@@ -448,13 +447,55 @@ NiftyOptionBuy935 niftyOptionBuy935;
 
     @Autowired
     TradeEngine oneTradeExecutor;
-    @GetMapping("/oneTradeExecutor")
-    public void oneTradeExecutor() throws Exception, KiteException {
+    @GetMapping("/oneTradeLoad")
+    public void oneTradeLoad() throws Exception, KiteException {
 
        /* List<StockEntity> stockEntityList=stockRepository.findAll();
         stockEntityList.forEach(stockEntity -> {*/
         oneTradeExecutor.loadStrategy();
       //  oneTradeExecutor.executeStrategy();
+        /*  });*/
+
+    }
+    @GetMapping("/oneTradeExecutor")
+    public void oneTradeExecutor() throws Exception, KiteException {
+
+       /* List<StockEntity> stockEntityList=stockRepository.findAll();
+        stockEntityList.forEach(stockEntity -> {*/
+      //
+        //
+        //
+        //  oneTradeExecutor.loadStrategy();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+          oneTradeExecutor.executeStrategy();
         /*  });*/
 
     }

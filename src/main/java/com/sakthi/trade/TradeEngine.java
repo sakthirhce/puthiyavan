@@ -250,11 +250,10 @@ public class TradeEngine {
         Date currentMinDate = calendarCurrentMin.getTime();
         Date candleCurrentMinDate = candleCalenderMin.getTime();
         String candleHourMinStr = hourMinFormat.format(candleCurrentMinDate);
-
-        //   String candleHourMinStr="09:34";
+        //String candleHourMinStr="09:34";
         // System.out.println(candleHourMinStr);
         String currentHourMinStr = hourMinFormat.format(currentMinDate);
-         //   String currentHourMinStr="09:35";
+        //    String currentHourMinStr="09:35";
         // System.out.println(currentHourMinStr);
         log.info(currentHourMinStr+":"+"executing");
         executorThread.submit(() -> {
@@ -441,7 +440,7 @@ public class TradeEngine {
                                                         tradeData.setUserId(user.getName());
                                                         tradeData.setTradeDate(currentDateStr);
                                                         tradeData.setStockId(Integer.valueOf(strikeData.getZerodhaId()));
-                                                        //tradeData.setStrike(Integer.valueOf(strikeData.getDhanId()));
+                                                        tradeData.setStrikeId(strikeData.getDhanId());
                                                         tradeData.setTradeStrategy(strategy);
                                                         order = brokerWorker.placeOrder(orderParams, user, tradeData);
                                                         if (order != null) tradeData.setEntryOrderId(order.orderId);
