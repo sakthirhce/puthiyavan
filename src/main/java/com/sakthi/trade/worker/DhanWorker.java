@@ -8,6 +8,7 @@ import com.sakthi.trade.dhan.DhanProductType;
 import com.sakthi.trade.dhan.DhanRoutes;
 import com.sakthi.trade.dhan.schema.OrderResponseDTO;
 import com.sakthi.trade.dhan.schema.PositionResponseDTO;
+import com.sakthi.trade.dhan.schema.TradeResponseDTO;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.zerodha.account.User;
@@ -24,6 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 @Component
@@ -159,17 +161,26 @@ public class DhanWorker implements BrokerWorker {
     public  List<Order> getOrders(User user) {
         Request request= transactionService.createGetRequests(routes.get("orders"),user.getAccessToken());
         String rsponse=transactionService.callAPI(request);
-        log.info("dhan order respnse:"+rsponse);
+       // log.info("dhan order respnse:"+rsponse);
         List<OrderResponseDTO> orderResponseDTOList=Arrays.asList(gson.fromJson(rsponse,OrderResponseDTO[].class));
+        Request tradeRequest= transactionService.createGetRequests(routes.get("trades"),user.getAccessToken());
+        String tradeResponse=transactionService.callAPI(tradeRequest);
+      //  log.info("dhan order trade respnse:"+tradeResponse);
+        List<TradeResponseDTO> tradeResponseDTOList=Arrays.asList(gson.fromJson(tradeResponse,TradeResponseDTO[].class));
         List<Order> orderList = new ArrayList<>();
         orderResponseDTOList.stream().forEach(orderResponseDTO -> {
             Order order=new Order();
             order.orderId=orderResponseDTO.getOrderId();
             order.status=orderResponseDTO.getOrderStatus();
+            Optional<TradeResponseDTO> tradeResponseDTOOptional=tradeResponseDTOList.stream().filter(tradeResponseDTO -> tradeResponseDTO.getOrderId().equals(orderResponseDTO.getOrderId())).findFirst();
+            if(tradeResponseDTOOptional.isPresent()){
+                TradeResponseDTO tradeResponseDTO= tradeResponseDTOOptional.get();
+                order.averagePrice=tradeResponseDTO.getTradedPrice().toString();
+            }
             order.transactionType=orderResponseDTO.getTransactionType();
             orderList.add(order);
         });
-        log.info("dhan order respnse after conversion:"+new Gson().toJson(orderList));
+    //    log.info("dhan order respnse after conversion:"+new Gson().toJson(orderList));
     return orderList;
 
     }

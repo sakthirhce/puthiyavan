@@ -10,6 +10,7 @@ public class DhanRoutes {
     public Map<String, String> routes = new HashMap<String, String>() {
         {
             this.put("orders", "/orders");
+            this.put("trades", "/trades");
             this.put("orders.modify", "/orders/:order_id");
             this.put("orders.cancel", "/orders/:order_id");
             this.put("portfolio.positions", "/positions");
