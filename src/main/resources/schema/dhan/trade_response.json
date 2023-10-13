@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Generated schema for Root",
+  "javaType": "com.sakthi.trade.dhan.schema.TradeResponse",
+  "type": "object",
+  "properties": {
+    "dhanClientId": {
+      "type": "string"
+    },
+    "orderId": {
+      "type": "string"
+    },
+    "exchangeOrderId": {
+      "type": "string"
+    },
+    "exchangeTradeId": {
+      "type": "string"
+    },
+    "transactionType": {
+      "type": "string"
+    },
+    "exchangeSegment": {
+      "type": "string"
+    },
+    "productType": {
+      "type": "string"
+    },
+    "orderType": {
+      "type": "string"
+    },
+    "tradingSymbol": {
+      "type": "string"
+    },
+    "securityId": {
+      "type": "string"
+    },
+    "tradedQuantity": {
+      "type": "number"
+    },
+    "tradedPrice": {
+      "type": "number"
+    },
+    "createTime": {
+      "type": "string"
+    },
+    "updateTime": {
+      "type": "string"
+    },
+    "exchangeTime": {
+      "type": "string"
+    },
+    "drvExpiryDate": {},
+    "drvOptionType": {},
+    "drvStrikePrice": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "dhanClientId",
+    "orderId",
+    "exchangeOrderId",
+    "exchangeTradeId",
+    "transactionType",
+    "exchangeSegment",
+    "productType",
+    "orderType",
+    "tradingSymbol",
+    "securityId",
+    "tradedQuantity",
+    "tradedPrice",
+    "createTime",
+    "updateTime",
+    "exchangeTime",
+    "drvExpiryDate",
+    "drvOptionType",
+    "drvStrikePrice"
+  ]
+}
