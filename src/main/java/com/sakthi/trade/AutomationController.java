@@ -109,8 +109,7 @@ public class AutomationController {
 
     @Autowired
     BNFFuturesTrendFollowing bnfFuturesTrendFollowing;
-    @Autowired
-    ZerodhaBankNiftyShortStraddleWithLong zerodhaBankNiftyShortStraddleWithLong;
+
     @Autowired
     WeeklyDataBackup weeklyDataBackup;
  /*   @Autowired
@@ -127,7 +126,7 @@ public class AutomationController {
 
     @GetMapping("/zerodhaTradeGet")
     public void zerodhaTradeGet(@RequestParam String orderId) throws Exception, KiteException {
-        List<Trade> trades = zerodhaAccount.kiteSdk.getOrderTrades(orderId); //oly for executed
+        List<Trade> trades = zerodhaAccount.kiteConnect.getOrderTrades(orderId); //oly for executed
         trades.stream().findFirst();
         log.info("getOrderTrades:" + gson.toJson(trades));
     }
@@ -140,14 +139,14 @@ public class AutomationController {
 
     @GetMapping("/zerodhaTrades")
     public void zerodhaTrades() throws Exception, KiteException {
-        List<Trade> trades = zerodhaAccount.kiteSdk.getTrades(); //all executed trades
+        List<Trade> trades = zerodhaAccount.kiteConnect.getTrades(); //all executed trades
         trades.stream().findFirst();
         log.info("zerodhaTrades:" + gson.toJson(trades));
     }
 
     @GetMapping("/zerodhaOrders")
     public void zerodhaOrders() throws Exception, KiteException {
-        List<com.zerodhatech.models.Order> trades = zerodhaAccount.kiteSdk.getOrders(); //all orders including pending, completed
+        List<com.zerodhatech.models.Order> trades = zerodhaAccount.kiteConnect.getOrders(); //all orders including pending, completed
         trades.stream().findFirst();
         log.info("zerodhaOrders:" + gson.toJson(trades));
     }
@@ -177,13 +176,13 @@ public class AutomationController {
   */
     @GetMapping("/zerodhaGetPositions")
     public void zerodhaGetPositions() throws Exception, KiteException {
-        Map<String, List<Position>> trades = zerodhaAccount.kiteSdk.getPositions(); //all orders including pending, completed
+        Map<String, List<Position>> trades = zerodhaAccount.kiteConnect.getPositions(); //all orders including pending, completed
         log.info("zerodhaOrders:" + gson.toJson(trades));
     }
 
     @GetMapping("/zerodhaOrdersId")
     public void zerodhaOrdersId(@RequestParam String orderId) throws Exception, KiteException {
-        List<com.zerodhatech.models.Order> trades = zerodhaAccount.kiteSdk.getOrderHistory(orderId);
+        List<com.zerodhatech.models.Order> trades = zerodhaAccount.kiteConnect.getOrderHistory(orderId);
         log.info("zerodhaOrdersId:" + gson.toJson(trades));
     }
 
@@ -400,10 +399,6 @@ String stockId;
 @Autowired
 NiftyOptionBuy935 niftyOptionBuy935;
 
-    @GetMapping("/zerodhaloadmtest")
-    public void zerodhaloadmtest() throws Exception {
-        zerodhaBankNiftyShortStraddleWithLong.loadNrmlPositions();
-    }
     @GetMapping("/niftyOptionBuy935loadmtest")
     public void niftyOptionBuy935loadmtest() throws Exception {
         niftyOptionBuy935.loadNrmlPositions();
@@ -428,10 +423,10 @@ NiftyOptionBuy935 niftyOptionBuy935;
 
     }
 
-    @GetMapping("/monitorPositionSize")
+ /*   @GetMapping("/monitorPositionSize")
     public void monitorPositionSize() throws Exception, KiteException {
         zerodhaAccount.monitorPositionSize();
-    }
+    }*/
 
 
 
@@ -457,6 +452,43 @@ NiftyOptionBuy935 niftyOptionBuy935;
         /*  });*/
 
     }
+    /*
+    @GetMapping("/bnfIndexData")
+    public void bnfIndexData(@RequestParam int day) throws Exception, KiteException {
+
+        int daycount=day;
+        String path="/home/hasvanth/Downloads/";
+        CSVWriter csvWriter = new CSVWriter(new FileWriter(path+"/bnf.csv", true));
+        String[] dataHeader = {"Date-Time", "Open", "High", "Low", "Close"};
+        csvWriter.writeNext(dataHeader);
+        while (daycount >0) {
+            LocalDate currentdate = LocalDate.now().minusDays(daycount);
+            DateTimeFormatter df1 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        try{
+            System.out.println(df1.format(currentdate));
+            String stockId = zerodhaTransactionService.niftyIndics.get("NIFTY 50");
+            String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + df1.format(currentdate) + "+09:00:00&to=" + df1.format(currentdate) + "+16:00:00";
+                String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
+                HistoricalData historicalData = new HistoricalData();
+                JSONObject json = new JSONObject(response);
+                String status = json.getString("status");
+                if (!status.equals("error")) {
+                    historicalData.parseResponse(json);
+                    historicalData.dataArrayList.stream().forEach(candle -> {
+                        String[] data = {candle.timeStamp, String.valueOf(candle.open), String.valueOf(candle.high), String.valueOf(candle.low), String.valueOf(candle.close)};
+                        csvWriter.writeNext(data);
+                });
+            }}
+       catch (Exception e){
+            e.printStackTrace();
+       }
+            daycount--;
+            System.out.println(daycount);
+        }
+
+    }
+
+     */
     @GetMapping("/oneTradeExecutor")
     public void oneTradeExecutor() throws Exception, KiteException {
 
@@ -466,35 +498,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
         //
         //
         //  oneTradeExecutor.loadStrategy();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
           oneTradeExecutor.executeStrategy();
         /*  });*/
 
@@ -553,6 +556,25 @@ NiftyOptionBuy935 niftyOptionBuy935;
        // expBuy.buy();
 
     }
+    @GetMapping("/triggerWebsocket")
+    public void tickerInitialize() throws Exception, KiteException {
+        tradeEngine.tickerInitialize();
+        tradeEngine.addStriketoWebsocket(Long.parseLong("65611015"));
+
+    }
+    @GetMapping("/triggerWebsocket1")
+    public void tickerInitialize1() throws Exception, KiteException {
+     //   tradeEngine.tickerInitialize();
+        tradeEngine.addStriketoWebsocket(Long.parseLong("63590407"));
+
+    }
+    @GetMapping("/tickExport")
+    public void tickExport() throws Exception, KiteException {
+        //   tradeEngine.tickerInitialize();
+        tradeEngine.tickExport();
+
+    }
+
     @GetMapping("/getPositions")
     public void getPositions() throws Exception {
         String response = "{\"s\":\"ok\",\"netPositions\":[{\"crossCurrency\":\"N\",\"qty\":16,\"realized_profit\":0.0,\"id\":\"NSE:JPASSOCIAT-EQ-CNC\",\"unrealized_profit\":0.32,\"buyQty\":16,\"sellAvg\":0.0,\"sellQty\":0,\"buyAvg\":4.78,\"symbol\":\"NSE:JPASSOCIAT-EQ\",\"fyToken\":\"101000000011460\",\"slNo\":0,\"avgPrice\":4.78,\"segment\":\"E\",\"dummy\":\" \",\"rbiRefRate\":1.0,\"side\":1,\"netQty\":16,\"pl\":0.32,\"productType\":\"CNC\",\"netAvg\":4.78,\"qtyMulti_com\":1.0},{\"crossCurrency\":\"N\",\"qty\":90,\"realized_profit\":0.0,\"id\":\"NSE:RCOM-EQ-CNC\",\"unrealized_profit\":1.8,\"buyQty\":90,\"sellAvg\":0.0,\"sellQty\":0,\"buyAvg\":2.03,\"symbol\":\"NSE:RCOM-EQ\",\"fyToken\":\"101000000013187\",\"slNo\":1,\"avgPrice\":2.03,\"segment\":\"E\",\"dummy\":\" \",\"rbiRefRate\":1.0,\"side\":1,\"netQty\":90,\"pl\":1.8,\"productType\":\"CNC\",\"netAvg\":2.03,\"qtyMulti_com\":1.0}],message:\"\"}";
@@ -629,8 +651,8 @@ NiftyOptionBuy935 niftyOptionBuy935;
     @GetMapping("/getQuote")
     public void getQuote() throws Exception, KiteException {
         String[] str = {"NFO:BANKNIFTY21JAN31500CE"};
-        zerodhaAccount.kiteSdk.getLTP(str);
-        Map<String, LTPQuote> map = zerodhaAccount.kiteSdk.getLTP(str);
+        zerodhaAccount.kiteConnect.getLTP(str);
+        Map<String, LTPQuote> map = zerodhaAccount.kiteConnect.getLTP(str);
         map.entrySet().stream().findFirst().isPresent();
     }
 

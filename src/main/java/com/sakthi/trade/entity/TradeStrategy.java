@@ -56,9 +56,10 @@ public class TradeStrategy {
     BigDecimal reentryCount ;
     String slType ; //percent/point
     BigDecimal slValue ;
-    String trailSlType ; //percent/point
-    BigDecimal trailSlMoves ;
-    BigDecimal trailSlMove ;
+    String trailSlType ; //percent/points
+    boolean trailEnabled ;
+    BigDecimal trailSlMoves;
+    BigDecimal trailPointMove ;
     String slOrderType ;//market/limit
     boolean target ;
     String targetType ;//percent/point

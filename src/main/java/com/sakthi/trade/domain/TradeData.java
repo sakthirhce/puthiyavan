@@ -46,6 +46,7 @@ public class TradeData {
     String reverseOrderId;
     String slOrderId;
     BigDecimal slPrice;
+    BigDecimal initialSLPrice;
     BigDecimal targetPrice;
     BigDecimal slTradedPrice;
     String reverseSLOrderId;

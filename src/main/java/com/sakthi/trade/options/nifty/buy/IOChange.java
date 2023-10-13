@@ -1,3 +1,4 @@
+/*
 package com.sakthi.trade.options.nifty.buy;
 
 import com.google.common.util.concurrent.AtomicDouble;
@@ -123,7 +124,9 @@ public class IOChange implements Strategy {
                         }
                     //    LOGGER.info("IOChange lastElement:"+new Gson().toJson(lastElement));
                         String openDate = format.format(openDatetime);
-                        if (sdf.format(openDatetime).equals(openDate + "T14:44:00")) {/*"09:30:00"*/
+                        if (sdf.format(openDatetime).equals(openDate + "T14:44:00")) {*/
+/*"09:30:00"*//*
+
                      //       LOGGER.info("IOChange inside if");
                             int atmStrike = commonUtil.findATM((int) lastElement.close);
                       //      LOGGER.info("IOChange atmStrike:"+atmStrike);
@@ -228,3 +231,4 @@ public class IOChange implements Strategy {
 
     }
 }
+*/

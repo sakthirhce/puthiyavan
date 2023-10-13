@@ -1,3 +1,4 @@
+
 package com.sakthi.trade.seda;
 
 import com.google.gson.Gson;
@@ -27,3 +28,4 @@ public class TelegramSedaProcessor implements Processor {
         telegramMessenger.sendToTelegram(telegramData.getMessage(),telegramBot,telegramData.getGroupChatId());
     }
 }
+

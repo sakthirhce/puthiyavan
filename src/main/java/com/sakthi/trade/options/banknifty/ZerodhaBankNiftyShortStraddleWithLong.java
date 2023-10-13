@@ -1,3 +1,4 @@
+/*
 package com.sakthi.trade.options.banknifty;
 
 import com.google.common.util.concurrent.AtomicDouble;
@@ -111,7 +112,8 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                 } else {
                     atmStrikesStraddle = zerodhaTransactionService.bankNiftyWeeklyOptions;
                 }
-             /*   Map<String,String> rangeSelected= mathUtils.getPriceRange(currentDate,300,250,"09:34:00","BNF");
+             */
+/*   Map<String,String> rangeSelected= mathUtils.getPriceRange(currentDate,300,250,"09:34:00","BNF");
                 rangeSelected.forEach((key, value) -> {
                     LOGGER.info(key + ":" + value);
                     try {
@@ -119,7 +121,8 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                     }catch (Exception e){
                         log.error("error:"+e);
                     }
-                });*/
+                });*//*
+
             }catch (Exception e){
                 e.printStackTrace();
             }
@@ -418,9 +421,11 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                 } catch (Exception e) {
                                                     LOGGER.info(e.getMessage());
                                                 }
-                                           /* } else {
+                                           */
+/* } else {
                                                 triggerPrice = slPrice.get(trendTradeData.getStockId());
-                                            }*/
+                                            }*//*
+
                                                 if (triggerPriceAtomic.get() > 0) {
                                                     triggerPrice = BigDecimal.valueOf(triggerPriceAtomic.get());
                                                 }
@@ -433,7 +438,8 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                 String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
                                                 String todayCaps = today.toUpperCase();
                                                 AtomicInteger qty = new AtomicInteger(0);
-                                               /*     if (user.getStraddleConfig().getBuyConfig() != null && user.getStraddleConfig().getBuyConfig().isEnabled()) {
+                                               */
+/*     if (user.getStraddleConfig().getBuyConfig() != null && user.getStraddleConfig().getBuyConfig().isEnabled()) {
                                                         user.getStraddleConfig().getBuyConfig().getLotConfig().forEach((lotValue, value1) -> {
                                                             if (lotValue.contains(todayCaps)) {
                                                                 int value2 = (Integer.parseInt(value1) * 25);
@@ -444,7 +450,8 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                             qty.getAndAdd(trendTradeData.getQty());
 
 
-                                                    }*/
+                                                    }*//*
+
                                                 orderParams.quantity = Integer.parseInt(order.filledQuantity);
                                                 orderParams.orderType = "SL";
                                                 orderParams.product = "NRML";
@@ -1422,3 +1429,4 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
     }
 
 }
+*/

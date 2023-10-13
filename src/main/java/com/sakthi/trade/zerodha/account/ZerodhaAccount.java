@@ -85,10 +85,10 @@ public class ZerodhaAccount {
 
     public com.zerodhatech.models.User user;
     public String token = null;
-    public KiteConnect kiteSdk;
+    public KiteConnect kiteConnect;
     public int spaceCheck=0;
     SimpleDateFormat candleDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-
+    SimpleDateFormat dFormat = new SimpleDateFormat("yyyy-MM-dd");
     //  @Scheduled(cron="${zerodha.login.schedule}")
     public String generateToken() throws IOException, InterruptedException, URISyntaxException {
 
@@ -209,9 +209,9 @@ public class ZerodhaAccount {
             log.info("generating token at: " + LocalDateTime.now().toString());
 
             if (token == null) {
-                kiteSdk = new KiteConnect(zerodhaAppKey);
-                kiteSdk.setUserId("RS4899");
-                String url = kiteSdk.getLoginURL();
+                kiteConnect = new KiteConnect(zerodhaAppKey);
+                kiteConnect.setUserId("RS4899");
+                String url = kiteConnect.getLoginURL();
                 System.setProperty("webdriver.chrome.driver", driverPath);
                 ChromeOptions ChromeOptions = new ChromeOptions();
                 ChromeOptions.addArguments("--headless", "window-size=1024,768", "--no-sandbox");
@@ -236,15 +236,15 @@ public class ZerodhaAccount {
                 List<NameValuePair> queryParams = new URIBuilder(webDriver.getCurrentUrl()).getQueryParams();
                 String requestToken = queryParams.stream().filter(param -> param.getName().equals("request_token")).map(NameValuePair::getValue).findFirst().orElse("");
 
-                user = kiteSdk.generateSession(requestToken, zerodhaApiSecret);
+                user = kiteConnect.generateSession(requestToken, zerodhaApiSecret);
                 System.out.println(user.accessToken);
-                kiteSdk.setAccessToken(user.accessToken);
+                kiteConnect.setAccessToken(user.accessToken);
                 token = user.accessToken;
-                kiteSdk.setPublicToken(user.publicToken);
-                Margin margins = kiteSdk.getMargins("equity");
+                kiteConnect.setPublicToken(user.publicToken);
+                Margin margins = kiteConnect.getMargins("equity");
                 System.out.println(margins.available.cash);
                 System.out.println(margins.utilised.debits);
-                sendMessage.sendToTelegram("Token :" + kiteSdk.getAccessToken(), telegramToken);
+                sendMessage.sendToTelegram("Token :" + kiteConnect.getAccessToken(), telegramToken);
                 sendMessage.sendToTelegram("Available Cash :" + margins.available.cash, telegramToken);
 
                 webDriver.quit();
@@ -278,17 +278,15 @@ public class ZerodhaAccount {
             userList.getUser().stream().filter(user1 -> user1.enabled).forEach(user1 -> {
                 if (user1.tokenCount < 2) {
                 if (user1.broker.equals("zerodha")) {
-                        KiteConnect kiteConnect;
+                        KiteConnect kiteConnectLocal;
                         System.setProperty("webdriver.chrome.driver", driverPath);
                         ChromeOptions ChromeOptions = new ChromeOptions();
                         ChromeOptions.addArguments("--headless", "window-size=1024,768", "--no-sandbox");
                         WebDriver webDriver = new ChromeDriver(ChromeOptions);
                         try {
-                            kiteConnect = new KiteConnect(user1.appkey);
-                            kiteConnect.setUserId(user1.name);
-                            String url = kiteConnect.getLoginURL();
-
-
+                            kiteConnectLocal = new KiteConnect(user1.appkey);
+                            kiteConnectLocal.setUserId(user1.name);
+                            String url = kiteConnectLocal.getLoginURL();
                             AuthRequestDTO authRequest = new AuthRequestDTO();
                             webDriver.get(url);
 
@@ -314,12 +312,12 @@ public class ZerodhaAccount {
                             List<NameValuePair> queryParams = new URIBuilder(webDriver.getCurrentUrl()).getQueryParams();
                             String requestToken = queryParams.stream().filter(param -> param.getName().equals("request_token")).map(NameValuePair::getValue).findFirst().orElse("");
 
-                            User user = kiteConnect.generateSession(requestToken, user1.secret);
+                            User user = kiteConnectLocal.generateSession(requestToken, user1.secret);
                             System.out.println(user.accessToken);
-                            kiteConnect.setAccessToken(user.accessToken);
+                            kiteConnectLocal.setAccessToken(user.accessToken);
                             token = user.accessToken;
-                            kiteConnect.setPublicToken(user.publicToken);
-                            Margin margins = kiteConnect.getMargins("equity");
+                            kiteConnectLocal.setPublicToken(user.publicToken);
+                            Margin margins = kiteConnectLocal.getMargins("equity");
                             logger.info(margins.available.cash);
                             logger.info(margins.utilised.debits);
                             String botId = "";
@@ -329,12 +327,12 @@ public class ZerodhaAccount {
                             }
                             String botIdFinal = botId;
 
-                            user1.kiteConnect = kiteConnect;
+                            user1.kiteConnect = kiteConnectLocal;
                             user1.tokenGenerated = true;
                             if (user1.admin) {
                                 transactionService.setup();
                                 admingroupId.getAndSet(Integer.valueOf(botIdFinal));
-                                kiteSdk = kiteConnect;
+                                kiteConnect = kiteConnectLocal;
                                 try {
                                     tradeSedaQueue.sendTelemgramSeda("Token for user:" + user.userName + ":" + kiteConnect.getAccessToken(),user1.telegramBot.groupId);
                                 }catch (Exception e){
@@ -519,149 +517,128 @@ public class ZerodhaAccount {
     @Autowired
     OpenTradeDataRepo openTradeDataRepo;
     private Map<String,Integer> getTradeOpenQty(){
+        Date date=new Date();
+
         Map<String,Integer> openTradeData = new HashMap<>();
             List<OpenPositionData> openTradeDataEntities;
-            String userId=zerodhaAccount.kiteSdk.getUserId();
-        openTradeDataEntities = openTradeDataRepo.getTradeOpenData(userId);
+            String userId=zerodhaAccount.kiteConnect.getUserId();
+        openTradeDataEntities = openTradeDataRepo.getOpenData(userId,dFormat.format(date));
         openTradeDataEntities.stream().forEach(openTradeDataEntity -> {
             openTradeData.put(openTradeDataEntity.getStockName(),openTradeDataEntity.getQty());
         });
         return openTradeData;
     }
-  //  @Scheduled(cron = "${over.position.monitor.scheduler}")
+
+    @Value("${overposition.monitor.userId}")
+    String overPositionUserId;
+    @Value("${overposition.monitor.enabled}")
+    boolean overEnabled;
+    /*
+    @Scheduled(cron = "${overposition.monitor.scheduler}")
    public void monitorPositionSize() throws IOException, KiteException {
+        if (overPositionUserId != null && overPositionUserId.contains("LTK728") && overEnabled) {
+            Map<String, Integer> openTradeData = getTradeOpenQty();
+            openTradeData.entrySet().stream().forEach(map -> {
+                System.out.println(" position:" + map.getKey() + ": qty:" + map.getValue());
+            });
+            List<Position> positions = zerodhaAccount.kiteSdk.getPositions().get("net");
+            positions.stream().filter(position -> position.netQuantity > 0 && position.product.equals("MIS")).forEach(position ->
+            {
+                executorService.submit(() -> {
+                    if (openTradeData.containsKey(position.tradingSymbol)) {
+                        Integer openQty = openTradeData.get(position.tradingSymbol);
+                        Integer overPositionQty = position.netQuantity - openQty;
+                        if (overPositionQty > 0) {
+                            OrderParams orderParams = new OrderParams();
+                            orderParams.tradingsymbol = position.tradingSymbol;
+                            orderParams.exchange = "NFO";
+                            orderParams.quantity = Math.abs(position.netQuantity);
+                            orderParams.orderType = "MARKET";
+                            orderParams.product = position.product;
+                            //orderParams.price=price.doubleValue();
+                            if (position.netQuantity > 0) {
+                                orderParams.transactionType = "SELL";
+                            } else {
+                                orderParams.transactionType = "BUY";
+                            }
+                            orderParams.validity = "DAY";
+                            com.zerodhatech.models.Order orderResponse = null;
+                            try {
+                                // orderResponse = zerodhaAccount.kiteSdk.placeOrder(orderParams, "regular");
 
-        Map<String,Integer> openTradeData =getTradeOpenQty();
-        openTradeData.entrySet().stream().forEach(map->{
-            System.out.println("over position:"+map.getKey()+": qty:"+map.getValue());
-        });
-       List<Position> positions = zerodhaAccount.kiteSdk.getPositions().get("net");
-       positions.stream().filter(position -> position.netQuantity > 0).forEach(position ->
-       {
-           executorService.submit(() -> {
-           if (openTradeData.containsKey(position.tradingSymbol)) {
-               Integer openQty = openTradeData.get(position.tradingSymbol);
-               Integer overPositionQty = position.netQuantity - openQty;
-               if (overPositionQty > 0) {
-                   OrderParams orderParams = new OrderParams();
-                   orderParams.tradingsymbol = position.tradingSymbol;
-                   orderParams.exchange = "NFO";
-                   orderParams.quantity = Math.abs(position.netQuantity);
-                   orderParams.orderType = "MARKET";
-                   orderParams.product = position.product;
-                   //orderParams.price=price.doubleValue();
-                   if (position.netQuantity > 0) {
-                       orderParams.transactionType = "SELL";
-                   } else {
-                       orderParams.transactionType = "BUY";
-                   }
-                   orderParams.validity = "DAY";
-                   com.zerodhatech.models.Order orderResponse = null;
-                   try {
-                      // orderResponse = zerodhaAccount.kiteSdk.placeOrder(orderParams, "regular");
+                                String message = MessageFormat.format("Closed Over Leveraged Position {0}", orderParams.tradingsymbol);
+                                log.info(message);
+                                sendMessage.sendToTelegram(message, telegramToken);
 
-                       String message = MessageFormat.format("Closed Over Leveraged Position {0}", orderParams.tradingsymbol);
-                       log.info(message);
-                       sendMessage.sendToTelegram(message, telegramToken);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    } else {
+                        try {
+                            Thread.sleep(// minutes to sleep. for 1 min its not required.
+                                    30 *    // seconds to a minute
+                                            1000);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        Map<String, Integer> openTradeData1 = getTradeOpenQty();
+                        if (openTradeData1.containsKey(position.tradingSymbol)) {
+                            Integer openQty = openTradeData1.get(position.tradingSymbol);
+                            Integer overPositionQty = position.netQuantity - openQty;
+                            if (overPositionQty > 0) {
+                                OrderParams orderParams = new OrderParams();
+                                orderParams.tradingsymbol = position.tradingSymbol;
+                                orderParams.exchange = "NFO";
+                                orderParams.quantity = Math.abs(position.netQuantity);
+                                orderParams.orderType = "MARKET";
+                                orderParams.product = position.product;
+                                //orderParams.price=price.doubleValue();
+                                if (position.netQuantity > 0) {
+                                    orderParams.transactionType = "SELL";
+                                } else {
+                                    orderParams.transactionType = "BUY";
+                                }
+                                orderParams.validity = "DAY";
+                                com.zerodhatech.models.Order orderResponse = null;
+                                try {
 
-                   } catch (Exception e) {
-                       e.printStackTrace();
-                   }
-                    /*else if (position.pnl < -2500) {
-                   OrderParams orderParams = new OrderParams();
-                   orderParams.tradingsymbol = position.tradingSymbol;
-                   orderParams.exchange = "NFO";
-                   orderParams.quantity = Math.abs(position.netQuantity);
-                   orderParams.orderType = "MARKET";
-                   orderParams.product = "MIS";
-                   //orderParams.price=price.doubleValue();
-                   if (position.netQuantity > 0) {
-                       orderParams.transactionType = "SELL";
-                   } else {
-                       orderParams.transactionType = "BUY";
-                   }
-                   orderParams.validity = "DAY";
-                   com.zerodhatech.models.Order orderResponse;
-                   try {
-                       orderResponse = zerodhaAccount.kiteSdk.placeOrder(orderParams, "regular");
+                                    String message = MessageFormat.format("Closed Over Leveraged Position {0}", orderParams.tradingsymbol);
+                                    log.info(message);
+                                    sendMessage.sendToTelegram(message, telegramToken);
 
-                       String message = MessageFormat.format("Closed Over Leveraged Position {0}", orderParams.tradingsymbol);
-                       log.info(message);
-                       sendMessage.sendToTelegram(message, telegramToken);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        } else {
+                            OrderParams orderParams = new OrderParams();
+                            orderParams.tradingsymbol = position.tradingSymbol;
+                            orderParams.exchange = "NFO";
+                            orderParams.quantity = Math.abs(position.netQuantity);
+                            orderParams.orderType = "MARKET";
+                            orderParams.product = position.product;
+                            //orderParams.price=price.doubleValue();
+                            if (position.netQuantity > 0) {
+                                orderParams.transactionType = "SELL";
+                            } else {
+                                orderParams.transactionType = "BUY";
+                            }
+                            orderParams.validity = "DAY";
+                            com.zerodhatech.models.Order orderResponse = null;
+                            try {
+                                //   orderResponse = zerodhaAccount.kiteSdk.placeOrder(orderParams, "regular");
+                                String message = MessageFormat.format("Closed Over Leveraged Position {0}", orderParams.tradingsymbol);
+                                log.info(message);
+                                sendMessage.sendToTelegram(message, telegramToken);
 
-                   } catch (IOException e) {
-                       e.printStackTrace();
-                   } catch (KiteException e) {
-                       e.printStackTrace();
-                   }
-               }*/
-               }
-           } else {
-               try {
-                   Thread.sleep(// minutes to sleep. for 1 min its not required.
-                           60 *    // seconds to a minute
-                                   1000);
-               } catch (InterruptedException e) {
-                   throw new RuntimeException(e);
-               }
-               Map<String, Integer> openTradeData1 = getTradeOpenQty();
-               if (openTradeData1.containsKey(position.tradingSymbol)) {
-                   Integer openQty = openTradeData1.get(position.tradingSymbol);
-                   Integer overPositionQty = position.netQuantity - openQty;
-                   if (overPositionQty > 0) {
-                       OrderParams orderParams = new OrderParams();
-                       orderParams.tradingsymbol = position.tradingSymbol;
-                       orderParams.exchange = "NFO";
-                       orderParams.quantity = Math.abs(position.netQuantity);
-                       orderParams.orderType = "MARKET";
-                       orderParams.product = position.product;
-                       //orderParams.price=price.doubleValue();
-                       if (position.netQuantity > 0) {
-                           orderParams.transactionType = "SELL";
-                       } else {
-                           orderParams.transactionType = "BUY";
-                       }
-                       orderParams.validity = "DAY";
-                       com.zerodhatech.models.Order orderResponse = null;
-                       try {
-                           //orderResponse = zerodhaAccount.kiteSdk.placeOrder(orderParams, "regular");
-
-                           String message = MessageFormat.format("Closed Over Leveraged Position {0}", orderParams.tradingsymbol);
-                           log.info(message);
-                           sendMessage.sendToTelegram(message, telegramToken);
-
-                       } catch (Exception e) {
-                           e.printStackTrace();
-                       }
-                   }
-               } else {
-                   OrderParams orderParams = new OrderParams();
-                   orderParams.tradingsymbol = position.tradingSymbol;
-                   orderParams.exchange = "NFO";
-                   orderParams.quantity = Math.abs(position.netQuantity);
-                   orderParams.orderType = "MARKET";
-                   orderParams.product = position.product;
-                   //orderParams.price=price.doubleValue();
-                   if (position.netQuantity > 0) {
-                       orderParams.transactionType = "SELL";
-                   } else {
-                       orderParams.transactionType = "BUY";
-                   }
-                   orderParams.validity = "DAY";
-                   com.zerodhatech.models.Order orderResponse = null;
-                   try {
-                    //   orderResponse = zerodhaAccount.kiteSdk.placeOrder(orderParams, "regular");
-                       String message = MessageFormat.format("Closed Over Leveraged Position {0}", orderParams.tradingsymbol);
-                       log.info(message);
-                       sendMessage.sendToTelegram(message, telegramToken);
-
-                   } catch (Exception e) {
-                       e.printStackTrace();
-                   }
-               }
-           }
-       });
-       });
-   }
-
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                });
+            });
+        }
+    }*/
 }

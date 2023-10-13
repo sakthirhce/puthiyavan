@@ -20,6 +20,8 @@ public interface OpenTradeDataRepo extends JpaRepository<OpenTradeDataEntity,Str
 
     @Query(value="select stock_name  as stockName,sum(qty) as qty from open_trade_data where user_id=?1 and is_exited=false and entry_type='BUY' group by stock_name",nativeQuery=true)
     List<OpenPositionData> getTradeOpenData(String userId);
+    @Query(value="select stock_name  as stockName,sum(qty) as qty from open_trade_data where user_id=?1 and trade_date=?2 and is_order_placed=true  and is_exited=false and entry_type='BUY' group by stock_name",nativeQuery=true)
+    List<OpenPositionData> getOpenData(String userId,String tradeDate);
     @Query(value="select * from public.open_trade_data where user_id=?1 AND trade_date=?2 and is_exited=true",nativeQuery=true)
     List<OpenTradeDataEntity> findByUserIdAndTradeDate(String userId, String trade_date);
 

@@ -1,3 +1,4 @@
+/*
 package com.sakthi.trade.options.banknifty.buy;
 
 import com.google.common.util.concurrent.AtomicDouble;
@@ -698,7 +699,8 @@ public class BNiftyOptionBuy925 {
     @Autowired
     TradeDataMapper tradeDataMapper;
     public void mapTradeDataToSaveOpenTradeDataEntity(TradeData tradeData,boolean orderPlaced) {
-        try {/*
+        try {*/
+/*
             OpenTradeDataEntity openTradeDataEntity = new OpenTradeDataEntity();
             openTradeDataEntity.setDataKey(tradeData.getDataKey());
             openTradeDataEntity.setAlgoName(this.getAlgoName());
@@ -729,7 +731,8 @@ public class BNiftyOptionBuy925 {
             }else{
                 openTradeDataEntity.setTradeDate(tradeData.getTradeDate());
             }
-            saveTradeData(openTradeDataEntity);*/
+            saveTradeData(openTradeDataEntity);*//*
+
             tradeDataMapper.mapTradeDataToSaveOpenTradeDataEntity(tradeData,orderPlaced,this.getAlgoName());
             //LOGGER.info("sucessfully saved trade data");
         } catch (Exception e) {
@@ -749,3 +752,4 @@ public class BNiftyOptionBuy925 {
         }
     }
 }
+*/

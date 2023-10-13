@@ -74,10 +74,31 @@ public class WeeklyDataBackup {
         }
         Date date = finniftycalendar.getTime();
         String weekExp=format.format(date);
-        if (zerodhaTransactionService.lsHoliday.containsKey(weekExp)){
+        if (zerodhaTransactionService.lsFinHoliday.containsKey(weekExp)){
             finniftycalendar.add(DAY_OF_MONTH, -1);
             weekExp=format.format(finniftycalendar.getTime());
             log.info("Tuesday falling on holiday. recalculated weekly exp date is:"+weekExp);
+        }
+        System.out.printf(weekExp);
+        return  weekExp;
+    }
+
+    public String currentBSEExp(){
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar finniftycalendar = Calendar.getInstance();
+        int findayadd = 6 - finniftycalendar.get(DAY_OF_WEEK);
+        if (findayadd > 0) {
+            finniftycalendar.add(DAY_OF_MONTH, findayadd);
+        }else if (findayadd < 0) {
+            int findayadd1 =findayadd+7;
+            finniftycalendar.add(DAY_OF_MONTH, findayadd1);
+        }
+        Date date = finniftycalendar.getTime();
+        String weekExp=format.format(date);
+        if (zerodhaTransactionService.lsSensexHoliday.containsKey(weekExp)){
+            finniftycalendar.add(DAY_OF_MONTH, -1);
+            weekExp=format.format(finniftycalendar.getTime());
+            log.info("friday falling on holiday. recalculated weekly exp date is:"+weekExp);
         }
         System.out.printf(weekExp);
         return  weekExp;
@@ -106,11 +127,14 @@ public class WeeklyDataBackup {
         Date currentDate=new Date();
         String currentExp=currentExp();
         String currentFNExp=currentFNExp();
+        String currentBNFExp=zerodhaTransactionService.bankBiftyExpDate;
+        String currentBSEExp=currentBSEExp();
         Calendar calendarCurrent = Calendar.getInstance();
         calendarCurrent.add(DAY_OF_MONTH, -8);
         Date startDate=calendarCurrent.getTime();
         String path=trendPath+"/BANKNIFTY/"+year.format(currentDate);
         String nPath=trendPath+"/NIFTY/"+year.format(currentDate);
+        String bsePath=trendPath+"/BSE/"+year.format(currentDate);
         File f=new File(path);
         if(!f.exists()){
             f.mkdir();
@@ -119,18 +143,27 @@ public class WeeklyDataBackup {
         if(!nf.exists()){
             nf.mkdir();
         }
+        File sensexf=new File(bsePath);
+        if(!sensexf.exists()){
+            sensexf.mkdir();
+        }
+
         String monthpath=path+"/"+month.format(currentDate);
         String nMonthpath=nPath+"/"+month.format(currentDate);
+        String sMonthpath=sensexf+"/"+month.format(currentDate);
         File monthFile=new File(monthpath);
         File nmonthFile=new File(nMonthpath);
-
+        File smonthFile=new File(sMonthpath);
         if(!monthFile.exists()){
             monthFile.mkdir();
+        }
+        if(!smonthFile.exists()){
+            smonthFile.mkdir();
         }
         if(!nmonthFile.exists()){
             nmonthFile.mkdir();
         }
-        String expPath=monthpath+"/"+currentExp;
+        String expPath=monthpath+"/"+currentBNFExp;
         File expFolder=new File(expPath);
         if(!expFolder.exists()){
             expFolder.mkdir();
@@ -140,10 +173,61 @@ public class WeeklyDataBackup {
         if(!nexpFolder.exists()){
             nexpFolder.mkdir();
         }
+        String sensexpPath=smonthFile+"/"+currentBSEExp;
+        File sensexexpFolder=new File(sensexpPath);
+        if(!sensexexpFolder.exists()){
+            System.out.println("inside folder creation:");
+            boolean b=sensexexpFolder.mkdir();
+            System.out.println("inside folder creation:"+b);
+        }
+        System.out.println(sensexexpFolder);
         expFolder.setReadable(true); //read
         expFolder.setWritable(true); //write
         nexpFolder.setReadable(true); //read
         nexpFolder.setWritable(true); //write
+        sensexexpFolder.setReadable(true); //read
+        sensexexpFolder.setWritable(true); //write
+        try {
+            if (currentBSEExp.equals(format.format(currentDate))) {
+                String message = "sensex Expiry export date:" + currentBSEExp;
+                telegramClient.sendToTelegram(message, telegramTokenGroup, "-646157933");
+                zerodhaTransactionService.sensexWeeklyOptions.entrySet().stream().forEach(exp -> {
+
+                    Map<String, String> map = exp.getValue();
+                    map.entrySet().stream().forEach(optionExp -> {
+                        String strikeNo = optionExp.getValue();
+                        String strikeKey = optionExp.getKey();
+                        String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentBSEExp + "+15:30:00&oi=1";
+                        System.out.println(historicURL);
+                        String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
+                        System.out.println(response);
+                        String fileName;
+                        if (strikeKey.contains("CE")) {
+                            fileName = exp.getKey() + "CE";
+                        } else {
+                            fileName = exp.getKey() + "PE";
+                        }
+
+                        PrintWriter writer = null;
+                        try {
+                            writer = new PrintWriter(new File(sensexexpFolder + "/" + fileName + ".json"));
+
+                            writer.write(response);
+                            writer.flush();
+                            writer.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
+                    });
+                });
+                zippingDirectory.test(sensexpPath, "SENSEX_" + format.format(currentDate));
+                telegramClient.sendDocumentToTelegram(sensexpPath + "/SENSEX_" + format.format(currentDate) + ".zip", "SENSEX_" + format.format(currentDate));
+               // FileUtils.deleteDirectory(new File(sensexpPath));
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
 try {
     String fnPath = trendPath + "/FINNIFTY/" + year.format(currentDate);
     File fn = new File(fnPath);
@@ -170,6 +254,11 @@ try {
 
             Map<String, String> map = exp.getValue();
             map.entrySet().stream().forEach(optionExp -> {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
                 String strikeNo = optionExp.getValue();
                 String strikeKey = optionExp.getKey();
                 String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentFNExp + "+15:30:00&oi=1";
@@ -202,8 +291,8 @@ try {
 }catch (Exception e){
     e.printStackTrace();
 }
-        if(currentExp.equals(format.format(currentDate))){
-           // log.info("Expiry export date:"+currentExp);
+        if(currentBNFExp.equals(format.format(currentDate))) {
+            // log.info("Expiry export date:"+currentExp);
             try {
                 String message = "BNifty Expiry export date:" + currentExp;
                 telegramClient.sendToTelegram(message, telegramTokenGroup, "-646157933");
@@ -212,6 +301,11 @@ try {
                     map.entrySet().stream().forEach(optionExp -> {
                         String strikeNo = optionExp.getValue();
                         String strikeKey = optionExp.getKey();
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
                         String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentExp + "+15:30:00&oi=1";
                         String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
                         String fileName;
@@ -234,13 +328,14 @@ try {
 
                     });
                 });
-                zippingDirectory.test(expPath,"BNIFTY_"+format.format(currentDate));
-                telegramClient.sendDocumentToTelegram(expPath+"/BNIFTY_"+format.format(currentDate)+".zip","BNF");
+                zippingDirectory.test(expPath, "BNIFTY_" + format.format(currentDate));
+                telegramClient.sendDocumentToTelegram(expPath + "/BNIFTY_" + format.format(currentDate) + ".zip", "BNF");
                 FileUtils.deleteDirectory(new File(expPath));
 
-            }catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
+        } if(currentExp.equals(format.format(currentDate))){
                try{
             zerodhaTransactionService.niftyWeeklyOptions.entrySet().stream().forEach( exp->{
                 Map<String,String> map=exp.getValue();

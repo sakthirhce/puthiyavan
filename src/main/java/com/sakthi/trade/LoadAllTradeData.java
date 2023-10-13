@@ -72,9 +72,9 @@ public class LoadAllTradeData {
     @PostConstruct
     public void loadAllData() throws ParseException {
 if(backtestEnabled) {
-    zerodhaAccount.kiteSdk = new KiteConnect(zerodhaAppKey);
-    zerodhaAccount.kiteSdk.setUserId("RS4899");
-    zerodhaAccount.kiteSdk.setAccessToken(zerodhaApiaccessToken);
+    zerodhaAccount.kiteConnect = new KiteConnect(zerodhaAppKey);
+    zerodhaAccount.kiteConnect.setUserId("RS4899");
+    zerodhaAccount.kiteConnect.setAccessToken(zerodhaApiaccessToken);
     try {
         zerodhaTransactionService.getInstrument();
     } catch (Exception e) {

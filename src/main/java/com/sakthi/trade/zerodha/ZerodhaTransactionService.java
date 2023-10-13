@@ -1,5 +1,6 @@
 package com.sakthi.trade.zerodha;
 
+import com.google.gson.Gson;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import com.sakthi.trade.seda.TradeSedaQueue;
@@ -53,6 +54,8 @@ public class ZerodhaTransactionService {
     public Map<String,String> lsSymbols=new HashMap<>();
     public Map<String,String> lsHoliday=new HashMap<>();
     public Map<String,String> lsFinHoliday=new HashMap<>();
+    public Map<String,String> lsSensexHoliday=new HashMap<>();
+    public Map<String,String> lsBankNiftyHoliday=new HashMap<>();
     public Map<String,String> niftyIndics=new HashMap<>();
 
     public Map<String,Map<String,String>> currentFutures=new HashMap<>();
@@ -60,6 +63,8 @@ public class ZerodhaTransactionService {
     public Map<String,String> niftyVix  =new HashMap<>();
     public Map<String,Map<String,String>> bankNiftyWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>> bankNiftyNextWeeklyOptions=new HashMap<>();
+    public Map<String,Map<String,String>> sensexWeeklyOptions=new HashMap<>();
+    public Map<String,Map<String,String>> sensexNextWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>> niftyNextWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>> niftyWeeklyOptions=new HashMap<>();
     public Map<String,Map<String,String>> finNiftyNextWeeklyOptions=new HashMap<>();
@@ -72,6 +77,8 @@ public class ZerodhaTransactionService {
     public Map<String,Map<String, Map<String, StrikeData>>>globalOptionsInfo=new HashMap<>();
     public String expDate;
     public String finExpDate;
+    public String sensexExpDate;
+    public String bankBiftyExpDate;
     @Autowired
     TelegramMessenger sendMessage;
 
@@ -126,6 +133,43 @@ public class ZerodhaTransactionService {
         }
         return currentWeekExpCal.getTime();
     }
+    public Date nextWeekFinExpDate(Calendar currentWeekExpCal,boolean currentWeekExpOff,Map<String,String> lsHoliday){
+        if(currentWeekExpOff){
+            currentWeekExpCal.add(DAY_OF_MONTH, 1);
+        }
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        currentWeekExpCal.add(DAY_OF_MONTH, 7);
+        String weekExp=format.format(currentWeekExpCal.getTime());
+        boolean nextWeekExpOff=false;
+        if (lsHoliday.containsKey(weekExp)) {
+            nextWeekExpOff=true;
+        }
+        if(nextWeekExpOff){
+            currentWeekExpCal.add(DAY_OF_MONTH, -1);
+            weekExp=format.format(currentWeekExpCal.getTime());
+            LOGGER.info("Next Tuesday falling on holiday. recalculated fin weekly exp date is:"+weekExp);
+        }
+        return currentWeekExpCal.getTime();
+    }
+
+    public Date nextWeekSensexExpDate(Calendar currentWeekExpCal,boolean currentWeekExpOff,Map<String,String> lsHoliday){
+        if(currentWeekExpOff){
+            currentWeekExpCal.add(DAY_OF_MONTH, 1);
+        }
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        currentWeekExpCal.add(DAY_OF_MONTH, 7);
+        String weekExp=format.format(currentWeekExpCal.getTime());
+        boolean nextWeekExpOff=false;
+        if (lsHoliday.containsKey(weekExp)) {
+            nextWeekExpOff=true;
+        }
+        if(nextWeekExpOff){
+            currentWeekExpCal.add(DAY_OF_MONTH, -1);
+            weekExp=format.format(currentWeekExpCal.getTime());
+            LOGGER.info("Next Tuesday falling on holiday. recalculated fin weekly exp date is:"+weekExp);
+        }
+        return currentWeekExpCal.getTime();
+    }
     @Value("${test.profile:false}")
     Boolean testProfile;
     @Scheduled(cron="${zerodha.get.instrument}")
@@ -133,18 +177,27 @@ public class ZerodhaTransactionService {
         CSVReader csvReader = new CSVReader(new FileReader(trendPath + "/fo_mktlots.csv"));
         String[] line;
 
-            CSVReader csvHolidayReader = new CSVReader(new FileReader(trendPath + "/trading_thursday_holiday_2021.csv"));
+        CSVReader csvHolidayReader = new CSVReader(new FileReader(trendPath + "/trading_thursday_holiday_2021.csv"));
         String[] lineHoliday;
         while ((lineHoliday = csvHolidayReader.readNext()) != null) {
             lsHoliday.put(lineHoliday[0].trim(),lineHoliday[0].trim());
+        }
+        CSVReader bnfcsvHolidayReader = new CSVReader(new FileReader(trendPath + "/trading_wednesday_holiday_2021.csv"));
+        String[] bnflineHoliday;
+        while ((bnflineHoliday = bnfcsvHolidayReader.readNext()) != null) {
+            lsBankNiftyHoliday.put(bnflineHoliday[0].trim(),bnflineHoliday[0].trim());
         }
         CSVReader csvHolidayFinReader = new CSVReader(new FileReader(trendPath + "/trading_tuesday_holiday_2021.csv"));
         String[] lineFinHoliday;
         while ((lineFinHoliday = csvHolidayFinReader.readNext()) != null) {
             lsFinHoliday.put(lineFinHoliday[0].trim(),lineFinHoliday[0].trim());
         }
+        CSVReader csvHolidaySensexReader = new CSVReader(new FileReader(trendPath + "/trading_friday_holiday.csv"));
+        String[] lineSensexHoliday;
+        while ((lineSensexHoliday = csvHolidaySensexReader.readNext()) != null) {
+            lsSensexHoliday.put(lineSensexHoliday[0].trim(),lineSensexHoliday[0].trim());
+        }
         int i=0;
-
         while ((line = csvReader.readNext()) != null) {
             if (i>4) {
                 lsSymbols.put(line[1].trim(),line[1].trim());
@@ -152,8 +205,12 @@ public class ZerodhaTransactionService {
             i++;
         }
         Calendar calendar = Calendar.getInstance();
+        Calendar todayDate = Calendar.getInstance();
         Calendar finniftycalendar = Calendar.getInstance();
+        Calendar bankNiftycalendar = Calendar.getInstance();
+        Calendar sensexCalendar = Calendar.getInstance();
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        String todayDateStr = format.format(todayDate.getTime());
         SimpleDateFormat formatMM = new SimpleDateFormat("MM-dd");
         SimpleDateFormat formatddMMM = new SimpleDateFormat("dd-MMM");
         if (formatMM.format(calendar.getTime()).equals("01-02") || formatMM.format(calendar.getTime()).equals("01-03")) {
@@ -167,12 +224,26 @@ public class ZerodhaTransactionService {
         System.out.println(calendar.get(DAY_OF_WEEK));
         //TODO: add logic to determine wednesday exp date if thursday is trade holiday
         int dayadd = 5 - calendar.get(DAY_OF_WEEK);
+        int bankniftyadd = 4 - calendar.get(DAY_OF_WEEK);
+        int daysensexadd = 6 - calendar.get(DAY_OF_WEEK);
         int findayadd = 3 - finniftycalendar.get(DAY_OF_WEEK);
         if (dayadd > 0) {
             calendar.add(DAY_OF_MONTH, dayadd);
         } else if (dayadd < 0) {
             int dayadd1 =dayadd+7;
             calendar.add(DAY_OF_MONTH, dayadd1);
+        }
+        if (bankniftyadd > 0) {
+            bankNiftycalendar.add(DAY_OF_MONTH, bankniftyadd);
+        } else if (bankniftyadd < 0) {
+            int dayadd1 =bankniftyadd+7;
+            bankNiftycalendar.add(DAY_OF_MONTH, dayadd1);
+        }
+        if (daysensexadd > 0) {
+            sensexCalendar.add(DAY_OF_MONTH, daysensexadd);
+        }else if (daysensexadd < 0) {
+            int sensexadd1 =daysensexadd+7;
+            sensexCalendar.add(DAY_OF_MONTH, sensexadd1);
         }
         if (findayadd > 0) {
             finniftycalendar.add(DAY_OF_MONTH, findayadd);
@@ -182,9 +253,15 @@ public class ZerodhaTransactionService {
         }
         Date date = calendar.getTime();
         Date findate = finniftycalendar.getTime();
+        Date sensexDate = sensexCalendar.getTime();
+        Date bnfDate = bankNiftycalendar.getTime();
         String weekExp=format.format(date);
         String finWeekExp=format.format(findate);
+        String sensexWeekExp=format.format(sensexDate);
+        String bnfWeekExp=format.format(bnfDate);
         boolean currentWeekExpOff=false;
+        boolean bnfWeekExpOff=false;
+        boolean currentSensexWeekExpOff=false;
         if (lsHoliday.containsKey(weekExp)) {
             currentWeekExpOff=true;
         }
@@ -193,6 +270,27 @@ public class ZerodhaTransactionService {
             date=calendar.getTime();
             weekExp=format.format(date);
             log.info("Thursday falling on holiday. recalculated weekly exp date is:"+weekExp);
+            tradeSedaQueue.sendTelemgramSeda("Thursday falling on holiday. recalculated weekly exp date is:"+weekExp);
+        }
+        if (lsBankNiftyHoliday.containsKey(bnfWeekExp)) {
+            bnfWeekExpOff=true;
+        }
+        if(bnfWeekExpOff){
+            bankNiftycalendar.add(DAY_OF_MONTH, -1);
+            bnfDate=bankNiftycalendar.getTime();
+            bnfWeekExp=format.format(bnfDate);
+            log.info("wednesday falling on holiday. recalculated weekly exp date is:"+bnfWeekExp);
+            tradeSedaQueue.sendTelemgramSeda("wednesday falling on holiday. recalculated bnf weekly exp date is:"+bnfWeekExp);
+        }
+        if (lsSensexHoliday.containsKey(sensexWeekExp)) {
+            currentSensexWeekExpOff=true;
+        }
+        if(currentSensexWeekExpOff){
+            sensexCalendar.add(DAY_OF_MONTH, -1);
+            sensexDate=sensexCalendar.getTime();
+            sensexWeekExp=format.format(sensexDate);
+            log.info("Friday falling on holiday. recalculated weekly exp date is:"+sensexWeekExp);
+            tradeSedaQueue.sendTelemgramSeda("Friday falling on holiday. recalculated weekly exp date is:"+sensexWeekExp);
         }
         boolean currentFinWeekExpOff=false;
         if (lsFinHoliday.containsKey(finWeekExp)) {
@@ -202,12 +300,12 @@ public class ZerodhaTransactionService {
             finniftycalendar.add(DAY_OF_MONTH, -1);
             findate=finniftycalendar.getTime();
             finWeekExp=format.format(findate);
-            log.info("Thursday falling on holiday. recalculated weekly exp date is:"+weekExp);
+            log.info("tuesday falling on holiday. recalculated fin weekly exp date is:"+finWeekExp);
+            tradeSedaQueue.sendTelemgramSeda("tuesday falling on holiday. recalculated fin weekly exp date is:"+finWeekExp);
         }
         expDate=weekExp;
         finExpDate=finWeekExp;
-        Date currentWeekExpDate=date;
-        Date currentFinWeekExpDate=findate;
+        sensexExpDate=sensexWeekExp;
         Date monthlyExpDate=getMonthExpDay();
         boolean currentMonthlyExpOff=false;
         String monthlyExp=format.format(monthlyExpDate);
@@ -221,11 +319,35 @@ public class ZerodhaTransactionService {
             monthlyExpDate=monthlyExpCal.getTime();
             monthlyExp=format.format(monthlyExpDate);
             log.info("Monthly Exp falling on holiday. recalculated weekly exp date is:"+monthlyExp);
+            tradeSedaQueue.sendTelemgramSeda("Monthly Exp falling on holiday. recalculated weekly exp date is:"+monthlyExp);
         }
+        if(monthlyExp.equals(expDate)){
+            bnfWeekExp=expDate;
+            bnfDate=date;
+        }
+        bankBiftyExpDate=bnfWeekExp;
+        Date currentWeekExpDate=date;
+        Date currentFinWeekExpDate=findate;
+        Date nextWeekFinExpDateRes=nextWeekFinExpDate(finniftycalendar,currentFinWeekExpOff,lsFinHoliday);
+        String nextWeekFinExpDate=format.format(nextWeekFinExpDateRes);
+        Date nextWeekSensexExpDateRes=nextWeekFinExpDate(sensexCalendar,currentSensexWeekExpOff,lsSensexHoliday);
+        String nextWeekSensexExpDate=format.format(nextWeekSensexExpDateRes);
+
 
         Date nextWeekExpDateRes=nextWeekExpDate(calendar,currentWeekExpOff,lsHoliday);
+        Date bnfnextWeekExpDateRes=nextWeekExpDate(bankNiftycalendar,bnfWeekExpOff,lsBankNiftyHoliday);
         String nextWeekExpDate=format.format(nextWeekExpDateRes);
+        String bnfnextWeekExpDate=format.format(bnfnextWeekExpDateRes);
         String instrumentURI = baseURL+instrumentURL;
+        if(monthlyExp.equals(nextWeekExpDate) && todayDateStr.equals(bankBiftyExpDate)){
+            bnfnextWeekExpDate=nextWeekExpDate;
+            bnfnextWeekExpDateRes=nextWeekExpDateRes;
+        }
+        if(todayDateStr.equals(expDate) && monthlyExp.equals(nextWeekExpDate)){
+            bankBiftyExpDate=nextWeekExpDate;
+            bnfDate=nextWeekExpDateRes;
+            bnfWeekExp=nextWeekExpDate;
+        }
         String response=null;
         if(!testProfile) {
             response = transactionService.callAPI(transactionService.createZerodhaGetRequest(instrumentURI));
@@ -249,7 +371,7 @@ public class ZerodhaTransactionService {
                   niftyIndics.put(data[2].trim(),data[0].trim());
             }
             String index = data[3].replace("\"", "");
-            if( index.equals("BANKNIFTY") &&  data[5].equals(weekExp) &&  data[10].equals("NFO-OPT") && data[11].equals("NFO")){
+            if( index.equals("BANKNIFTY") &&  data[5].equals(bnfWeekExp) &&  data[10].equals("NFO-OPT") && data[11].equals("NFO")){
                 if(bankNiftyWeeklyOptions.get(data[6])!=null){
                     Map<String,String> map=bankNiftyWeeklyOptions.get(data[6]);
                     map.put(data[2],data[0]);
@@ -258,6 +380,28 @@ public class ZerodhaTransactionService {
                     Map<String,String> map=new HashMap<>();
                     map.put(data[2],data[0]);
                     bankNiftyWeeklyOptions.put(data[6], map);
+                }
+            }
+            if( index.equals("SENSEX") &&  data[5].equals(sensexWeekExp) &&  data[10].equals("BFO-OPT") && data[11].equals("BFO")){
+                if(sensexWeeklyOptions.get(data[6])!=null){
+                    Map<String,String> map=sensexWeeklyOptions.get(data[6]);
+                    map.put(data[2],data[0]);
+                    sensexWeeklyOptions.put(data[6], map);
+                }else {
+                    Map<String,String> map=new HashMap<>();
+                    map.put(data[2],data[0]);
+                    sensexWeeklyOptions.put(data[6], map);
+                }
+            }
+            if( index.equals("SENSEX") &&  data[5].equals(nextWeekSensexExpDate) &&  data[10].equals("BFO-OPT") && data[11].equals("BFO")){
+                if(sensexNextWeeklyOptions.get(data[6])!=null){
+                    Map<String,String> map=sensexNextWeeklyOptions.get(data[6]);
+                    map.put(data[2],data[0]);
+                    sensexNextWeeklyOptions.put(data[6], map);
+                }else {
+                    Map<String,String> map=new HashMap<>();
+                    map.put(data[2],data[0]);
+                    sensexNextWeeklyOptions.put(data[6], map);
                 }
             }
             if( index.equals("FINNIFTY") &&  data[5].equals(finWeekExp) &&  data[10].equals("NFO-OPT") && data[11].equals("NFO")){
@@ -271,7 +415,7 @@ public class ZerodhaTransactionService {
                     finNiftyWeeklyOptions.put(data[6], map);
                 }
             }
-            if( index.equals("FINNIFTY") &&  data[5].equals(nextWeekExpDate) &&  data[10].equals("NFO-OPT") && data[11].equals("NFO")){
+            if( index.equals("FINNIFTY") &&  data[5].equals(nextWeekFinExpDate) &&  data[10].equals("NFO-OPT") && data[11].equals("NFO")){
                 if(finNiftyNextWeeklyOptions.get(data[6])!=null){
                     Map<String,String> map=finNiftyNextWeeklyOptions.get(data[6]);
                     map.put(data[2],data[0]);
@@ -282,7 +426,7 @@ public class ZerodhaTransactionService {
                     finNiftyNextWeeklyOptions.put(data[6], map);
                 }
             }
-            if( index.equals("BANKNIFTY") &&  data[5].equals(nextWeekExpDate) &&  data[10].equals("NFO-OPT") && data[11].equals("NFO")){
+            if( index.equals("BANKNIFTY") &&  data[5].equals(bnfnextWeekExpDate) &&  data[10].equals("NFO-OPT") && data[11].equals("NFO")){
                 if(bankNiftyNextWeeklyOptions.get(data[6])!=null){
                     Map<String,String> map=bankNiftyNextWeeklyOptions.get(data[6]);
                     map.put(data[2],data[0]);
@@ -333,9 +477,15 @@ public class ZerodhaTransactionService {
             System.out.println(map.getKey()+":"+map.getValue());
         });*/
         System.out.println(bankNiftyWeeklyOptions.size());
-        tradeSedaQueue.sendTelemgramSeda("Total BNF current week expiry strike count :" + bankNiftyWeeklyOptions.size());
-        tradeSedaQueue.sendTelemgramSeda("Total BNF Next Week expiry strike count :" + bankNiftyNextWeeklyOptions.size());
-        tradeSedaQueue.sendTelemgramSeda("Total Fin nifty expiry strike count:" + finNiftyWeeklyOptions.size());
+        tradeSedaQueue.sendTelemgramSeda("Total Nifty current week expiry:"+weekExp+" strike count :" + niftyWeeklyOptions.size());
+        tradeSedaQueue.sendTelemgramSeda("Total Nifty Next Week expiry expiry:"+nextWeekExpDate+" strike count :" + niftyNextWeeklyOptions.size());
+        tradeSedaQueue.sendTelemgramSeda("Total BNF current week expiry:"+bnfWeekExp+" strike count :" + bankNiftyWeeklyOptions.size());
+        tradeSedaQueue.sendTelemgramSeda("Total BNF Next Week expiry expiry:"+bnfnextWeekExpDate+" strike count :" + bankNiftyNextWeeklyOptions.size());
+        tradeSedaQueue.sendTelemgramSeda("Total Fin nifty expiry:"+finWeekExp+" strike count:" + finNiftyWeeklyOptions.size());
+        tradeSedaQueue.sendTelemgramSeda("Total Fin nifty next week expiry:"+nextWeekFinExpDate+" strike count:" + finNiftyNextWeeklyOptions.size());
+        //log.info("Total Fin nifty next week expiry strike count:" + new Gson().toJson(finNiftyNextWeeklyOptions));
+        tradeSedaQueue.sendTelemgramSeda("Total Sensex week expiry:"+sensexWeekExp+" strike count:" + sensexWeeklyOptions.size());
+        tradeSedaQueue.sendTelemgramSeda("Total Sensex next week expiry:"+nextWeekSensexExpDate+" strike count:" + sensexNextWeeklyOptions.size());
         tradeSedaQueue.sendTelemgramSeda("Total BNF Futures strike Count for monthly exp :" +monthlyExp+":"+ currentFutures.size());
         try {
             tradeSedaQueue.sendTelemgramSeda("Total BNF current week expiry strike count :" + bankNiftyWeeklyOptions.size());
@@ -345,6 +495,21 @@ public class ZerodhaTransactionService {
         try{
        String dhanResponse=transactionService.downloadInstrumentData(dhanInstrumentURL);
        String[] dhanlines = dhanResponse.split("\\r?\\n");
+            String dhanCurrentWeekExpDate=formatddMMM.format(currentWeekExpDate).toUpperCase();
+            String dhanBNFCurrentWeekExpDate=formatddMMM.format(bnfDate).toUpperCase();
+            if(monthlyExp.equals(expDate)){
+                dhanBNFCurrentWeekExpDate=dhanCurrentWeekExpDate;
+            }
+
+            String dhanFinCurrentWeekExpDate=formatddMMM.format(currentFinWeekExpDate).toUpperCase();
+            String dhanNextWeekExpDate=formatddMMM.format(nextWeekExpDateRes).toUpperCase();
+            String bnfdhanNextWeekExpDate=formatddMMM.format(bnfnextWeekExpDateRes).toUpperCase();
+            if(monthlyExp.equals(nextWeekExpDate) && todayDateStr.equals(bankBiftyExpDate)){
+                bnfdhanNextWeekExpDate=dhanNextWeekExpDate;
+            }
+            if(todayDateStr.equals(expDate) && monthlyExp.equals(nextWeekExpDate)){
+                dhanBNFCurrentWeekExpDate=dhanNextWeekExpDate;
+            }
        System.out.println("dhan output:"+ dhanResponse.length());
        for ( int j=0; j< dhanlines.length;j++){
            String[] data =dhanlines[j].split(",");
@@ -354,9 +519,7 @@ public class ZerodhaTransactionService {
            String securitySymbol = data[5].replace("\"", "");
            String securityCustomSymbol = data[7].replace("\"", "");
            String[] splited = securityCustomSymbol.split("\\s+");
-           String dhanCurrentWeekExpDate=formatddMMM.format(currentWeekExpDate).toUpperCase();
-           String dhanFinCurrentWeekExpDate=formatddMMM.format(currentFinWeekExpDate).toUpperCase();
-           String dhanNextWeekExpDate=formatddMMM.format(nextWeekExpDateRes).toUpperCase();
+
            if(index.equals("NSE") && instrumentName.equals("OPTIDX")){
                String strikeExpDate=splited[1]+"-"+splited[2];
                if(dhanFinCurrentWeekExpDate.equals(strikeExpDate)){
@@ -373,17 +536,6 @@ public class ZerodhaTransactionService {
                    }
                }
                    if (dhanCurrentWeekExpDate.equals(strikeExpDate)) {
-                       if ("BANKNIFTY".equals(splited[0])) {
-                           if(dhanBankNiftyWeeklyOptions.get(splited[3])!=null){
-                               Map<String,String> map=dhanBankNiftyWeeklyOptions.get(splited[3]);
-                               map.put(data[5],data[2]);
-                               dhanBankNiftyWeeklyOptions.put(splited[3], map);
-                           }else {
-                               Map<String,String> map=new HashMap<>();
-                               map.put(data[5],data[2]);
-                               dhanBankNiftyWeeklyOptions.put(splited[3], map);
-                           }
-                       }
                        if("NIFTY".equals(splited[0])) {
                            if(dhanNiftyWeeklyOptions.get(splited[3])!=null){
                                Map<String,String> map=dhanNiftyWeeklyOptions.get(splited[3]);
@@ -396,17 +548,6 @@ public class ZerodhaTransactionService {
                            }
                        }
                    }else if(dhanNextWeekExpDate.equals(strikeExpDate)) {
-                       if ("BANKNIFTY".equals(splited[0])) {
-                           if(dhanBankNiftyNextWeeklyOptions.get(splited[3])!=null){
-                               Map<String,String> map=dhanBankNiftyNextWeeklyOptions.get(splited[3]);
-                               map.put(data[5],data[2]);
-                               dhanBankNiftyNextWeeklyOptions.put(splited[3], map);
-                           }else {
-                               Map<String,String> map=new HashMap<>();
-                               map.put(data[5],data[2]);
-                               dhanBankNiftyNextWeeklyOptions.put(splited[3], map);
-                           }
-                       }
                        if("NIFTY".equals(splited[0])) {
                            if(dhanNiftyNextWeeklyOptions.get(splited[3])!=null){
                                Map<String,String> map=dhanNiftyNextWeeklyOptions.get(splited[3]);
@@ -419,12 +560,37 @@ public class ZerodhaTransactionService {
                            }
                        }
                    }
+               if (dhanBNFCurrentWeekExpDate.equals(strikeExpDate)) {
+                   if ("BANKNIFTY".equals(splited[0])) {
+                       if(dhanBankNiftyWeeklyOptions.get(splited[3])!=null){
+                           Map<String,String> map=dhanBankNiftyWeeklyOptions.get(splited[3]);
+                           map.put(data[5],data[2]);
+                           dhanBankNiftyWeeklyOptions.put(splited[3], map);
+                       }else {
+                           Map<String,String> map=new HashMap<>();
+                           map.put(data[5],data[2]);
+                           dhanBankNiftyWeeklyOptions.put(splited[3], map);
+                       }
+                   }
+               }else if(bnfdhanNextWeekExpDate.equals(strikeExpDate)) {
+                   if ("BANKNIFTY".equals(splited[0])) {
+                       if(dhanBankNiftyNextWeeklyOptions.get(splited[3])!=null){
+                           Map<String,String> map=dhanBankNiftyNextWeeklyOptions.get(splited[3]);
+                           map.put(data[5],data[2]);
+                           dhanBankNiftyNextWeeklyOptions.put(splited[3], map);
+                       }else {
+                           Map<String,String> map=new HashMap<>();
+                           map.put(data[5],data[2]);
+                           dhanBankNiftyNextWeeklyOptions.put(splited[3], map);
+                       }
+                   }
+               }
            }
 
        }
        // System.out.println(bankNiftyWeeklyOptions.size());
-       tradeSedaQueue.sendTelemgramSeda("Total Dhan BNF current week expiry strike count :" + dhanBankNiftyWeeklyOptions.size());
-       tradeSedaQueue.sendTelemgramSeda("Total Dhan BNF Next Week expiry strike count :" + dhanBankNiftyNextWeeklyOptions.size());
+       tradeSedaQueue.sendTelemgramSeda("Total Dhan BNF current week expiry  :"+dhanBNFCurrentWeekExpDate+" strike count :" + dhanBankNiftyWeeklyOptions.size());
+       tradeSedaQueue.sendTelemgramSeda("Total Dhan BNF Next Week expiry:"+bnfdhanNextWeekExpDate+" strike count :" + dhanBankNiftyNextWeeklyOptions.size());
        tradeSedaQueue.sendTelemgramSeda("Total Dhan FN Week expiry strike count :" + dhanFNiftyWeeklyOptions.size());
        //  sendMessage.sendToTelegram("Total Dhan BNF Futures strike Count for monthly exp :" +monthlyExp+":"+ currentFutures.size(), telegramToken,"-713214125");
        tradeSedaQueue.sendTelemgramSeda("Total Dhan NF current week expiry strike count :" + dhanNiftyWeeklyOptions.size());

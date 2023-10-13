@@ -40,7 +40,10 @@ public class OptionDayViceTest {
     @Autowired
     UserList userList;
     public void test(int day) throws ParseException, IOException, KiteException {
-        while (day < 0) {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.YEAR, -2);
+        int daycount=730;
+        while (day < daycount) {
             StopWatch stopWatch = new StopWatch();
             stopWatch.start();
             Calendar calendar = Calendar.getInstance();

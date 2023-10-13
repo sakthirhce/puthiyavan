@@ -26,6 +26,12 @@ public class TradeSedaQueue {
     PriorityTelegramSedaProcessor priorityTelegramSedaProcessor;
 
     @Autowired
+    WebSocketOrderUpdateSedaProcessor webSocketOrderUpdateSedaProcessor;
+
+    @Autowired
+    WebSocketTicksSedaProcessor webSocketTicksSedaProcessor;
+
+    @Autowired
     UserList userList;
 
     Gson gson=new Gson();
@@ -37,6 +43,8 @@ public class TradeSedaQueue {
         camelContext.addComponent("telegramQueue", camelContext.getComponent("seda"));
         camelContext.addComponent("placeOrderQueue", camelContext.getComponent("seda"));
         camelContext.addComponent("priorityTelegramQueue", camelContext.getComponent("seda"));
+        camelContext.addComponent("websocketOrderUpdateQueue", camelContext.getComponent("seda"));
+        camelContext.addComponent("websocketTicksQueue", camelContext.getComponent("seda"));
         camelContext.addRoutes(new RouteBuilder() {
             public void configure() throws Exception {
                 from("seda:telegramQueue")
@@ -58,6 +66,20 @@ public class TradeSedaQueue {
                         .end();
             }
         });
+        camelContext.addRoutes(new RouteBuilder() {
+            public void configure() throws Exception {
+                from("seda:websocketOrderUpdateQueue")
+                        .process(webSocketOrderUpdateSedaProcessor)
+                        .end();
+            }
+        });
+        camelContext.addRoutes(new RouteBuilder() {
+            public void configure() throws Exception {
+                from("seda:websocketTicksQueue")
+                        .process(webSocketTicksSedaProcessor)
+                        .end();
+            }
+        });
         camelContext.start();
         return camelContext;
     }
@@ -74,6 +96,20 @@ public class TradeSedaQueue {
         User user =userList.getUser().stream().filter(user1 -> user1.isAdmin()).findFirst().get();
         telegramData.setGroupChatId(user.telegramBot.getGroupId());
         camelContext.createProducerTemplate().sendBody("seda:telegramQueue", gson.toJson(telegramData));
+    }
+    public void sendWebsocketOrderUpdateSeda(String message){
+        try {
+            camelContext.createProducerTemplate().sendBody("seda:websocketOrderUpdateQueue", message);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+    public void sendWebsocketTicksSeda(String message){
+        try {
+            camelContext.createProducerTemplate().sendBody("seda:websocketTicksQueue", message);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
     public void sendPriorityTelemgramSeda(String message){
         camelContext.createProducerTemplate().sendBody("seda:priorityTelegramQueue", message);

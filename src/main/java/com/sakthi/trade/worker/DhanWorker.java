@@ -194,7 +194,7 @@ public class DhanWorker implements BrokerWorker {
     public List<Position>  getPositions(User user) {
         Request request= transactionService.createGetRequests(routes.get("portfolio.positions"),user.getAccessToken());
         String rsponse=transactionService.callAPI(request);
-        log.info("dhan position respnse:"+rsponse);
+       // log.info("dhan position respnse:"+rsponse);
         List<PositionResponseDTO> orderResponseDTOList=Arrays.asList(gson.fromJson(rsponse,PositionResponseDTO[].class));
         List<Position> positions=new ArrayList<>();
         orderResponseDTOList.stream().forEach(orderResponseDTO ->{
@@ -204,7 +204,7 @@ public class DhanWorker implements BrokerWorker {
             position.netQuantity=orderResponseDTO.getNetQty();
             positions.add(position);
         });
-        log.info("dhan position respnse after conversion:"+new Gson().toJson(positions));
+      //  log.info("dhan position respnse after conversion:"+new Gson().toJson(positions));
         return positions;
     }
 
