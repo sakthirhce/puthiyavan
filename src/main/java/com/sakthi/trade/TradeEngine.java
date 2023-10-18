@@ -656,7 +656,7 @@ public class TradeEngine {
                         }
                     });
                 } catch (IOException | KiteException e) {
-                    throw new RuntimeException(e);
+                    e.printStackTrace();
                 }
             });
 
@@ -1115,7 +1115,7 @@ public class TradeEngine {
                                             tradeSedaQueue.sendTelemgramSeda("error option order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status:" + e.getMessage() + ": algo:"  + strategy.getTradeStrategyKey(),user.telegramBot.getGroupId());
                                             //e.printStackTrace();
                                         } catch (KiteException e) {
-                                            throw new RuntimeException(e);
+                                           e.printStackTrace();
                                         }
 
                                     } catch (Exception e) {
@@ -1126,7 +1126,7 @@ public class TradeEngine {
                                 }
                             }
                         } catch (ParseException e) {
-                            throw new RuntimeException(e);
+                            e.printStackTrace();
                         }
                     });
                 } catch (Exception e) {
