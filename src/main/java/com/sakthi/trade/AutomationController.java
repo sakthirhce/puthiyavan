@@ -2,6 +2,7 @@ package com.sakthi.trade;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.opencsv.CSVWriter;
 import com.sakthi.trade.algotest.backtest.data.Algotest;
 import com.sakthi.trade.domain.*;
 import com.sakthi.trade.entity.*;
@@ -24,10 +25,12 @@ import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import com.sakthi.trade.zerodha.account.UserList;
 import com.sakthi.trade.zerodha.account.ZerodhaAccount;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
+import com.zerodhatech.models.HistoricalData;
 import com.zerodhatech.models.LTPQuote;
 import com.zerodhatech.models.Position;
 import com.zerodhatech.models.Trade;
 import lombok.extern.slf4j.Slf4j;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -38,11 +41,13 @@ import org.springframework.web.bind.annotation.*;
 import javax.websocket.Session;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
 import java.util.logging.Logger;
@@ -452,43 +457,123 @@ NiftyOptionBuy935 niftyOptionBuy935;
         /*  });*/
 
     }
-    /*
+
     @GetMapping("/bnfIndexData")
     public void bnfIndexData(@RequestParam int day) throws Exception, KiteException {
 
         int daycount=day;
         String path="/home/hasvanth/Downloads/";
         CSVWriter csvWriter = new CSVWriter(new FileWriter(path+"/bnf.csv", true));
-        String[] dataHeader = {"Date-Time", "Open", "High", "Low", "Close"};
+        String[] dataHeader = {"Date-Time", "Prediction", "PL","Entry during previous close", "exit at open"};
         csvWriter.writeNext(dataHeader);
-        while (daycount >0) {
-            LocalDate currentdate = LocalDate.now().minusDays(daycount);
+      //  while (daycount >0) {
+            LocalDate startDate = LocalDate.now().minusDays(daycount);
+            LocalDate currentdate = LocalDate.now();
             DateTimeFormatter df1 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         try{
-            System.out.println(df1.format(currentdate));
+
             String stockId = zerodhaTransactionService.niftyIndics.get("NIFTY 50");
-            String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + df1.format(currentdate) + "+09:00:00&to=" + df1.format(currentdate) + "+16:00:00";
+            String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/day?from=" + df1.format(startDate) + "+00:00:00&to=" + df1.format(currentdate) + "+23:59:59";
                 String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                 HistoricalData historicalData = new HistoricalData();
                 JSONObject json = new JSONObject(response);
                 String status = json.getString("status");
                 if (!status.equals("error")) {
                     historicalData.parseResponse(json);
-                    historicalData.dataArrayList.stream().forEach(candle -> {
-                        String[] data = {candle.timeStamp, String.valueOf(candle.open), String.valueOf(candle.high), String.valueOf(candle.low), String.valueOf(candle.close)};
+                    int i=0;
+                    while(i<historicalData.dataArrayList.size()){
+                        System.out.println(i);
+                        HistoricalData previousDay=historicalData.dataArrayList.get(i);
+                        HistoricalData currentDay=historicalData.dataArrayList.get(i+1);
+                        System.out.println(previousDay.timeStamp);
+                        System.out.println(currentDay.timeStamp);
+                        double bodySize = Math.abs(previousDay.open - previousDay.close);
+                        double pL=0;
+                        double pL1=0;
+                        double pL2=0;
+                        double pL3=0;
+                        double pL4=0;
+                        double pL5=0;
+                        double upperWick = previousDay.high - Math.max(previousDay.open, previousDay.close);
+                        double lowerWick = Math.min(previousDay.open, previousDay.close) - previousDay.low;
+                        String trendPrediction="";
+                        // Bullish engulfing pattern
+                        if (previousDay.close > previousDay.open) {
+                            trendPrediction ="Bullish";
+                            pL=currentDay.close-currentDay.open;
+                            if(pL<-100){
+                                pL=-100;
+                            }
+                            pL1=currentDay.open-previousDay.close;
+                            if(pL1<-100){
+                                pL2=pL1;
+                            }else {
+                                pL2 = currentDay.close - previousDay.close;
+                            }
+                        }
+                        // Bearish engulfing pattern
+                        else if (previousDay.open > previousDay.close) {
+                            trendPrediction = "Bearish";
+                            pL=currentDay.open-currentDay.close;
+                            if(pL<-100){
+                                pL=-100;
+                            }
+                            pL1=previousDay.close-currentDay.open;
+                            if(pL1<-100){
+                                pL2=pL1;
+                            }else {
+                            pL2=previousDay.close-currentDay.close;
+                            }
+                        }
+                        // If neither, it's indecisive
+                            String trendPrediction1="";
+                            if(previousDay.open > previousDay.close && bodySize>20){
+                                trendPrediction1 = "Indecisive-Bearish";
+                                pL3=currentDay.open-currentDay.close;
+                                if(pL3<-100){
+                                    pL3=-100;
+                                }
+                                pL4=previousDay.close-currentDay.open;
+                                if(pL4<100){
+                                    pL5=pL4;
+                                }else {
+                                    pL5=previousDay.close-currentDay.close;
+                                }
+
+                            }
+                            if (previousDay.close > previousDay.open && bodySize>20 ) {
+                                trendPrediction1 ="Indecisive-Bullish";
+                                pL3=currentDay.close-currentDay.open;
+                                if(pL3<-100){
+                                    pL3=-100;
+                                }
+                                pL4=currentDay.open-previousDay.close;
+                                if(pL4<100){
+                                    pL5=pL4;
+                                }else {
+                                    pL5 =  currentDay.close-previousDay.close;
+                                }
+                            }
+
+                        String[] data = {currentDay.timeStamp, trendPrediction,String.valueOf(pL),String.valueOf(pL1),String.valueOf(pL2),trendPrediction1,String.valueOf(pL3),String.valueOf(pL4),String.valueOf(pL5)};
                         csvWriter.writeNext(data);
+                        csvWriter.flush();
+                        i++;
+                    }
+
+                    historicalData.dataArrayList.stream().forEach(candle -> {
+
                 });
             }}
        catch (Exception e){
             e.printStackTrace();
        }
-            daycount--;
-            System.out.println(daycount);
-        }
+
+
 
     }
 
-     */
+
     @GetMapping("/oneTradeExecutor")
     public void oneTradeExecutor() throws Exception, KiteException {
 

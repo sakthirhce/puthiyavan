@@ -36,6 +36,9 @@ public class WeeklyDataBackup {
     @Value("${filepath.trend}")
     String trendPath;
 
+    @Value("${data.export}")
+    boolean dataExport;
+
     @Autowired
     TelegramMessenger sendMessage;
     public static final Logger LOGGER = LoggerFactory.getLogger(WeeklyDataBackup.class.getName());
@@ -121,260 +124,262 @@ public class WeeklyDataBackup {
     }
     @Scheduled(cron="${zerodha.data.backup}")
     public void dataBackUp() throws Exception {
-        LOGGER.info("Expiry export started");
-        SimpleDateFormat year = new SimpleDateFormat("yyyy");
-        SimpleDateFormat month = new SimpleDateFormat("MMM");
-        Date currentDate=new Date();
-        String currentExp=currentExp();
-        String currentFNExp=currentFNExp();
-        String currentBNFExp=zerodhaTransactionService.bankBiftyExpDate;
-        String currentBSEExp=currentBSEExp();
-        Calendar calendarCurrent = Calendar.getInstance();
-        calendarCurrent.add(DAY_OF_MONTH, -8);
-        Date startDate=calendarCurrent.getTime();
-        String path=trendPath+"/BANKNIFTY/"+year.format(currentDate);
-        String nPath=trendPath+"/NIFTY/"+year.format(currentDate);
-        String bsePath=trendPath+"/BSE/"+year.format(currentDate);
-        File f=new File(path);
-        if(!f.exists()){
-            f.mkdir();
-        }
-        File nf=new File(nPath);
-        if(!nf.exists()){
-            nf.mkdir();
-        }
-        File sensexf=new File(bsePath);
-        if(!sensexf.exists()){
-            sensexf.mkdir();
-        }
-
-        String monthpath=path+"/"+month.format(currentDate);
-        String nMonthpath=nPath+"/"+month.format(currentDate);
-        String sMonthpath=sensexf+"/"+month.format(currentDate);
-        File monthFile=new File(monthpath);
-        File nmonthFile=new File(nMonthpath);
-        File smonthFile=new File(sMonthpath);
-        if(!monthFile.exists()){
-            monthFile.mkdir();
-        }
-        if(!smonthFile.exists()){
-            smonthFile.mkdir();
-        }
-        if(!nmonthFile.exists()){
-            nmonthFile.mkdir();
-        }
-        String expPath=monthpath+"/"+currentBNFExp;
-        File expFolder=new File(expPath);
-        if(!expFolder.exists()){
-            expFolder.mkdir();
-        }
-        String nexpPath=nmonthFile+"/"+currentExp;
-        File nexpFolder=new File(nexpPath);
-        if(!nexpFolder.exists()){
-            nexpFolder.mkdir();
-        }
-        String sensexpPath=smonthFile+"/"+currentBSEExp;
-        File sensexexpFolder=new File(sensexpPath);
-        if(!sensexexpFolder.exists()){
-            System.out.println("inside folder creation:");
-            boolean b=sensexexpFolder.mkdir();
-            System.out.println("inside folder creation:"+b);
-        }
-        System.out.println(sensexexpFolder);
-        expFolder.setReadable(true); //read
-        expFolder.setWritable(true); //write
-        nexpFolder.setReadable(true); //read
-        nexpFolder.setWritable(true); //write
-        sensexexpFolder.setReadable(true); //read
-        sensexexpFolder.setWritable(true); //write
-        try {
-            if (currentBSEExp.equals(format.format(currentDate))) {
-                String message = "sensex Expiry export date:" + currentBSEExp;
-                telegramClient.sendToTelegram(message, telegramTokenGroup, "-646157933");
-                zerodhaTransactionService.sensexWeeklyOptions.entrySet().stream().forEach(exp -> {
-
-                    Map<String, String> map = exp.getValue();
-                    map.entrySet().stream().forEach(optionExp -> {
-                        String strikeNo = optionExp.getValue();
-                        String strikeKey = optionExp.getKey();
-                        String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentBSEExp + "+15:30:00&oi=1";
-                        System.out.println(historicURL);
-                        String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
-                        System.out.println(response);
-                        String fileName;
-                        if (strikeKey.contains("CE")) {
-                            fileName = exp.getKey() + "CE";
-                        } else {
-                            fileName = exp.getKey() + "PE";
-                        }
-
-                        PrintWriter writer = null;
-                        try {
-                            writer = new PrintWriter(new File(sensexexpFolder + "/" + fileName + ".json"));
-
-                            writer.write(response);
-                            writer.flush();
-                            writer.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-
-                    });
-                });
-                zippingDirectory.test(sensexpPath, "SENSEX_" + format.format(currentDate));
-                telegramClient.sendDocumentToTelegram(sensexpPath + "/SENSEX_" + format.format(currentDate) + ".zip", "SENSEX_" + format.format(currentDate));
-               // FileUtils.deleteDirectory(new File(sensexpPath));
+        if (dataExport) {
+            LOGGER.info("Expiry export started");
+            SimpleDateFormat year = new SimpleDateFormat("yyyy");
+            SimpleDateFormat month = new SimpleDateFormat("MMM");
+            Date currentDate = new Date();
+            String currentExp = currentExp();
+            String currentFNExp = currentFNExp();
+            String currentBNFExp = zerodhaTransactionService.bankBiftyExpDate;
+            String currentBSEExp = currentBSEExp();
+            Calendar calendarCurrent = Calendar.getInstance();
+            calendarCurrent.add(DAY_OF_MONTH, -8);
+            Date startDate = calendarCurrent.getTime();
+            String path = trendPath + "/BANKNIFTY/" + year.format(currentDate);
+            String nPath = trendPath + "/NIFTY/" + year.format(currentDate);
+            String bsePath = trendPath + "/BSE/" + year.format(currentDate);
+            File f = new File(path);
+            if (!f.exists()) {
+                f.mkdir();
             }
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-try {
-    String fnPath = trendPath + "/FINNIFTY/" + year.format(currentDate);
-    File fn = new File(fnPath);
-    if (!fn.exists()) {
-        fn.mkdir();
-    }
-    String fnmonthpath = fnPath + "/" + month.format(currentDate);
-    File fnmonthFile = new File(fnmonthpath);
-    if (!fnmonthFile.exists()) {
-        fnmonthFile.mkdir();
-    }
-    String fnexpPath = fnmonthFile + "/" + currentFNExp;
-    File fnexpFolder = new File(fnexpPath);
-    if (!fnexpFolder.exists()) {
-        fnexpFolder.mkdir();
-    }
-    fnexpFolder.setReadable(true); //read
-    fnexpFolder.setWritable(true); //write
+            File nf = new File(nPath);
+            if (!nf.exists()) {
+                nf.mkdir();
+            }
+            File sensexf = new File(bsePath);
+            if (!sensexf.exists()) {
+                sensexf.mkdir();
+            }
 
-    if (currentFNExp.equals(format.format(currentDate))) {
-        String message="FN Expiry export date:" + currentFNExp;
-        telegramClient.sendToTelegram(message,telegramTokenGroup, "-646157933");
-        zerodhaTransactionService.finNiftyWeeklyOptions.entrySet().stream().forEach(exp -> {
-
-            Map<String, String> map = exp.getValue();
-            map.entrySet().stream().forEach(optionExp -> {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                String strikeNo = optionExp.getValue();
-                String strikeKey = optionExp.getKey();
-                String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentFNExp + "+15:30:00&oi=1";
-                String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
-                String fileName;
-                if (strikeKey.contains("CE")) {
-                    fileName = exp.getKey() + "CE";
-                } else {
-                    fileName = exp.getKey() + "PE";
-                }
-
-                PrintWriter writer = null;
-                try {
-                    writer = new PrintWriter(new File(fnexpFolder + "/" + fileName + ".json"));
-
-                    writer.write(response);
-                    writer.flush();
-                    writer.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-            });
-        });
-        zippingDirectory.test(fnexpPath, "FINNIFTY_"+format.format(currentDate));
-        telegramClient.sendDocumentToTelegram(fnexpPath+"/FINNIFTY_"+format.format(currentDate)+".zip","FINNIFTY_"+format.format(currentDate));
-        FileUtils.deleteDirectory(new File(fnexpPath));
-    }
-
-}catch (Exception e){
-    e.printStackTrace();
-}
-        if(currentBNFExp.equals(format.format(currentDate))) {
-            // log.info("Expiry export date:"+currentExp);
+            String monthpath = path + "/" + month.format(currentDate);
+            String nMonthpath = nPath + "/" + month.format(currentDate);
+            String sMonthpath = sensexf + "/" + month.format(currentDate);
+            File monthFile = new File(monthpath);
+            File nmonthFile = new File(nMonthpath);
+            File smonthFile = new File(sMonthpath);
+            if (!monthFile.exists()) {
+                monthFile.mkdir();
+            }
+            if (!smonthFile.exists()) {
+                smonthFile.mkdir();
+            }
+            if (!nmonthFile.exists()) {
+                nmonthFile.mkdir();
+            }
+            String expPath = monthpath + "/" + currentBNFExp;
+            File expFolder = new File(expPath);
+            if (!expFolder.exists()) {
+                expFolder.mkdir();
+            }
+            String nexpPath = nmonthFile + "/" + currentExp;
+            File nexpFolder = new File(nexpPath);
+            if (!nexpFolder.exists()) {
+                nexpFolder.mkdir();
+            }
+            String sensexpPath = smonthFile + "/" + currentBSEExp;
+            File sensexexpFolder = new File(sensexpPath);
+            if (!sensexexpFolder.exists()) {
+                System.out.println("inside folder creation:");
+                boolean b = sensexexpFolder.mkdir();
+                System.out.println("inside folder creation:" + b);
+            }
+            System.out.println(sensexexpFolder);
+            expFolder.setReadable(true); //read
+            expFolder.setWritable(true); //write
+            nexpFolder.setReadable(true); //read
+            nexpFolder.setWritable(true); //write
+            sensexexpFolder.setReadable(true); //read
+            sensexexpFolder.setWritable(true); //write
             try {
-                String message = "BNifty Expiry export date:" + currentExp;
-                telegramClient.sendToTelegram(message, telegramTokenGroup, "-646157933");
-                zerodhaTransactionService.bankNiftyWeeklyOptions.entrySet().stream().forEach(exp -> {
-                    Map<String, String> map = exp.getValue();
-                    map.entrySet().stream().forEach(optionExp -> {
-                        String strikeNo = optionExp.getValue();
-                        String strikeKey = optionExp.getKey();
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
-                        String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentExp + "+15:30:00&oi=1";
-                        String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
-                        String fileName;
-                        if (strikeKey.contains("CE")) {
-                            fileName = exp.getKey() + "CE";
-                        } else {
-                            fileName = exp.getKey() + "PE";
-                        }
+                if (currentBSEExp.equals(format.format(currentDate))) {
+                    String message = "sensex Expiry export date:" + currentBSEExp;
+                    telegramClient.sendToTelegram(message, telegramTokenGroup, "-646157933");
+                    zerodhaTransactionService.sensexWeeklyOptions.entrySet().stream().forEach(exp -> {
 
-                        PrintWriter writer = null;
-                        try {
-                            writer = new PrintWriter(new File(expFolder + "/" + fileName + ".json"));
+                        Map<String, String> map = exp.getValue();
+                        map.entrySet().stream().forEach(optionExp -> {
+                            String strikeNo = optionExp.getValue();
+                            String strikeKey = optionExp.getKey();
+                            String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentBSEExp + "+15:30:00&oi=1";
+                            System.out.println(historicURL);
+                            String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
+                            System.out.println(response);
+                            String fileName;
+                            if (strikeKey.contains("CE")) {
+                                fileName = exp.getKey() + "CE";
+                            } else {
+                                fileName = exp.getKey() + "PE";
+                            }
 
-                            writer.write(response);
-                            writer.flush();
-                            writer.close();
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        }
+                            PrintWriter writer = null;
+                            try {
+                                writer = new PrintWriter(new File(sensexexpFolder + "/" + fileName + ".json"));
 
+                                writer.write(response);
+                                writer.flush();
+                                writer.close();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                        });
                     });
-                });
-                zippingDirectory.test(expPath, "BNIFTY_" + format.format(currentDate));
-                telegramClient.sendDocumentToTelegram(expPath + "/BNIFTY_" + format.format(currentDate) + ".zip", "BNF");
-                FileUtils.deleteDirectory(new File(expPath));
+                    zippingDirectory.test(sensexpPath, "SENSEX_" + format.format(currentDate));
+                    telegramClient.sendDocumentToTelegram(sensexpPath + "/SENSEX_" + format.format(currentDate) + ".zip", "SENSEX_" + format.format(currentDate));
+                    // FileUtils.deleteDirectory(new File(sensexpPath));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try {
+                String fnPath = trendPath + "/FINNIFTY/" + year.format(currentDate);
+                File fn = new File(fnPath);
+                if (!fn.exists()) {
+                    fn.mkdir();
+                }
+                String fnmonthpath = fnPath + "/" + month.format(currentDate);
+                File fnmonthFile = new File(fnmonthpath);
+                if (!fnmonthFile.exists()) {
+                    fnmonthFile.mkdir();
+                }
+                String fnexpPath = fnmonthFile + "/" + currentFNExp;
+                File fnexpFolder = new File(fnexpPath);
+                if (!fnexpFolder.exists()) {
+                    fnexpFolder.mkdir();
+                }
+                fnexpFolder.setReadable(true); //read
+                fnexpFolder.setWritable(true); //write
+
+                if (currentFNExp.equals(format.format(currentDate))) {
+                    String message = "FN Expiry export date:" + currentFNExp;
+                    telegramClient.sendToTelegram(message, telegramTokenGroup, "-646157933");
+                    zerodhaTransactionService.finNiftyWeeklyOptions.entrySet().stream().forEach(exp -> {
+
+                        Map<String, String> map = exp.getValue();
+                        map.entrySet().stream().forEach(optionExp -> {
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                            String strikeNo = optionExp.getValue();
+                            String strikeKey = optionExp.getKey();
+                            String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentFNExp + "+15:30:00&oi=1";
+                            String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
+                            String fileName;
+                            if (strikeKey.contains("CE")) {
+                                fileName = exp.getKey() + "CE";
+                            } else {
+                                fileName = exp.getKey() + "PE";
+                            }
+
+                            PrintWriter writer = null;
+                            try {
+                                writer = new PrintWriter(new File(fnexpFolder + "/" + fileName + ".json"));
+
+                                writer.write(response);
+                                writer.flush();
+                                writer.close();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                        });
+                    });
+                    zippingDirectory.test(fnexpPath, "FINNIFTY_" + format.format(currentDate));
+                    telegramClient.sendDocumentToTelegram(fnexpPath + "/FINNIFTY_" + format.format(currentDate) + ".zip", "FINNIFTY_" + format.format(currentDate));
+                    FileUtils.deleteDirectory(new File(fnexpPath));
+                }
 
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        } if(currentExp.equals(format.format(currentDate))){
-               try{
-            zerodhaTransactionService.niftyWeeklyOptions.entrySet().stream().forEach( exp->{
-                Map<String,String> map=exp.getValue();
-                map.entrySet().stream().forEach(optionExp -> {
-                    String strikeNo = optionExp.getValue();
-                    String strikeKey = optionExp.getKey();
-                    String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentExp + "+15:30:00&oi=1";
-                    String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
-                    String fileName;
-                    if(strikeKey.contains("CE"))
-                    {
-                        fileName=exp.getKey()+"CE";
-                    }else{
-                        fileName=exp.getKey()+"PE";
-                    }
+            if (currentBNFExp.equals(format.format(currentDate))) {
+                // log.info("Expiry export date:"+currentExp);
+                try {
+                    String message = "BNifty Expiry export date:" + currentExp;
+                    telegramClient.sendToTelegram(message, telegramTokenGroup, "-646157933");
+                    zerodhaTransactionService.bankNiftyWeeklyOptions.entrySet().stream().forEach(exp -> {
+                        Map<String, String> map = exp.getValue();
+                        map.entrySet().stream().forEach(optionExp -> {
+                            String strikeNo = optionExp.getValue();
+                            String strikeKey = optionExp.getKey();
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                            String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentExp + "+15:30:00&oi=1";
+                            String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
+                            String fileName;
+                            if (strikeKey.contains("CE")) {
+                                fileName = exp.getKey() + "CE";
+                            } else {
+                                fileName = exp.getKey() + "PE";
+                            }
 
-                    PrintWriter writer =null;
-                    try {
-                        writer = new PrintWriter(new File(nexpFolder+"/"+fileName+".json"));
+                            PrintWriter writer = null;
+                            try {
+                                writer = new PrintWriter(new File(expFolder + "/" + fileName + ".json"));
 
-                        writer.write(response);
-                        writer.flush();
-                        writer.close();
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    }
+                                writer.write(response);
+                                writer.flush();
+                                writer.close();
+                            } catch (FileNotFoundException e) {
+                                e.printStackTrace();
+                            }
 
-                });
-            });
-                zippingDirectory.test(nexpPath,"NIFTY_"+format.format(currentDate));
-                telegramClient.sendDocumentToTelegram(nexpPath+"/NIFTY_"+format.format(currentDate)+".zip","NIFTY");
-                FileUtils.deleteDirectory(new File(nexpPath));
-            }catch (Exception e){
-                e.printStackTrace();
+                        });
+                    });
+                    zippingDirectory.test(expPath, "BNIFTY_" + format.format(currentDate));
+                    telegramClient.sendDocumentToTelegram(expPath + "/BNIFTY_" + format.format(currentDate) + ".zip", "BNF");
+                    FileUtils.deleteDirectory(new File(expPath));
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
+            if (currentExp.equals(format.format(currentDate))) {
+                try {
+                    zerodhaTransactionService.niftyWeeklyOptions.entrySet().stream().forEach(exp -> {
+                        Map<String, String> map = exp.getValue();
+                        map.entrySet().stream().forEach(optionExp -> {
+                            String strikeNo = optionExp.getValue();
+                            String strikeKey = optionExp.getKey();
+                            String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentExp + "+15:30:00&oi=1";
+                            String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
+                            String fileName;
+                            if (strikeKey.contains("CE")) {
+                                fileName = exp.getKey() + "CE";
+                            } else {
+                                fileName = exp.getKey() + "PE";
+                            }
+
+                            PrintWriter writer = null;
+                            try {
+                                writer = new PrintWriter(new File(nexpFolder + "/" + fileName + ".json"));
+
+                                writer.write(response);
+                                writer.flush();
+                                writer.close();
+                            } catch (FileNotFoundException e) {
+                                e.printStackTrace();
+                            }
+
+                        });
+                    });
+                    zippingDirectory.test(nexpPath, "NIFTY_" + format.format(currentDate));
+                    telegramClient.sendDocumentToTelegram(nexpPath + "/NIFTY_" + format.format(currentDate) + ".zip", "NIFTY");
+                    FileUtils.deleteDirectory(new File(nexpPath));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 /*  zipUtils.zipExpData(expFolder.getPath(),currentExp);
         File zipPath=new File(expFolder.getPath()+"/"+currentExp+".zip");*/
-      //  sendMessage.sendDocumentToTelegram(zipPath,"1162339611:AAGTezAs6970OmLwhcBuTlef_-dsfcoQi_o","-646157933");
+                //  sendMessage.sendDocumentToTelegram(zipPath,"1162339611:AAGTezAs6970OmLwhcBuTlef_-dsfcoQi_o","-646157933");
 
+            }
         }
     }
 }

@@ -20,6 +20,7 @@ import org.apache.camel.Processor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -46,6 +47,9 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
     SimpleDateFormat exchangeDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     @Autowired
     TradeDataMapper tradeDataMapper;
+
+    @Value("${websocket.userId}")
+    String websocketUserId;
 
     public void mapTradeDataToSaveOpenTradeDataEntity(TradeData tradeData, boolean orderPlaced) {
         try {
@@ -74,7 +78,7 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
         String currentDateStr = dateFormat.format(date);
         tradeEngine.openTrade.entrySet().stream().forEach(userTradeData -> {
             String userId = userTradeData.getKey();
-            if(userId.equals("LTK728")) {
+            if(userId.equals(websocketUserId)) {
                 List<TradeData> tradeData = userTradeData.getValue();
                 User user = userList.getUser().stream().filter(user1 -> user1.getName().equals(userId)).findFirst().get();
                 BrokerWorker brokerWorker = workerFactory.getWorker(user);
@@ -164,6 +168,9 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                             OrderParams orderParams = new OrderParams();
                                             orderParams.tradingsymbol = trendTradeData.getStockName();
                                             orderParams.exchange = "NFO";
+                                            if(strategy.getTradeStrategyKey().length()<=20) {
+                                                orderParams.tag = strategy.getTradeStrategyKey();
+                                            }
                                             orderParams.quantity = trendTradeData.getQty();
                                             orderParams.orderType = "SL";
                                             if ("MIS".equals(strategy.getTradeValidity())) {
@@ -226,7 +233,7 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                             LOGGER.info("error while placing sl:" + e.getMessage() + trendTradeData.getEntryOrderId() + ":" + trendTradeData.getStockName());
                                         }
 
-                                    }
+                                    }}
                                     if (("COMPLETE".equals(order.status) || "TRADED".equals(order.status)) && order.orderId.equals(trendTradeData.getSlOrderId()) && !trendTradeData.isExited && trendTradeData.isSlPlaced) {
                                         trendTradeData.isSLHit = true;
                                         trendTradeData.isExited = true;
@@ -248,7 +255,11 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                                     trendTradeData.getStockName().equals(tradeDataTemp.getStockName())
                                                             && tradeDataTemp.getTradeStrategy().getTradeStrategyKey().equals(strategy.getTradeStrategyKey()) && tradeDataTemp.isSLHit).count();
                                             if (tradeCount < strategy.getReentryCount().intValue() + 1) {
+
                                                 OrderParams orderParams = new OrderParams();
+                                                if(strategy.getTradeStrategyKey().length()<=20) {
+                                                    orderParams.tag = strategy.getTradeStrategyKey();
+                                                }
                                                 TradeData reentryTradeData = new TradeData();
                                                 reentryTradeData.setStockName(trendTradeData.getStockName());
                                                 String dataKey = UUID.randomUUID().toString();
@@ -315,6 +326,9 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                             reentryTradeData.setTradeStrategy(strategy);
                                             orderParams.tradingsymbol = trendTradeData.getStockName();
                                             orderParams.exchange = "NFO";
+                                            if(strategy.getTradeStrategyKey().length()<=20) {
+                                                orderParams.tag = strategy.getTradeStrategyKey();
+                                            }
                                             orderParams.quantity = trendTradeData.getQty();
                                             orderParams.orderType = "SL";
                                           //  orderParams.triggerPrice = trendTradeData.get().doubleValue();
@@ -369,7 +383,7 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                         }
                                         if (strategy.isTrailToCost()) {
                                             userTradeData.getValue().stream().filter(tradeDataTemp -> tradeDataTemp.getTradeStrategy().getTradeStrategyKey().equals(strategy.getTradeStrategyKey())
-                                                    && !tradeDataTemp.isSLHit).forEach(tradeDataMod -> {
+                                                    && !tradeDataTemp.isSLHit && !tradeDataTemp.isExited).forEach(tradeDataMod -> {
                                                 try {
                                                     Order order1 = brokerWorker.getOrder(user, tradeDataMod.getSlOrderId());
                                                     OrderParams orderParams = new OrderParams();
@@ -395,7 +409,7 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                         }
                                     }
 
-                                } else if ("REJECTED".equals(order.status) && !trendTradeData.isErrored && order.orderId.equals(trendTradeData.getSlOrderId())) {
+                                 if ("REJECTED".equals(order.status) && !trendTradeData.isErrored && order.orderId.equals(trendTradeData.getSlOrderId())) {
                                     String message = MessageFormat.format("SL order placement rejected for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + order.status + ":" + order.statusMessage + ":" + strategy.getTradeStrategyKey());
                                     LOGGER.info(message);
                                     trendTradeData.isErrored = true;

@@ -321,10 +321,7 @@ public class ZerodhaTransactionService {
             log.info("Monthly Exp falling on holiday. recalculated weekly exp date is:"+monthlyExp);
             tradeSedaQueue.sendTelemgramSeda("Monthly Exp falling on holiday. recalculated weekly exp date is:"+monthlyExp);
         }
-        if(monthlyExp.equals(expDate)){
-            bnfWeekExp=expDate;
-            bnfDate=date;
-        }
+
         bankBiftyExpDate=bnfWeekExp;
         Date currentWeekExpDate=date;
         Date currentFinWeekExpDate=findate;
@@ -343,11 +340,15 @@ public class ZerodhaTransactionService {
             bnfnextWeekExpDate=nextWeekExpDate;
             bnfnextWeekExpDateRes=nextWeekExpDateRes;
         }
-        if(todayDateStr.equals(expDate) && monthlyExp.equals(nextWeekExpDate)){
-            bankBiftyExpDate=nextWeekExpDate;
-            bnfDate=nextWeekExpDateRes;
-            bnfWeekExp=nextWeekExpDate;
+        if(monthlyExp.equals(expDate)){
+            bnfnextWeekExpDate=bnfWeekExp;
+            bnfnextWeekExpDateRes=bnfDate;
+            bnfWeekExp=expDate;
+            bnfDate=date;
+            bankBiftyExpDate=bnfWeekExp;
+
         }
+
         String response=null;
         if(!testProfile) {
             response = transactionService.callAPI(transactionService.createZerodhaGetRequest(instrumentURI));
@@ -753,7 +754,7 @@ public class ZerodhaTransactionService {
         int expDayTemp=expDateTemp.getDayOfMonth();
        int curDayTemp=LocalDate.now().getDayOfMonth();
         //Calendar calCurTemp = Calendar.getInstance();
-        if(curDayTemp>=expDayTemp){
+        if(curDayTemp>expDayTemp){
             int month=Integer.parseInt(monthFormat.format(cal.getTime()));
             int year=Integer.parseInt(yearFormat.format(cal.getTime()));
             if(month==12){

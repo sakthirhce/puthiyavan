@@ -372,7 +372,7 @@ public class TradeEngine {
                             String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL), stockId, currentHourMinStr);
                             HistoricalData historicalData = new HistoricalData();
                             JSONObject json = new JSONObject(response);
-                               //  log.info(currentHourMinStr+":"+historicURL+":"+response);
+                                 log.info(currentHourMinStr+":"+historicURL+":"+response);
                             String status = json.getString("status");
                             if (!status.equals("error")) {
                                 historicalData.parseResponse(json);
@@ -468,6 +468,9 @@ public class TradeEngine {
                                                                 }
                                                                 orderParams.transactionType = strategy.getOrderType();
                                                                 orderParams.validity = "DAY";
+                                                                if(strategy.getTradeStrategyKey().length()<=20) {
+                                                                    orderParams.tag = strategy.getTradeStrategyKey();
+                                                                }
                                                                 LocalDate localDate = LocalDate.now();
                                                                 DayOfWeek dow = localDate.getDayOfWeek();
                                                                 String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
@@ -507,9 +510,10 @@ public class TradeEngine {
                                                                             tradeData.setStrikeId(strikeData.getDhanId());
                                                                             tradeData.setTradeStrategy(strategy);
                                                                             order = brokerWorker.placeOrder(orderParams, user, tradeData);
-                                                                            if (order != null)
+                                                                            if (order != null) {
                                                                                 tradeData.setEntryOrderId(order.orderId);
-                                                                            //  tradeData.isOrderPlaced = true;
+                                                                                //  tradeData.isOrderPlaced = true;
+                                                                            }
 
                                                                             mapTradeDataToSaveOpenTradeDataEntity(tradeData, true);
                                                                             List<TradeData> tradeDataList = openTrade.get(user.getName());
@@ -615,6 +619,9 @@ public class TradeEngine {
                                         OrderParams orderParams = new OrderParams();
                                         orderParams.tradingsymbol = position.tradingSymbol;
                                         orderParams.exchange = "NFO";
+                                        if(strategy.getTradeStrategyKey().length()<=20) {
+                                            orderParams.tag = strategy.getTradeStrategyKey();
+                                        }
                                         orderParams.quantity = tradeData.getQty();
                                         orderParams.orderType = "MARKET";
                                         if ("MIS".equals(strategy.getTradeValidity())) {
@@ -949,7 +956,7 @@ public class TradeEngine {
                                         }
                                         System.out.println(triggerPriceTemp);
                                         orderParams.triggerPrice = triggerPriceTemp.doubleValue();
-                                        orderParams.price = BigDecimal.valueOf(triggerPriceTemp.get()).subtract(BigDecimal.valueOf(triggerPriceTemp.get()).divide(new BigDecimal(100))
+                                        orderParams.price = BigDecimal.valueOf(triggerPriceTemp.get()).add(BigDecimal.valueOf(triggerPriceTemp.get()).divide(new BigDecimal(100))
                                                 .multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP).doubleValue();
                                         if ("MIS".equals(strategy.getTradeValidity())) {
                                             orderParams.product = "MIS";
@@ -1056,6 +1063,9 @@ public class TradeEngine {
                                         orderParams.exchange = "NFO";
                                         orderParams.quantity = trendTradeData.getQty();
                                         orderParams.orderType = "SL";
+                                        if(strategy.getTradeStrategyKey().length()<=20) {
+                                            orderParams.tag = strategy.getTradeStrategyKey();
+                                        }
                                         if ("MIS".equals(strategy.getTradeValidity())) {
                                             orderParams.product = "MIS";
                                         } else {
@@ -1251,6 +1261,9 @@ public class TradeEngine {
                                         try {
                                             // mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, true);
                                             OrderParams orderParams = new OrderParams();
+                                            if(strategy.getTradeStrategyKey().length()<=20) {
+                                                orderParams.tag = strategy.getTradeStrategyKey();
+                                            }
                                             orderParams.tradingsymbol = trendTradeData.getStockName();
                                             orderParams.exchange = "NFO";
                                             orderParams.quantity = trendTradeData.getQty();
@@ -1358,6 +1371,9 @@ public class TradeEngine {
                                             orderParams.exchange = "NFO";
                                             orderParams.quantity = trendTradeData.getQty();
                                             orderParams.orderType = "SL";
+                                            if(strategy.getTradeStrategyKey().length()<=20) {
+                                                orderParams.tag = strategy.getTradeStrategyKey();
+                                            }
                                             orderParams.triggerPrice = trendTradeData.getSellPrice().doubleValue();
                                             orderParams.price = trendTradeData.getSellPrice().subtract(trendTradeData.getSellPrice().divide(new BigDecimal(100))
                                                     .multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP).doubleValue();
@@ -1408,6 +1424,9 @@ public class TradeEngine {
                                         reentryTradeData.setTradeStrategy(strategy);
                                         orderParams.tradingsymbol = trendTradeData.getStockName();
                                         orderParams.exchange = "NFO";
+                                        if(strategy.getTradeStrategyKey().length()<=20) {
+                                            orderParams.tag = strategy.getTradeStrategyKey();
+                                        }
                                         orderParams.quantity = trendTradeData.getQty();
                                         orderParams.orderType = "SL";
                                         //  orderParams.triggerPrice = trendTradeData.get().doubleValue();
@@ -1534,6 +1553,9 @@ public class TradeEngine {
 
                         OrderParams orderParams = new OrderParams();
                         orderParams.tradingsymbol = finalSelected.getValue().getZerodhaSymbol();
+                        if(strategy.getTradeStrategyKey().length()<=20) {
+                            orderParams.tag = strategy.getTradeStrategyKey();
+                        }
                         orderParams.exchange = "NFO";
                         if ("MIS".equals(strategy.getTradeValidity())) {
                             orderParams.product = "MIS";
@@ -1629,6 +1651,9 @@ public class TradeEngine {
                             orderParams.product = "MIS";
                         } else {
                             orderParams.product = "NRML";
+                        }
+                        if(strategy.getTradeStrategyKey().length()<=20) {
+                            orderParams.tag = strategy.getTradeStrategyKey();
                         }
                         orderParams.transactionType = strategy.getOrderType();
                         orderParams.validity = "DAY";
@@ -2061,14 +2086,17 @@ public class TradeEngine {
     TelegramMessenger telegramClient;
     @Value("${telegram.orb.bot.token}")
     String telegramTokenGroup;
-
+    @Value("${data.export}")
+    boolean dataExport;
     @Scheduled(cron = "${tradeEngine.websocket.tick.export}")
     public void tickExport() throws IOException {
-        Date date=new Date();
-        zippingDirectory.zipFile("tick_" + dateFormat.format(date) + ".csv","tick_" + dateFormat.format(date),"/home/ubuntu","instrument_" + dateFormat.format(date) + ".csv");
-        telegramClient.sendDocumentToTelegram("/home/ubuntu/tick_"+ dateFormat.format(date)+ ".zip", "Tick_"+dateFormat.format(date));
-        FileUtils.delete(new File("/home/ubuntu/tick_"+ dateFormat.format(date)+ ".zip"));
-        FileUtils.delete(new File("/home/ubuntu/tick_"+ dateFormat.format(date)+ ".csv"));
+        if(dataExport) {
+            Date date = new Date();
+            zippingDirectory.zipFile("tick_" + dateFormat.format(date) + ".csv", "tick_" + dateFormat.format(date), "/home/ubuntu", "instrument_" + dateFormat.format(date) + ".csv");
+            telegramClient.sendDocumentToTelegram("/home/ubuntu/tick_" + dateFormat.format(date) + ".zip", "Tick_" + dateFormat.format(date));
+            FileUtils.delete(new File("/home/ubuntu/tick_" + dateFormat.format(date) + ".zip"));
+            FileUtils.delete(new File("/home/ubuntu/tick_" + dateFormat.format(date) + ".csv"));
+        }
     }
     public int getAtm(String strikeId){
         Date date = new Date();

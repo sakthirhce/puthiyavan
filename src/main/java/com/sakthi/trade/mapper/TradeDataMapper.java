@@ -1,6 +1,7 @@
 package com.sakthi.trade.mapper;
 
 import com.google.gson.Gson;
+import com.sakthi.trade.TradeEngine;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.entity.OpenTradeDataBackupEntity;
 import com.sakthi.trade.entity.OpenTradeDataEntity;
@@ -10,6 +11,7 @@ import com.sakthi.trade.repo.OpenTradeDataBackupRepo;
 import com.sakthi.trade.repo.OpenTradeDataRepo;
 import com.sakthi.trade.repo.TradeStrategyRepo;
 import com.sakthi.trade.util.MathUtils;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +24,7 @@ import java.util.logging.Logger;
 @Service
 public class TradeDataMapper {
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-
+    public static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(TradeDataMapper.class.getName());
     public TradeData mapTradeEntityToTradeData(OpenTradeDataEntity openTradeDataEntity){
         TradeData tradeData = new TradeData();
         tradeData.setDataKey(openTradeDataEntity.getDataKey());
@@ -186,7 +188,7 @@ public class TradeDataMapper {
             }}
         return tradeData;
     }
-    public static final Logger LOGGER = Logger.getLogger(TradeDataMapper.class.getName());
+  //  public static final Logger LOGGER = Logger.getLogger(TradeDataMapper.class.getName());
     @Autowired
     OpenTradeDataBackupRepo openTradeDataBackupRepo;
 
@@ -287,7 +289,7 @@ public class TradeDataMapper {
                 }
             }
             saveTradeData(openTradeDataEntity);
-            //LOGGER.info("sucessfully saved trade data:"+new Gson().toJson(openTradeDataEntity));
+            LOGGER.info("sucessfully saved trade data:"+new Gson().toJson(openTradeDataEntity));
         } catch (Exception e) {
             LOGGER.info(e.getMessage());
         }

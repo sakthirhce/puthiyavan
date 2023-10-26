@@ -146,17 +146,19 @@ public class TransactionService {
         String responseStr=globalContextCache.getHistoricData(time,stockId);
         try{
             if(responseStr==null) {
+                log.info("details not found in cache:"+stockId+":"+responseStr);
                 if(tokenBucket.tryConsumeWithWait()){
                 StopWatch watch = new StopWatch();
                 watch.start();
                 Response response = okHttpClient.newCall(request).execute();
                 watch.stop();
-                //  log.info("Total time taken for zerodha api call in millisecs: "+ watch.getTotalTimeMillis());
+                log.info("Total time taken for zerodha api cal"+stockId+" in millisecs: "+ watch.getTotalTimeMillis());
                 responseStr = response.body().string();
+                    log.info("api response"+stockId+":"+responseStr);
                 globalContextCache.setHistoricData(time,stockId,responseStr);
                 }
             }else {
-               // LOGGER.info("from cache:"+responseStr);
+                LOGGER.info("api response:"+stockId+" from cache:"+responseStr);
             }
         }catch (Exception e){
             e.printStackTrace();
