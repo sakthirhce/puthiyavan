@@ -146,6 +146,23 @@ public class MathUtils {
                 strikeMasterMap1 = zerodhaTransactionService.niftyWeeklyOptions;
             }
         }
+
+        if ("FN".equals(index)) {
+            stockId = zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE");
+            if (zerodhaTransactionService.finExpDate.equals(currentDate)) {
+                strikeMasterMap1= zerodhaTransactionService.finNiftyWeeklyOptions;
+            } else {
+                strikeMasterMap1 = zerodhaTransactionService.finNiftyNextWeeklyOptions;
+            }
+        }
+        if ("SS".equals(index)) {
+            stockId = zerodhaTransactionService.niftyIndics.get("SENSEX");
+            if (zerodhaTransactionService.sensexExpDate.equals(currentDate)) {
+                strikeMasterMap1= zerodhaTransactionService.sensexWeeklyOptions;
+            } else {
+                strikeMasterMap1 = zerodhaTransactionService.sensexNextWeeklyOptions;
+            }
+        }
         if ("MC".equals(index)) {
             stockId = zerodhaTransactionService.niftyIndics.get("NIFTY MID SELECT");
             if (zerodhaTransactionService.midCpExpDate.equals(currentDate)) {
@@ -248,12 +265,29 @@ public class MathUtils {
                 strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.NF_CURRENT.expiryName);
             }
         }
+        if ("FN".equals(index)) {
+            stockId = zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE");
+            if (zerodhaTransactionService.finExpDate.equals(currentDate)) {
+                strikeMasterMap1= zerodhaTransactionService.globalOptionsInfo.get(Expiry.FN_NEXT.expiryName);
+            } else {
+                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.FN_CURRENT.expiryName);
+            }
+        }
+        if ("SS".equals(index)) {
+            stockId = zerodhaTransactionService.niftyIndics.get("SENSEX");
+            if (zerodhaTransactionService.sensexExpDate.equals(currentDate)) {
+                strikeMasterMap1= zerodhaTransactionService.globalOptionsInfo.get(Expiry.SS_NEXT.expiryName);
+            } else {
+                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.SS_CURRENT.expiryName);
+            }
+        }
         if ("MC".equals(index)) {
             stockId = zerodhaTransactionService.niftyIndics.get("NIFTY MID SELECT");
             if (zerodhaTransactionService.midCpExpDate.equals(currentDate)) {
-                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.MC_CURRENT.expiryName);
-            } else {
                 strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.MC_NEXT.expiryName);
+            }
+            else {
+                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.MC_CURRENT.expiryName);;
             }
         }
         Map<Double,Map.Entry<String, StrikeData>> ce=new HashMap<>();
@@ -390,12 +424,30 @@ public class MathUtils {
                 stockId = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
                 strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.BNF_CURRENT.expiryName);
             }
-        } if ("MC".equals(index)) {
+        }
+        if ("FN".equals(index)) {
+            stockId = zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE");
+            if (zerodhaTransactionService.finExpDate.equals(currentDate)) {
+                strikeMasterMap1= zerodhaTransactionService.globalOptionsInfo.get(Expiry.FN_NEXT.expiryName);
+            } else {
+                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.FN_CURRENT.expiryName);
+            }
+        }
+        if ("SS".equals(index)) {
+            stockId = zerodhaTransactionService.niftyIndics.get("SENSEX");
+            if (zerodhaTransactionService.sensexExpDate.equals(currentDate)) {
+                strikeMasterMap1= zerodhaTransactionService.globalOptionsInfo.get(Expiry.SS_NEXT.expiryName);
+            } else {
+                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.SS_CURRENT.expiryName);
+            }
+        }
+        if ("MC".equals(index)) {
             stockId = zerodhaTransactionService.niftyIndics.get("NIFTY MID SELECT");
             if (zerodhaTransactionService.midCpExpDate.equals(currentDate)) {
-                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.MC_CURRENT.expiryName);
-            } else {
                 strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.MC_NEXT.expiryName);
+            }
+            else {
+                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.MC_CURRENT.expiryName);
             }
         }
         Map<Double,Map.Entry<String, StrikeData>> ce=new HashMap<>();
@@ -525,6 +577,10 @@ public class MathUtils {
                     strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.MC_CURRENT.expiryName);
                 }
 
+            if ("SS".equals(index)) {
+                stockId = zerodhaTransactionService.niftyIndics.get("SENSEX");
+                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.SS_CURRENT.expiryName);
+            }
             Map<Double, Map.Entry<String, StrikeData>> ce = new HashMap<>();
             Map<Double, Map.Entry<String, StrikeData>> pe = new HashMap<>();
             //  Map<Double,Map.Entry<String, StrikeData>> cepe=new HashMap<>();
@@ -630,6 +686,11 @@ public class MathUtils {
                 stockId = zerodhaTransactionService.niftyIndics.get("NIFTY MID SELECT");
                 strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.MC_CURRENT.expiryName);
             }
+
+            if ("SS".equals(index)) {
+                stockId = zerodhaTransactionService.niftyIndics.get("SENSEX");
+                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.SS_CURRENT.expiryName);
+            }
             Map<Double, Map.Entry<String, StrikeData>> ce = new HashMap<>();
             Map<Double, Map.Entry<String, StrikeData>> pe = new HashMap<>();
             //  Map<Double,Map.Entry<String, StrikeData>> cepe=new HashMap<>();
@@ -729,9 +790,26 @@ public class MathUtils {
         } if ("MC".equals(index)) {
             stockId = zerodhaTransactionService.niftyIndics.get("NIFTY MID SELECT");
             if (zerodhaTransactionService.midCpExpDate.equals(currentDate)) {
-                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.MC_CURRENT.expiryName);
-            } else {
                 strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.MC_NEXT.expiryName);
+            } else {
+                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.MC_CURRENT.expiryName);
+            }
+        }
+
+        if ("FN".equals(index)) {
+            stockId = zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE");
+            if (zerodhaTransactionService.finExpDate.equals(currentDate)) {
+                strikeMasterMap1= zerodhaTransactionService.globalOptionsInfo.get(Expiry.FN_NEXT.expiryName);
+            } else {
+                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.FN_CURRENT.expiryName);
+            }
+        }
+        if ("SS".equals(index)) {
+            stockId = zerodhaTransactionService.niftyIndics.get("SENSEX");
+            if (zerodhaTransactionService.sensexExpDate.equals(currentDate)) {
+                strikeMasterMap1= zerodhaTransactionService.globalOptionsInfo.get(Expiry.SS_NEXT.expiryName);
+            } else {
+                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.SS_CURRENT.expiryName);
             }
         }
         Map<Double,Map.Entry<String, StrikeData>> ce=new HashMap<>();
@@ -836,11 +914,19 @@ public class MathUtils {
       if ("MC".equals(index)) {
           stockId = zerodhaTransactionService.niftyIndics.get("NIFTY MID SELECT");
           if (zerodhaTransactionService.midCpExpDate.equals(currentDate)) {
-              strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.MC_CURRENT.expiryName);
-          } else {
               strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.MC_NEXT.expiryName);
+          } else {
+              strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.MC_CURRENT.expiryName);
           }
       }
+        if ("SS".equals(index)) {
+            stockId = zerodhaTransactionService.niftyIndics.get("SENSEX");
+            if (zerodhaTransactionService.sensexExpDate.equals(currentDate)) {
+                strikeMasterMap1= zerodhaTransactionService.globalOptionsInfo.get(Expiry.SS_CURRENT.expiryName);
+            } else {
+                strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.SS_NEXT.expiryName);
+            }
+        }
         Map<Double,Map.Entry<String, StrikeData>> ce=new HashMap<>();
         Map<Double,Map.Entry<String, StrikeData>> pe=new HashMap<>();
         Map<String,Map<String,StrikeData>> strikeMasterMap=strikeMasterMap1;
@@ -988,6 +1074,15 @@ public class MathUtils {
                 strikeMasterMap = zerodhaTransactionService.globalOptionsInfo.get(Expiry.MC_CURRENT.expiryName);
             }
         }
+        if (currentDate.equals(zerodhaTransactionService.sensexExpDate) && strategy.getTradeValidity().equals(TradeValidity.BTST.getValidity())) {
+            if ("SS".equals(index)) {
+                strikeMasterMap = zerodhaTransactionService.globalOptionsInfo.get(Expiry.SS_NEXT.expiryName);
+            }
+        } else {
+            if ("SS".equals(index)) {
+                strikeMasterMap = zerodhaTransactionService.globalOptionsInfo.get(Expiry.SS_CURRENT.expiryName);
+            }
+        }
         int atmStrike = commonUtil.findATM((int) close);
         System.out.println("atmStrike:"+atmStrike);
         if (strikeSelectionType.equals(StrikeSelectionType.ATM.getType())) {
@@ -1124,6 +1219,15 @@ public class MathUtils {
         } else {
             if ("MC".equals(index)) {
                 strikeMasterMap = zerodhaTransactionService.globalOptionsInfo.get(Expiry.MC_CURRENT.expiryName);
+            }
+        }
+        if (currentDate.equals(zerodhaTransactionService.sensexExpDate) && strategy.getTradeValidity().equals(TradeValidity.BTST.getValidity())) {
+            if ("SS".equals(index)) {
+                strikeMasterMap = zerodhaTransactionService.globalOptionsInfo.get(Expiry.SS_NEXT.expiryName);
+            }
+        } else {
+            if ("SS".equals(index)) {
+                strikeMasterMap = zerodhaTransactionService.globalOptionsInfo.get(Expiry.SS_CURRENT.expiryName);
             }
         }
         int atmStrike = commonUtil.findATM((int) close);

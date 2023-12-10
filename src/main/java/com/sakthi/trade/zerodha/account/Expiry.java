@@ -8,7 +8,9 @@ public enum Expiry {
     BNF_NEXT("BNF_NEXT"),
     FN_NEXT("FN_NEXT"),
     MC_CURRENT("MC_CURRENT"),
-    MC_NEXT("MC_NEXT");
+    MC_NEXT("MC_NEXT"),
+    SS_CURRENT("SS_CURRENT"),
+    SS_NEXT("SS_NEXT");
     public String expiryName;
     private Expiry(String expiryName){
         this.expiryName=expiryName;

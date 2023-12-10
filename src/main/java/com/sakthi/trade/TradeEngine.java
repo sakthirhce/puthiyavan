@@ -340,6 +340,9 @@ public class TradeEngine {
                                 else if ("MC".equals(index)) {
                                     stockId = zerodhaTransactionService.niftyIndics.get("NIFTY MID SELECT");
                                 }
+                                else if ("SS".equals(index)) {
+                                    stockId = zerodhaTransactionService.niftyIndics.get("SENSEX");
+                                }
                                 String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + currentDateStr + "+09:00:00&to=" + currentDateStr + "+15:10:00";
                                 String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL), stockId, currentHourMinStr);
                                 HistoricalData historicalData = new HistoricalData();
@@ -393,6 +396,9 @@ public class TradeEngine {
                                 stockId = zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE");
                             }else if ("MC".equals(index)) {
                                 stockId = zerodhaTransactionService.niftyIndics.get("NIFTY MID SELECT");
+                            }
+                            else if ("SS".equals(index)) {
+                                stockId = zerodhaTransactionService.niftyIndics.get("SENSEX");
                             }
                             String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + currentDateStr + "+09:00:00&to=" + currentDateStr + "+15:35:00";
                             String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL), stockId, currentHourMinStr);
@@ -975,6 +981,12 @@ public class TradeEngine {
                                                     stockId = zerodhaTransactionService.niftyIndics.get("NIFTY 50");
                                                 } else if ("FN".equals(index)) {
                                                     stockId = zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE");
+                                                }
+                                                else if ("MC".equals(index)) {
+                                                    stockId = zerodhaTransactionService.niftyIndics.get("NIFTY MID SELECT");
+                                                }
+                                                else if ("SS".equals(index)) {
+                                                    stockId = zerodhaTransactionService.niftyIndics.get("SENSEX");
                                                 }
                                                 String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + currentDateStr + "+09:00:00&to=" + currentDateStr + "+15:35:00";
                                                 String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
