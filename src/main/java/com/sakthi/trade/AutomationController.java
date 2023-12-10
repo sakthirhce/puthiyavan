@@ -24,6 +24,7 @@ import com.sakthi.trade.util.ZippingDirectory;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import com.sakthi.trade.zerodha.account.UserList;
 import com.sakthi.trade.zerodha.account.ZerodhaAccount;
+import com.sakthi.trade.zerodha.models.HistoricalDataExtended;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
 import com.zerodhatech.models.HistoricalData;
 import com.zerodhatech.models.LTPQuote;
@@ -44,12 +45,15 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
@@ -457,30 +461,207 @@ NiftyOptionBuy935 niftyOptionBuy935;
         /*  });*/
 
     }
+    @Autowired
+    BollingerSqueeze1 bollingerSqueeze1;
+    @GetMapping("/bolingerBandTest")
+    public void bolingerBandTest(@RequestParam int day) throws Exception, KiteException {
 
-    @GetMapping("/bnfIndexData")
-    public void bnfIndexData(@RequestParam int day) throws Exception, KiteException {
+    bollingerSqueeze1.squeeze(day);
+    }
 
+    @Autowired
+    IndicatorDataRepo indicatorDataRepo;
+    SimpleDateFormat candleDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+    @GetMapping("/bbsInsert")
+    public void bbsInsert(@RequestParam int day) throws ParseException {
         int daycount=day;
-        String path="/home/hasvanth/Downloads/";
-        CSVWriter csvWriter = new CSVWriter(new FileWriter(path+"/bnf.csv", true));
-        String[] dataHeader = {"Date-Time", "Prediction", "PL","Entry during previous close", "exit at open"};
-        csvWriter.writeNext(dataHeader);
-      //  while (daycount >0) {
+        List<HistoricalData> dataArrayList = new ArrayList();
+        while (daycount >0) {
             LocalDate startDate = LocalDate.now().minusDays(daycount);
-            LocalDate currentdate = LocalDate.now();
             DateTimeFormatter df1 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        try{
 
-            String stockId = zerodhaTransactionService.niftyIndics.get("NIFTY 50");
-            String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/day?from=" + df1.format(startDate) + "+00:00:00&to=" + df1.format(currentdate) + "+23:59:59";
+            System.out.println(daycount);
+            try {
+
+                String stockId =  zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
+                String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + startDate + "+09:15:00&to=" + df1.format(startDate) + "+23:59:59";
                 String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                 HistoricalData historicalData = new HistoricalData();
                 JSONObject json = new JSONObject(response);
                 String status = json.getString("status");
                 if (!status.equals("error")) {
                     historicalData.parseResponse(json);
-                    int i=0;
+                    int i = 0;
+                    SimpleDateFormat candleDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                    dataArrayList.addAll( historicalData.dataArrayList);
+
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            daycount--;
+        }
+        List<HistoricalDataExtended> dataArrayList3M =DataResampler.resampleOHLCData(dataArrayList,3);
+        LinkedList<Double> closingPrices = new LinkedList<>();
+        int i = 0;
+        while (i<dataArrayList3M.size()){
+            HistoricalDataExtended historicalDataExtended= dataArrayList3M.get(i);
+            closingPrices.add(historicalDataExtended.getClose());
+            if (closingPrices.size() > 20) {
+                closingPrices.removeFirst();
+            }
+            if (i >= 20 - 1) {
+                double sma = MathUtils.calculateSMA(closingPrices);
+                double standardDeviation = MathUtils.calculateStandardDeviation(closingPrices, sma);
+                double lowerBand = sma - 2 * standardDeviation;
+                double upperBand = sma + 2 * standardDeviation;
+                double bandwidth = upperBand - lowerBand;
+                // Store the calculated values back in the candle
+                historicalDataExtended.setSma(sma);
+                historicalDataExtended.setBolingerLowerBand(lowerBand);
+                historicalDataExtended.setBolingerUpperBand(upperBand);
+                historicalDataExtended.setBolingerBandwith(bandwidth);
+
+            }
+            IndicatorData indicatorData= new IndicatorData();
+            indicatorData.setDataKey("BNF-260105-3M");
+            indicatorData.setIndicatorDataKey(i+1);
+            indicatorData.setOpen(BigDecimal.valueOf(historicalDataExtended.open));
+            indicatorData.setClose(BigDecimal.valueOf(historicalDataExtended.close));
+            indicatorData.setLow(BigDecimal.valueOf(historicalDataExtended.low));
+            indicatorData.setHigh(BigDecimal.valueOf(historicalDataExtended.high));
+            indicatorData.setBbSma(BigDecimal.valueOf(historicalDataExtended.getSma()));
+            indicatorData.setBbLowerband(BigDecimal.valueOf(historicalDataExtended.getBolingerLowerBand()));
+            indicatorData.setBbUpperband(BigDecimal.valueOf(historicalDataExtended.getBolingerUpperBand()));
+            Timestamp timestamp = new Timestamp(candleDateTimeFormat.parse(historicalDataExtended.getTimeStamp()).getTime());
+            indicatorData.setCandleTime(timestamp);
+            indicatorDataRepo.save(indicatorData);
+            i++;
+        }
+        System.out.println(new Gson().toJson(dataArrayList3M));
+    }
+    public List<HistoricalDataExtended> mapBBSData(List<IndicatorData> indicatorDataList){
+        List<HistoricalDataExtended> dataArrayList3M=new ArrayList<>();
+        indicatorDataList.forEach( indicatorData -> {
+            HistoricalDataExtended historicalDataExtended = new HistoricalDataExtended();
+            historicalDataExtended.open=indicatorData.getOpen().doubleValue();
+            historicalDataExtended.high=indicatorData.getHigh().doubleValue();
+            historicalDataExtended.low=indicatorData.getLow().doubleValue();
+            historicalDataExtended.close=indicatorData.getClose().doubleValue();
+            historicalDataExtended.sma=indicatorData.getBbSma().doubleValue();
+            historicalDataExtended.bolingerLowerBand= indicatorData.getBbLowerband().doubleValue();
+            historicalDataExtended.bolingerUpperBand=indicatorData.getBbUpperband().doubleValue();
+            historicalDataExtended.timeStamp=candleDateTimeFormat.format(indicatorData.getCandleTime().getTime());
+            dataArrayList3M.add(historicalDataExtended);
+        });
+        return dataArrayList3M;
+    }
+    @GetMapping("/bbsUpdate")
+    public void bbsUpdate(@RequestParam int day) throws ParseException {
+        int daycount=day;
+        List<HistoricalData> dataArrayList = new ArrayList();
+        List<IndicatorData> indicatorDataList=indicatorDataRepo.getLast20IndicatorData();
+        List<HistoricalDataExtended> dataArrayList3MHistory = mapBBSData(indicatorDataList);
+        IndicatorData lastCandle=indicatorDataList.get(indicatorDataList.size()-1);
+        int j=lastCandle.getIndicatorDataKey()+1;
+        while (daycount >=0) {
+            LocalDate startDate = LocalDate.now().minusDays(daycount);
+            DateTimeFormatter df1 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+            System.out.println(daycount);
+            try {
+
+                String stockId =  zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
+                String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + startDate + "+09:15:00&to=" + df1.format(startDate) + "+15:30:00";
+                String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
+                HistoricalData historicalData = new HistoricalData();
+                JSONObject json = new JSONObject(response);
+                String status = json.getString("status");
+                if (!status.equals("error")) {
+                    historicalData.parseResponse(json);
+                    int i = 0;
+                    SimpleDateFormat candleDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                    dataArrayList.addAll( historicalData.dataArrayList);
+
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            daycount--;
+        }
+        List<HistoricalDataExtended> dataArrayList3M = new ArrayList<>();
+        dataArrayList3M.addAll(dataArrayList3MHistory);
+        List<HistoricalDataExtended> dataArrayList3MRecentTemp=DataResampler.resampleOHLCData(dataArrayList,3);
+        dataArrayList3M.addAll(dataArrayList3MRecentTemp);
+        LinkedList<Double> closingPrices = new LinkedList<>();
+        int i = 0;
+        while (i<dataArrayList3M.size()){
+            HistoricalDataExtended historicalDataExtended= dataArrayList3M.get(i);
+            closingPrices.add(historicalDataExtended.getClose());
+            if (closingPrices.size() > 20) {
+                closingPrices.removeFirst();
+            }
+            if (i >= 20 - 1 && historicalDataExtended.sma==0 ) {
+                double sma = MathUtils.calculateSMA(closingPrices);
+                double standardDeviation = MathUtils.calculateStandardDeviation(closingPrices, sma);
+                double lowerBand = sma - 2 * standardDeviation;
+                double upperBand = sma + 2 * standardDeviation;
+                double bandwidth = upperBand - lowerBand;
+                // Store the calculated values back in the candle
+                historicalDataExtended.setSma(sma);
+                historicalDataExtended.setBolingerLowerBand(lowerBand);
+                historicalDataExtended.setBolingerUpperBand(upperBand);
+                historicalDataExtended.setBolingerBandwith(bandwidth);
+                IndicatorData indicatorData = new IndicatorData();
+                indicatorData.setDataKey("BNF-260105-3M");
+                indicatorData.setIndicatorDataKey(j);
+                indicatorData.setOpen(BigDecimal.valueOf(historicalDataExtended.open));
+                indicatorData.setClose(BigDecimal.valueOf(historicalDataExtended.close));
+                indicatorData.setLow(BigDecimal.valueOf(historicalDataExtended.low));
+                indicatorData.setHigh(BigDecimal.valueOf(historicalDataExtended.high));
+                indicatorData.setBbSma(BigDecimal.valueOf(historicalDataExtended.getSma()));
+                indicatorData.setBbLowerband(BigDecimal.valueOf(historicalDataExtended.getBolingerLowerBand()));
+                indicatorData.setBbUpperband(BigDecimal.valueOf(historicalDataExtended.getBolingerUpperBand()));
+                Timestamp timestamp = new Timestamp(candleDateTimeFormat.parse(historicalDataExtended.getTimeStamp()).getTime());
+                indicatorData.setCandleTime(timestamp);
+                try {
+                    indicatorDataRepo.save(indicatorData);
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
+                }
+            }
+            i++;
+            j++;
+        }
+        System.out.println(new Gson().toJson(dataArrayList3M));
+    }
+
+    @GetMapping("/bnfIndexData")
+    public void bnfIndexData(@RequestParam int day) throws Exception, KiteException {
+
+        int daycount=day;
+        String path="/home/hasvanth/Downloads/";
+        CSVWriter csvWriter = new CSVWriter(new FileWriter(path+"/bnfnifty_day.csv", true));
+        String[] dataHeader = {"Date-Time", "Open", "High","Low", "Close","Volume","oi"};
+        csvWriter.writeNext(dataHeader);
+        csvWriter.flush();
+        while (daycount >0) {
+            LocalDate startDate = LocalDate.now().minusDays(daycount);
+            LocalDate currentdate = LocalDate.now();
+            DateTimeFormatter df1 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            System.out.println(daycount);
+            try {
+
+                String stockId = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
+                // stockId = "260105";
+                String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + startDate + "+00:00:00&to=" + df1.format(startDate) + "+23:59:59";
+                String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
+                HistoricalData historicalData = new HistoricalData();
+                JSONObject json = new JSONObject(response);
+                String status = json.getString("status");
+                if (!status.equals("error")) {
+                    historicalData.parseResponse(json);
+                    int i = 0;/*
                     while(i<historicalData.dataArrayList.size()){
                         System.out.println(i);
                         HistoricalData previousDay=historicalData.dataArrayList.get(i);
@@ -559,21 +740,160 @@ NiftyOptionBuy935 niftyOptionBuy935;
                         csvWriter.writeNext(data);
                         csvWriter.flush();
                         i++;
-                    }
-
+                    }*/
+                    SimpleDateFormat candleDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
                     historicalData.dataArrayList.stream().forEach(candle -> {
+                        try {
+                            Date candleDateTime = candleDateTimeFormat.parse(candle.timeStamp);
+                        String[] data = {candleDateTimeFormat.format(candleDateTime),String.valueOf(candle.open),String.valueOf(candle.high),String.valueOf(candle.low),String.valueOf(candle.close),String.valueOf(candle.volume),String.valueOf(candle.oi)};
+                        System.out.println(data);
+                        csvWriter.writeNext(data);
 
-                });
-            }}
-       catch (Exception e){
-            e.printStackTrace();
-       }
-
-
+                            csvWriter.flush();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        } catch (ParseException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            daycount--;
+        }
 
     }
 
 
+    @GetMapping("/bnfIndexData3M")
+    public void bnfIndexData3M(@RequestParam int day) throws Exception, KiteException {
+
+        int daycount=day;
+        String path="/home/hasvanth/Downloads/";
+        CSVWriter csvWriter = new CSVWriter(new FileWriter(path+"/bnfnifty_3M.csv", true));
+        String[] dataHeader = {"Date-Time", "Open", "High","Low", "Close","Volume","oi"};
+        csvWriter.writeNext(dataHeader);
+        csvWriter.flush();
+        while (daycount >=0) {
+            LocalDate startDate = LocalDate.now().minusDays(daycount);
+            LocalDate currentdate = LocalDate.now();
+            DateTimeFormatter df1 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            System.out.println(daycount);
+            try {
+
+                String stockId = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
+                // stockId = "260105";
+                String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/3minute?from=" + startDate + "+00:00:00&to=" + df1.format(startDate) + "+23:59:59";
+                String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
+                HistoricalData historicalData = new HistoricalData();
+                JSONObject json = new JSONObject(response);
+                String status = json.getString("status");
+                if (!status.equals("error")) {
+                    historicalData.parseResponse(json);
+                    int i = 0;/*
+                    while(i<historicalData.dataArrayList.size()){
+                        System.out.println(i);
+                        HistoricalData previousDay=historicalData.dataArrayList.get(i);
+                        HistoricalData currentDay=historicalData.dataArrayList.get(i+1);
+                        System.out.println(previousDay.timeStamp);
+                        System.out.println(currentDay.timeStamp);
+                        double bodySize = Math.abs(previousDay.open - previousDay.close);
+                        double pL=0;
+                        double pL1=0;
+                        double pL2=0;
+                        double pL3=0;
+                        double pL4=0;
+                        double pL5=0;
+                        double upperWick = previousDay.high - Math.max(previousDay.open, previousDay.close);
+                        double lowerWick = Math.min(previousDay.open, previousDay.close) - previousDay.low;
+                        String trendPrediction="";
+                        // Bullish engulfing pattern
+                        if (previousDay.close > previousDay.open) {
+                            trendPrediction ="Bullish";
+                            pL=currentDay.close-currentDay.open;
+                            if(pL<-100){
+                                pL=-100;
+                            }
+                            pL1=currentDay.open-previousDay.close;
+                            if(pL1<-100){
+                                pL2=pL1;
+                            }else {
+                                pL2 = currentDay.close - previousDay.close;
+                            }
+                        }
+                        // Bearish engulfing pattern
+                        else if (previousDay.open > previousDay.close) {
+                            trendPrediction = "Bearish";
+                            pL=currentDay.open-currentDay.close;
+                            if(pL<-100){
+                                pL=-100;
+                            }
+                            pL1=previousDay.close-currentDay.open;
+                            if(pL1<-100){
+                                pL2=pL1;
+                            }else {
+                            pL2=previousDay.close-currentDay.close;
+                            }
+                        }
+                        // If neither, it's indecisive
+                            String trendPrediction1="";
+                            if(previousDay.open > previousDay.close && bodySize>20){
+                                trendPrediction1 = "Indecisive-Bearish";
+                                pL3=currentDay.open-currentDay.close;
+                                if(pL3<-100){
+                                    pL3=-100;
+                                }
+                                pL4=previousDay.close-currentDay.open;
+                                if(pL4<100){
+                                    pL5=pL4;
+                                }else {
+                                    pL5=previousDay.close-currentDay.close;
+                                }
+
+                            }
+                            if (previousDay.close > previousDay.open && bodySize>20 ) {
+                                trendPrediction1 ="Indecisive-Bullish";
+                                pL3=currentDay.close-currentDay.open;
+                                if(pL3<-100){
+                                    pL3=-100;
+                                }
+                                pL4=currentDay.open-previousDay.close;
+                                if(pL4<100){
+                                    pL5=pL4;
+                                }else {
+                                    pL5 =  currentDay.close-previousDay.close;
+                                }
+                            }
+
+                        String[] data = {currentDay.timeStamp, trendPrediction,String.valueOf(pL),String.valueOf(pL1),String.valueOf(pL2),trendPrediction1,String.valueOf(pL3),String.valueOf(pL4),String.valueOf(pL5)};
+                        csvWriter.writeNext(data);
+                        csvWriter.flush();
+                        i++;
+                    }*/
+                    SimpleDateFormat candleDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                    historicalData.dataArrayList.stream().forEach(candle -> {
+                        try {
+                            Date candleDateTime = candleDateTimeFormat.parse(candle.timeStamp);
+                            String[] data = {candleDateTimeFormat.format(candleDateTime),String.valueOf(candle.open),String.valueOf(candle.high),String.valueOf(candle.low),String.valueOf(candle.close),String.valueOf(candle.volume),String.valueOf(candle.oi)};
+                            System.out.println(data);
+                            csvWriter.writeNext(data);
+
+                            csvWriter.flush();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        } catch (ParseException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            daycount--;
+        }
+
+    }
     @GetMapping("/oneTradeExecutor")
     public void oneTradeExecutor() throws Exception, KiteException {
 

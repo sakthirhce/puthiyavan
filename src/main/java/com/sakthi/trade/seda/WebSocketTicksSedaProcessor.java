@@ -42,6 +42,8 @@ public class WebSocketTicksSedaProcessor implements Processor {
     NumberFormat formatter = new DecimalFormat();
     @Autowired
     TradeEngine tradeEngine;
+    @Value("${data.export}")
+    boolean dataExport;
     @Autowired
     BrokerWorkerFactory workerFactory;
     @Autowired
@@ -57,11 +59,12 @@ public class WebSocketTicksSedaProcessor implements Processor {
     SimpleDateFormat candleDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
     public WebSocketTicksSedaProcessor() throws IOException {
         try {
-            Date date = new Date();
-            csvWriter = new CSVWriter(new FileWriter(  "/home/ubuntu/tick_" + dateFormat.format(date) + ".csv", true));
-            String[] dataHeader = {"instrument_token", "tick_time", "last_price"};
-            csvWriter.writeNext(dataHeader);
-            csvWriter.flush();
+                Date date = new Date();
+                csvWriter = new CSVWriter(new FileWriter("/home/ubuntu/tick_" + dateFormat.format(date) + ".csv", true));
+                String[] dataHeader = {"instrument_token", "tick_time", "last_price"};
+                csvWriter.writeNext(dataHeader);
+                csvWriter.flush();
+
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -78,11 +81,13 @@ public class WebSocketTicksSedaProcessor implements Processor {
                     LocalTime tickStartTime = LocalTime.of(9, 14);
                     LocalTime tickEndTime = LocalTime.of(15, 31);
                     if (currentTime.isAfter(tickStartTime) && currentTime.isBefore(tickEndTime)) {
-                        ticks.stream().forEach(tick -> {
-                            String[] dataHeader = {String.valueOf(tick.getInstrumentToken()), candleDateTimeFormat.format(tick.getTickTimestamp()), String.valueOf(tick.getLastTradedPrice())};
-                            csvWriter.writeNext(dataHeader);
-                        });
-                        csvWriter.flush();
+                        if (dataExport) {
+                            ticks.stream().forEach(tick -> {
+                                String[] dataHeader = {String.valueOf(tick.getInstrumentToken()), candleDateTimeFormat.format(tick.getTickTimestamp()), String.valueOf(tick.getLastTradedPrice())};
+                                csvWriter.writeNext(dataHeader);
+                            });
+                            csvWriter.flush();
+                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();

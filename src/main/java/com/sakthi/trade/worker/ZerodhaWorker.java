@@ -41,6 +41,7 @@ public class ZerodhaWorker implements BrokerWorker {
             if(orderParams.triggerPrice!=null && orderParams.triggerPrice>0){
                 orderParams.triggerPrice=(double)Math.round(orderParams.triggerPrice);
             }
+
             LOGGER.info("zerodha order input: " + user.getName() + ":" + new Gson().toJson(orderParams));
             Order order = user.getKiteConnect().placeOrder(orderParams, "regular");
             long finish = System.currentTimeMillis();

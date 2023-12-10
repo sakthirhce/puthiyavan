@@ -21,11 +21,22 @@ public class HistoricalDataExtended {
     public long oi;
     public double vwap;
     public double rsi;
+    public double sma;
+    public double bolingerUpperBand;
+    public double bolingerLowerBand;
+    public double bolingerBandwith;
     public double oima20;
     public double volumema50;
     public List<HistoricalDataExtended> dataArrayList = new ArrayList();
+    public HistoricalDataExtended(){
 
-    public HistoricalDataExtended() {
+    }
+    public HistoricalDataExtended(String timeStamp,double open,double high,double low,double close) {
+        this.timeStamp=timeStamp;
+        this.open=open;
+        this.high=high;
+        this.low=low;
+        this.close=close;
     }
 
     public void parseResponse(JSONObject response) throws JSONException {

@@ -42,6 +42,7 @@ public class TradeStrategy {
     boolean rangeBreak ;
     boolean strategyEnabled;
     String rangeBreakType ; //percent/point
+    String rangeType ;
     String rangeBreakTime ;
     String rangeStartTime ;
     BigDecimal rangeBreakValue ;
@@ -72,4 +73,9 @@ public class TradeStrategy {
     BigDecimal rangeHigh ;
     @Transient
     UserSubscriptions userSubscriptions;
+    int rangeCandleInterval;
+    int bbsWindow;
+    int multiplier;
+    boolean sPositionTaken;
+    double sz;
 }

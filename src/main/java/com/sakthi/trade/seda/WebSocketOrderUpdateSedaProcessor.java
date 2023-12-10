@@ -4,19 +4,25 @@ import com.google.common.util.concurrent.AtomicDouble;
 import com.google.gson.Gson;
 import com.sakthi.trade.TradeEngine;
 import com.sakthi.trade.domain.TradeData;
+import com.sakthi.trade.domain.strategy.StrikeSelectionType;
 import com.sakthi.trade.domain.strategy.ValueType;
 import com.sakthi.trade.entity.TradeStrategy;
 import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.util.MathUtils;
 import com.sakthi.trade.worker.BrokerWorker;
 import com.sakthi.trade.worker.BrokerWorkerFactory;
+import com.sakthi.trade.zerodha.TransactionService;
+import com.sakthi.trade.zerodha.ZerodhaTransactionService;
+import com.sakthi.trade.zerodha.account.StrikeData;
 import com.sakthi.trade.zerodha.account.User;
 import com.sakthi.trade.zerodha.account.UserList;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
+import com.zerodhatech.models.HistoricalData;
 import com.zerodhatech.models.Order;
 import com.zerodhatech.models.OrderParams;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +33,11 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.MessageFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.TextStyle;
 import java.util.*;
 
 
@@ -41,10 +51,22 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
     BrokerWorkerFactory workerFactory;
     @Autowired
     TradeSedaQueue tradeSedaQueue;
+
+    @Autowired
+    ZerodhaTransactionService zerodhaTransactionService;
+
+    @Autowired
+    TransactionService transactionService;
+
+    @Autowired
+    MathUtils mathUtils;
     @Autowired
     TradeEngine tradeEngine;
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     SimpleDateFormat exchangeDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    SimpleDateFormat candleDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+    SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+    SimpleDateFormat hourMinFormat = new SimpleDateFormat("HH:mm");
     @Autowired
     TradeDataMapper tradeDataMapper;
 
@@ -257,7 +279,7 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                             if (tradeCount < strategy.getReentryCount().intValue() + 1) {
 
                                                 OrderParams orderParams = new OrderParams();
-                                                if(strategy.getTradeStrategyKey().length()<=20) {
+                                                if (strategy.getTradeStrategyKey().length() <= 20) {
                                                     orderParams.tag = strategy.getTradeStrategyKey();
                                                 }
                                                 TradeData reentryTradeData = new TradeData();
@@ -311,77 +333,189 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                             }
                                         }
                                         if (strategy.isReentry() && "BUY".equals(trendTradeData.getEntryType())) {
-                                            OrderParams orderParams = new OrderParams();
-                                            TradeData reentryTradeData = new TradeData();
-                                            reentryTradeData.setStockName(trendTradeData.getStockName());
-                                            String dataKey = UUID.randomUUID().toString();
-                                            reentryTradeData.setDataKey(dataKey);
-                                            //TODO set sl price, entry price, exit date
-                                            reentryTradeData.setQty(trendTradeData.getQty());
-                                            reentryTradeData.setEntryType(strategy.getOrderType());
-                                            reentryTradeData.setUserId(user.getName());
-                                            reentryTradeData.setTradeDate(currentDateStr);
-                                            reentryTradeData.setStockId(trendTradeData.getStockId());
-                                            reentryTradeData.setStrikeId(trendTradeData.getStrikeId());
-                                            reentryTradeData.setTradeStrategy(strategy);
-                                            orderParams.tradingsymbol = trendTradeData.getStockName();
-                                            orderParams.exchange = "NFO";
-                                            if(strategy.getTradeStrategyKey().length()<=20) {
-                                                orderParams.tag = strategy.getTradeStrategyKey();
-                                            }
-                                            orderParams.quantity = trendTradeData.getQty();
-                                            orderParams.orderType = "SL";
-                                          //  orderParams.triggerPrice = trendTradeData.get().doubleValue();
-                                            double triggerPriceTemp = 0;
-                                            if (strategy.getSimpleMomentumType().equals(ValueType.PERCENT_UP.getType())) {
-                                                triggerPriceTemp=(MathUtils.percentageValueOfAmount(strategy.getSimpleMomentumValue(), trendTradeData.getSlPrice()).add(trendTradeData.getSlPrice())).setScale(0, RoundingMode.HALF_UP).doubleValue();
-                                            }
-                                            if (strategy.getSimpleMomentumType().equals(ValueType.PERCENT_DOWN.getType())) {
-                                                triggerPriceTemp=((trendTradeData.getSlPrice()).subtract(MathUtils.percentageValueOfAmount(strategy.getSimpleMomentumValue(), trendTradeData.getSlPrice())).setScale(0, RoundingMode.HALF_UP).doubleValue());
-                                            }
-                                            if (strategy.getSimpleMomentumType().equals(ValueType.POINTS_UP.getType())) {
-                                                triggerPriceTemp=(trendTradeData.getSlPrice().add(strategy.getSimpleMomentumValue())).setScale(0, RoundingMode.HALF_UP).doubleValue();
-                                            }
-                                            if (strategy.getSimpleMomentumType().equals(ValueType.POINTS_DOWN.getType())) {
-                                                triggerPriceTemp=(trendTradeData.getSlPrice().subtract(strategy.getSimpleMomentumValue()))
-                                                        .setScale(0, RoundingMode.HALF_UP).doubleValue();
-
-                                            }
-                                            System.out.println(triggerPriceTemp);
-                                            orderParams.triggerPrice = triggerPriceTemp;
-                                            orderParams.price = BigDecimal.valueOf(triggerPriceTemp).add(BigDecimal.valueOf(triggerPriceTemp).divide(new BigDecimal(100))
-                                                    .multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP).doubleValue();
-                                            if ("MIS".equals(strategy.getTradeValidity())) {
-                                                orderParams.product = "MIS";
-                                            } else {
-                                                orderParams.product = "NRML";
-                                            }
-                                            orderParams.transactionType = strategy.getOrderType();
-                                            orderParams.validity = "DAY";
-                                            com.zerodhatech.models.Order orderd = null;
                                             try {
-                                                LOGGER.info("input:" + gson.toJson(orderParams));
-                                                orderd = brokerWorker.placeOrder(orderParams, user, trendTradeData);
-                                                reentryTradeData.setEntryOrderId(orderd.orderId);
-                                                List<TradeData> tradeDataList = tradeEngine.openTrade.get(user.getName());
-                                                tradeDataList.add(reentryTradeData);
-                                                tradeEngine.openTrade.put(user.getName(), tradeDataList);
-                                                mapTradeDataToSaveOpenTradeDataEntity(reentryTradeData, false);
+                                                String optionStrikeType = trendTradeData.getStockName().substring(trendTradeData.getStockName().length() - 2);
+                                                LOGGER.info("optionStrikeType: "+optionStrikeType+":"+trendTradeData.getStockName());
+                                                long tradeCount = userTradeData.getValue().stream().filter(tradeDataTemp ->
+                                                        optionStrikeType.equals(tradeDataTemp.getStockName().substring(tradeDataTemp.getStockName().length() - 2))
+                                                                && tradeDataTemp.getTradeStrategy().getTradeStrategyKey().equals(strategy.getTradeStrategyKey()) && tradeDataTemp.isSLHit).count();
+                                                LOGGER.info("tradeCount: "+tradeCount);
+                                                if (tradeCount < strategy.getReentryCount().intValue() + 1) {
+                                                    LOGGER.info("re-entry condition satisfied");
+                                                    String stockId = "";
+                                                    String index = strategy.getIndex();
+                                                    if ("BNF".equals(index)) {
+                                                        stockId = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
+                                                    } else if ("NF".equals(index)) {
+                                                        stockId = zerodhaTransactionService.niftyIndics.get("NIFTY 50");
+                                                    } else if ("FN".equals(index)) {
+                                                        stockId = zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE");
+                                                    }
+                                                    String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + currentDateStr + "+09:00:00&to=" + currentDateStr + "+15:35:00";
+                                                    String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
+                                                    HistoricalData historicalData = new HistoricalData();
+                                                    JSONObject json = new JSONObject(response);
+                                                     LOGGER.info(historicURL+":"+response);
+                                                    String status = json.getString("status");
+                                                    if (!status.equals("error")) {
+                                                        historicalData.parseResponse(json);
+                                                        HistoricalData optionalHistoricalLatestData = historicalData.dataArrayList.get(historicalData.dataArrayList.size() - 1);
+                                                        Date lastCandleTimestamp = candleDateTimeFormat.parse(optionalHistoricalLatestData.timeStamp);
+                                                        String currentHourMinStr = hourMinFormat.format(lastCandleTimestamp);
+                                                        System.out.println("last candle:"+gson.toJson(lastCandleTimestamp));
+                                                        System.out.println("currentHourMinStr:"+currentHourMinStr);
+                                                        Map<Double, Map<String, StrikeData>> rangeStrikes = new HashMap<>();
+                                                        rangeStrikes = mathUtils.strikeSelection(currentDateStr, strategy, optionalHistoricalLatestData.close, currentHourMinStr+":00",optionStrikeType);
+                                                        rangeStrikes.forEach((indexStrikePrice, strikeDataEntry) -> {
+                                                            strikeDataEntry.entrySet().stream().forEach(strikeDataEntry1 -> {
+                                                                StrikeData strikeData = strikeDataEntry1.getValue();
+                                                                OrderParams orderParams = new OrderParams();
+                                                                AtomicDouble triggerPriceTemp = new AtomicDouble();
+                                                                double strikePrice = indexStrikePrice.doubleValue();
+                                                                if (strategy.isSimpleMomentum()) {
+                                                                    if (strategy.getStrikeSelectionType().equals(StrikeSelectionType.ATM.getType())) {
+                                                                        String historicURL1 = "https://api.kite.trade/instruments/historical/" + strikeData.getZerodhaId() + "/minute?from=" + currentDateStr + "+09:00:00&to=" + currentDateStr + "+15:35:00";
+                                                                        String priceResponse = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL1), strikeData.getZerodhaId(), currentHourMinStr);
+                                                                        HistoricalData historicalStrikeData = new HistoricalData();
+                                                                        JSONObject strikeJson = new JSONObject(priceResponse);
+                                                                        Optional<HistoricalData> historicalStrikeDataLastData = Optional.empty();
+                                                                        String strikeStatus = strikeJson.getString("status");
+                                                                        if (!strikeStatus.equals("error")) {
+                                                                            historicalStrikeData.parseResponse(strikeJson);
 
-                                                try {
-                                                    LOGGER.info("Option " + trendTradeData.getStockName() + ":" + user.getName() + " placed retry");
-                                                    tradeSedaQueue.sendTelemgramSeda("Option " + trendTradeData.getStockName() + ":" + user.getName() + " placed retry" + ":" + strategy.getTradeStrategyKey(), user.telegramBot.getGroupId());
-                                                } catch (Exception e) {
-                                                    LOGGER.info("error:" + e);
+                                                                            historicalStrikeDataLastData = historicalStrikeData.dataArrayList.stream().filter(candle -> {
+                                                                                try {
+                                                                                    Date candleDateTime = candleDateTimeFormat.parse(candle.timeStamp);
+                                                                                    return hourMinFormat.format(candleDateTime).equals(currentHourMinStr);
+                                                                                } catch (ParseException e) {
+                                                                                    throw new RuntimeException(e);
+                                                                                }
+                                                                            }).findFirst();
+                                                                            strikePrice = historicalStrikeDataLastData.get().close;
+                                                                        }
+                                                                    }
+                                                                    orderParams.orderType = "SL";
+
+                                                                    if (strategy.getSimpleMomentumType().equals(ValueType.PERCENT_UP.getType())) {
+                                                                        triggerPriceTemp.getAndSet((MathUtils.percentageValueOfAmount(strategy.getSimpleMomentumValue(), new BigDecimal(strikePrice)).add(new BigDecimal(strikePrice))).setScale(0, RoundingMode.HALF_UP).doubleValue());
+                                                                    }
+                                                                    if (strategy.getSimpleMomentumType().equals(ValueType.PERCENT_DOWN.getType())) {
+                                                                        triggerPriceTemp.getAndSet((new BigDecimal(strikePrice)).subtract(MathUtils.percentageValueOfAmount(strategy.getSimpleMomentumValue(), new BigDecimal(strikePrice))).setScale(0, RoundingMode.HALF_UP).doubleValue());
+                                                                    }
+                                                                    if (strategy.getSimpleMomentumType().equals(ValueType.POINTS_UP.getType())) {
+                                                                        triggerPriceTemp.getAndSet(new BigDecimal(strikePrice).add(strategy.getSimpleMomentumValue()).setScale(0, RoundingMode.HALF_UP).doubleValue());
+                                                                    }
+                                                                    if (strategy.getSimpleMomentumType().equals(ValueType.POINTS_DOWN.getType())) {
+                                                                        triggerPriceTemp.getAndSet(new BigDecimal(strikePrice).subtract(strategy.getSimpleMomentumValue())
+                                                                                .setScale(0, RoundingMode.HALF_UP).doubleValue());
+
+                                                                    }
+                                                                    System.out.println(triggerPriceTemp);
+                                                                    orderParams.triggerPrice = triggerPriceTemp.doubleValue();
+                                                                    BigDecimal price = new BigDecimal(triggerPriceTemp.get()).add(new BigDecimal(triggerPriceTemp.get()).setScale(0, RoundingMode.HALF_UP).divide(new BigDecimal(100))).setScale(0, RoundingMode.HALF_UP);
+                                                                    orderParams.price = price.doubleValue();
+
+                                                                } else {
+                                                                    //TODO: add call to api to get price
+                                                                    orderParams.orderType = "MARKET";
+                                                                }
+                                                                LOGGER.info(strategy.getTradeStrategyKey() + "placing order for:" + strikeData.getZerodhaSymbol());
+
+                                                                orderParams.tradingsymbol = strikeData.getZerodhaSymbol();
+                                                                orderParams.exchange = "NFO";
+                                                                if ("MIS".equals(strategy.getTradeValidity())) {
+                                                                    orderParams.product = "MIS";
+                                                                } else {
+                                                                    orderParams.product = "NRML";
+                                                                }
+                                                                orderParams.transactionType = strategy.getOrderType();
+                                                                orderParams.validity = "DAY";
+                                                                if (strategy.getTradeStrategyKey().length() <= 20) {
+                                                                    orderParams.tag = strategy.getTradeStrategyKey();
+                                                                }
+                                                                LocalDate localDate = LocalDate.now();
+                                                                DayOfWeek dow = localDate.getDayOfWeek();
+                                                                String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
+
+                                                                strategy.getUserSubscriptions().getUserSubscriptionList().stream().forEach(userSubscription -> {
+                                                                    userList.getUser().stream().filter(
+                                                                            user1 -> user1.getName().equals(userSubscription.getUserId())
+                                                                    ).forEach(user1 -> {
+                                                                        TradeData tradeDataRetry = new TradeData();
+                                                                        if ("SELL".equals(strategy.getOrderType())) {
+                                                                            tradeDataRetry.setSellPrice(new BigDecimal(triggerPriceTemp.get()));
+                                                                        } else {
+                                                                            tradeDataRetry.setBuyPrice(new BigDecimal(triggerPriceTemp.get()));
+                                                                        }
+                                                                        BrokerWorker brokerWorker1 = workerFactory.getWorker(user1);
+
+                                                                        Order order1 = null;
+                                                                        int lot = strategy.getLotSize() * userSubscription.getLotSize();
+                                                                        orderParams.quantity = lot;
+
+                                                                        String dataKey = UUID.randomUUID().toString();
+                                                                        tradeDataRetry.setDataKey(dataKey);
+
+                                                                        tradeDataRetry.setStockName(strikeData.getZerodhaSymbol());
+                                                                        try {
+                                                                            //TODO set sl price, entry price, exit date
+                                                                            tradeDataRetry.setQty(lot);
+                                                                            tradeDataRetry.setEntryType(strategy.getOrderType());
+                                                                            tradeDataRetry.setUserId(user1.getName());
+                                                                            tradeDataRetry.setTradeDate(currentDateStr);
+                                                                            tradeDataRetry.setStockId(Integer.valueOf(strikeData.getZerodhaId()));
+                                                                            try {
+                                                                                tradeEngine.addStriketoWebsocket(Long.parseLong(strikeData.getZerodhaId()));
+                                                                            } catch (Exception e) {
+                                                                                e.printStackTrace();
+                                                                            }
+                                                                            tradeDataRetry.setStrikeId(strikeData.getDhanId());
+                                                                            tradeDataRetry.setTradeStrategy(strategy);
+                                                                            order1 = brokerWorker1.placeOrder(orderParams, user1, tradeDataRetry);
+                                                                            if (order1 != null) {
+                                                                                tradeDataRetry.setEntryOrderId(order1.orderId);
+                                                                                //  tradeData.isOrderPlaced = true;
+                                                                            }
+
+                                                                            mapTradeDataToSaveOpenTradeDataEntity(tradeDataRetry, true);
+                                                                            List<TradeData> tradeDataList = tradeEngine.openTrade.get(user1.getName());
+                                                                            if (tradeDataList == null) {
+                                                                                tradeDataList = new ArrayList<>();
+                                                                            }
+                                                                            tradeDataList.add(tradeDataRetry);
+                                                                            tradeEngine.openTrade.put(user.getName(), tradeDataList);
+                                                                            LOGGER.info("trade data" + new Gson().toJson(tradeDataRetry));
+                                                                            tradeSedaQueue.sendTelemgramSeda("Options traded for user:" + user.getName() + " strike: "
+                                                                                    + strikeData.getZerodhaSymbol() + ":" + strategy.getTradeStrategyKey(), user.telegramBot.getGroupId());
+                                                                        } catch (Exception e) {
+                                                                            List<TradeData> tradeDataList = tradeEngine.openTrade.get(user.getName());
+                                                                            if (tradeDataList == null) {
+                                                                                tradeDataList = new ArrayList<>();
+                                                                            }
+                                                                            tradeDataList.add(tradeDataRetry);
+                                                                            tradeEngine.openTrade.put(user.getName(), tradeDataList);
+                                                                            tradeDataRetry.isErrored = true;
+                                                                            LOGGER.info("Error while placing straddle order: " + e);
+                                                                            e.printStackTrace();
+                                                                            tradeSedaQueue.sendTelemgramSeda("Error while placing straddle order: " + strikeData.getZerodhaSymbol() + ":" + user.getName() + ",Exception:" + e.getMessage() + ":" + strategy.getTradeStrategyKey(), user.telegramBot.getGroupId());
+
+                                                                        } catch (KiteException e) {
+                                                                            throw new RuntimeException(e);
+                                                                        }
+                                                                    });
+                                                                });
+                                                            });
+
+                                                        });
+                                                    }
                                                 }
                                             } catch (Exception e) {
-                                                LOGGER.info("error while placing retry order: " + e.getMessage() + ":" + user.getName());
-                                                tradeSedaQueue.sendTelemgramSeda("Error while placing retry order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + e.getMessage() + ":" + strategy.getTradeStrategyKey(), user.telegramBot.getGroupId());
-                                            } catch (KiteException e) {
-                                                throw new RuntimeException(e);
+                                                e.printStackTrace();
+                                                LOGGER.info("error while placing buy rentry order: " + e.getMessage() + ":" + user.getName());
+                                                tradeSedaQueue.sendTelemgramSeda("Error while placing buy reentry order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + e.getMessage() + ":" + strategy.getTradeStrategyKey(), user.telegramBot.getGroupId());
                                             }
                                         }
-                                        if (strategy.isTrailToCost()) {
+                                            if (strategy.isTrailToCost()) {
                                             userTradeData.getValue().stream().filter(tradeDataTemp -> tradeDataTemp.getTradeStrategy().getTradeStrategyKey().equals(strategy.getTradeStrategyKey())
                                                     && !tradeDataTemp.isSLHit && !tradeDataTemp.isExited).forEach(tradeDataMod -> {
                                                 try {

@@ -389,6 +389,9 @@ is_errored boolean not null default false);
 ALTER TABLE open_trade_data_backup
 ADD COLUMN is_sl_cancelled boolean default false;
 ALTER TABLE open_trade_data ADD COLUMN trade_strategy_key varchar(100) null;
+
+;
+ALTER TABLE trade_strategy ADD COLUMN range_type varchar(100) null;
 ALTER TABLE open_trade_data_backup ADD COLUMN trade_strategy_key varchar(100) null;
   insert into public.open_trade_data(
   data_key ,
@@ -411,3 +414,35 @@ ALTER TABLE open_trade_data_backup ADD COLUMN trade_strategy_key varchar(100) nu
   amount_per_stock,is_errored,
   create_timestamp,exit_order_id,isslhit,is_sl_cancelled) values('f001e62f-cce4-4fa9-8389-a1e73f0aa3e5',
   'BANKNIFTY2231035500CE',75,0,765.05,20,918.00,11030018,'RS4899','',true,false,false,'220247200561728','','STRADDLE_LONG','SELL',0,false,null,'',false,false);
+
+
+  ALTER TABLE trade_strategy ADD COLUMN range_candle_interval numeric(60,2) null;
+  ALTER TABLE trade_strategy ADD COLUMN multiplier numeric(60,2) null;
+    ALTER TABLE trade_strategy ADD COLUMN bbs_window numeric(60,2) null;
+  ALTER TABLE trade_strategy ADD COLUMN sz numeric(60,2) null;
+  ALTER TABLE trade_strategy ADD COLUMN s_position_taken boolean default false;
+
+update trade_strategy set trail_enabled=false where trade_strategy_key not like '%BBS%';
+update trade_strategy set multiplier=0 where trade_strategy_key not like '%BBS%';
+update trade_strategy set s_position_taken=false where trade_strategy_key not like '%BBS%';
+update trade_strategy set range_candle_interval=1 where trade_strategy_key not like '%BBS%';
+update trade_strategy set sz=1 where trade_strategy_key not like '%BBS%';
+update trade_strategy set bbs_window=1 where trade_strategy_key not like '%BBS%';
+
+create table indicator_high_level_data(
+data_key varchar(100) primary key,
+stock_name varchar(100) not null,strike_id varchar(100) not null,interval numeric(60,2) null);
+
+create table indicator_data(indicator_data_key varchar(100) primary key,
+data_key varchar(100), candle_time timestamp,
+                                         open numeric(10,2),
+                                          high numeric(10,2),
+                                         low numeric(10,2),
+                                         close numeric(10,2),
+                                         volume numeric(50,2),
+                                         oi numeric(50,2),
+                                          vwap numeric(10,2),bb_upperband numeric(50,2) ,bb_lowerband numeric(50,2),bb_sma numeric(50,2),
+                                          CONSTRAINT fk_indicator_data_key
+                                                FOREIGN KEY(data_key)
+                                          	  REFERENCES indicator_high_level_data(data_key),
+                                          	  UNIQUE(data_key,candle_time));

@@ -90,6 +90,18 @@ public class TransactionService {
             return requestBuilder.build();
 
     }
+    public Request createZerodhaGetRequest(String uri,String apiKey,String token){
+
+        //  LOGGER.info("uri:" + uri);
+        Request.Builder requestBuilder = new Request.Builder();
+        requestBuilder.addHeader("X-Kite-Version", "3");
+        requestBuilder.addHeader("Authorization", "token " + apiKey + ":" + token);
+
+        requestBuilder.url(uri);
+        requestBuilder.get();
+        return requestBuilder.build();
+
+    }
     public Request createZerodhaGetRequestWithoutLog(String uri){
         if(kiteConnect == null) {
             User user =userList.getUser().stream().filter(user1 -> user1.isAdmin()).findFirst().get();
@@ -109,7 +121,7 @@ public class TransactionService {
 
         Request.Builder requestBuilder = new Request.Builder();
         requestBuilder.addHeader("X-Kite-Version", "3");
-        requestBuilder.addHeader("Authorization", "token 65moyovkhp0k27tx:USEPdzP4CxMJ200ShKBdtX6igWxsREsR");
+        requestBuilder.addHeader("Authorization", "token o1wluh7qbc286ar8:ezX61ZtNheKMiL8jFwcO8rw16LHO6UIV");
 
         requestBuilder.url(uri);
         requestBuilder.get();
@@ -146,19 +158,19 @@ public class TransactionService {
         String responseStr=globalContextCache.getHistoricData(time,stockId);
         try{
             if(responseStr==null) {
-                log.info("details not found in cache:"+stockId+":"+responseStr);
+                //log.info("details not found in cache:"+stockId+":"+responseStr);
                 if(tokenBucket.tryConsumeWithWait()){
                 StopWatch watch = new StopWatch();
                 watch.start();
                 Response response = okHttpClient.newCall(request).execute();
                 watch.stop();
-                log.info("Total time taken for zerodha api cal"+stockId+" in millisecs: "+ watch.getTotalTimeMillis());
+                //log.info("Total time taken for zerodha api cal"+stockId+" in millisecs: "+ watch.getTotalTimeMillis());
                 responseStr = response.body().string();
-                    log.info("api response"+stockId+":"+responseStr);
+               //     log.info("api response"+stockId+":"+responseStr);
                 globalContextCache.setHistoricData(time,stockId,responseStr);
                 }
             }else {
-                LOGGER.info("api response:"+stockId+" from cache:"+responseStr);
+               // LOGGER.info("api response:"+stockId+" from cache:");
             }
         }catch (Exception e){
             e.printStackTrace();

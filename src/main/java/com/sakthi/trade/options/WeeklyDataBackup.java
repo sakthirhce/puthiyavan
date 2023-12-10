@@ -132,6 +132,7 @@ public class WeeklyDataBackup {
             String currentExp = currentExp();
             String currentFNExp = currentFNExp();
             String currentBNFExp = zerodhaTransactionService.bankBiftyExpDate;
+            String currentMidcpExp = zerodhaTransactionService.midCpExpDate;
             String currentBSEExp = currentBSEExp();
             Calendar calendarCurrent = Calendar.getInstance();
             calendarCurrent.add(DAY_OF_MONTH, -8);
@@ -139,6 +140,7 @@ public class WeeklyDataBackup {
             String path = trendPath + "/BANKNIFTY/" + year.format(currentDate);
             String nPath = trendPath + "/NIFTY/" + year.format(currentDate);
             String bsePath = trendPath + "/BSE/" + year.format(currentDate);
+            String midcpPath = trendPath + "/MIDCP/" + year.format(currentDate);
             File f = new File(path);
             if (!f.exists()) {
                 f.mkdir();
@@ -151,13 +153,19 @@ public class WeeklyDataBackup {
             if (!sensexf.exists()) {
                 sensexf.mkdir();
             }
+            File midCpf = new File(midcpPath);
+            if (!midCpf.exists()) {
+                midCpf.mkdir();
+            }
 
             String monthpath = path + "/" + month.format(currentDate);
             String nMonthpath = nPath + "/" + month.format(currentDate);
             String sMonthpath = sensexf + "/" + month.format(currentDate);
+            String mMonthpath = midCpf + "/" + month.format(currentDate);
             File monthFile = new File(monthpath);
             File nmonthFile = new File(nMonthpath);
             File smonthFile = new File(sMonthpath);
+            File mmonthFile = new File(mMonthpath);
             if (!monthFile.exists()) {
                 monthFile.mkdir();
             }
@@ -167,10 +175,18 @@ public class WeeklyDataBackup {
             if (!nmonthFile.exists()) {
                 nmonthFile.mkdir();
             }
+            if (!mmonthFile.exists()) {
+                mmonthFile.mkdir();
+            }
             String expPath = monthpath + "/" + currentBNFExp;
             File expFolder = new File(expPath);
             if (!expFolder.exists()) {
                 expFolder.mkdir();
+            }
+            String mexpPath = mmonthFile + "/" + currentMidcpExp;
+            File mexpFolder = new File(mexpPath);
+            if (!mexpFolder.exists()) {
+                mexpFolder.mkdir();
             }
             String nexpPath = nmonthFile + "/" + currentExp;
             File nexpFolder = new File(nexpPath);
@@ -191,6 +207,8 @@ public class WeeklyDataBackup {
             nexpFolder.setWritable(true); //write
             sensexexpFolder.setReadable(true); //read
             sensexexpFolder.setWritable(true); //write
+            mexpFolder.setReadable(true); //read
+            mexpFolder.setWritable(true); //write
             try {
                 if (currentBSEExp.equals(format.format(currentDate))) {
                     String message = "sensex Expiry export date:" + currentBSEExp;
@@ -232,6 +250,48 @@ public class WeeklyDataBackup {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            try {
+                if (currentMidcpExp.equals(format.format(currentDate))) {
+                    String message = "midcap Expiry export date:" + currentBSEExp;
+                    telegramClient.sendToTelegram(message, telegramTokenGroup, "-646157933");
+                    zerodhaTransactionService.midcpWeeklyOptions.entrySet().stream().forEach(exp -> {
+
+                        Map<String, String> map = exp.getValue();
+                        map.entrySet().stream().forEach(optionExp -> {
+                            String strikeNo = optionExp.getValue();
+                            String strikeKey = optionExp.getKey();
+                            String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentBSEExp + "+15:30:00&oi=1";
+                            System.out.println(historicURL);
+                            String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
+                            System.out.println(response);
+                            String fileName;
+                            if (strikeKey.contains("CE")) {
+                                fileName = exp.getKey() + "CE";
+                            } else {
+                                fileName = exp.getKey() + "PE";
+                            }
+
+                            PrintWriter writer = null;
+                            try {
+                                writer = new PrintWriter(new File(mexpFolder + "/" + fileName + ".json"));
+
+                                writer.write(response);
+                                writer.flush();
+                                writer.close();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                        });
+                    });
+                    zippingDirectory.test(sensexpPath, "MIDCP_" + format.format(currentDate));
+                    telegramClient.sendDocumentToTelegram(sensexpPath + "/MIDCP_" + format.format(currentDate) + ".zip", "MIDCP_" + format.format(currentDate));
+                    // FileUtils.deleteDirectory(new File(sensexpPath));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
             try {
                 String fnPath = trendPath + "/FINNIFTY/" + year.format(currentDate);
                 File fn = new File(fnPath);
