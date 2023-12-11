@@ -200,6 +200,9 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                             } else {
                                                 orderParams.product = "NRML";
                                             }
+                                            if ("SELL".equals(strategy.getOrderType()) && "MIS".equals(strategy.getTradeValidity()) && strategy.isRangeBreak() && "NF".equals(strategy.getIndex())) {
+                                                orderParams.product = "NRML";
+                                            }
                                             orderParams.validity = "DAY";
                                             com.zerodhatech.models.Order orderd = null;
                                             BigDecimal price;

@@ -252,7 +252,7 @@ public class WeeklyDataBackup {
             }
             try {
                 if (currentMidcpExp.equals(format.format(currentDate))) {
-                    String message = "midcap Expiry export date:" + currentBSEExp;
+                    String message = "midcap Expiry export date:" + currentMidcpExp;
                     telegramClient.sendToTelegram(message, telegramTokenGroup, "-646157933");
                     zerodhaTransactionService.midcpWeeklyOptions.entrySet().stream().forEach(exp -> {
 
@@ -260,7 +260,7 @@ public class WeeklyDataBackup {
                         map.entrySet().stream().forEach(optionExp -> {
                             String strikeNo = optionExp.getValue();
                             String strikeKey = optionExp.getKey();
-                            String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentBSEExp + "+15:30:00&oi=1";
+                            String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentMidcpExp + "+15:30:00&oi=1";
                             System.out.println(historicURL);
                             String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
                             System.out.println(response);
@@ -284,8 +284,8 @@ public class WeeklyDataBackup {
 
                         });
                     });
-                    zippingDirectory.test(sensexpPath, "MIDCP_" + format.format(currentDate));
-                    telegramClient.sendDocumentToTelegram(sensexpPath + "/MIDCP_" + format.format(currentDate) + ".zip", "MIDCP_" + format.format(currentDate));
+                    zippingDirectory.test(mexpPath, "MIDCP_" + format.format(currentDate));
+                    telegramClient.sendDocumentToTelegram(mexpPath + "/MIDCP_" + format.format(currentDate) + ".zip", "MIDCP_" + format.format(currentDate));
                     // FileUtils.deleteDirectory(new File(sensexpPath));
                 }
             } catch (Exception e) {
