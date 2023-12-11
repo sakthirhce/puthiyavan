@@ -1706,7 +1706,7 @@ public class TradeEngine {
                     if (strategy.getRangeLow().doubleValue() > 0) {
                         if (lastHistoricData.close < strategy.getRangeLow().doubleValue()) {
                             Map<String, StrikeData> rangeSelected;
-                            rangeSelected = mathUtils.getPriceRangeSortedWithLowRangeNifty(currentDateStr, strategy.getStrikePriceRangeHigh().intValue(), strategy.getStrikePriceRangeLow().intValue(), candleHourMinStr, strategy.getIndex(), strategy.getOrderType());
+                            rangeSelected = mathUtils.getPriceRangeSortedWithLowRangeNifty(currentDateStr, strategy.getStrikePriceRangeHigh().intValue(), strategy.getStrikePriceRangeLow().intValue(), candleHourMinStr, strategy.getIndex(), strategy.getOrderType(),"PE");
                             Map.Entry<String, StrikeData> finalSelected;
                             System.out.println(gson.toJson(rangeSelected));
                             OrderParams orderParams = new OrderParams();
@@ -1800,7 +1800,7 @@ public class TradeEngine {
                     if (strategy.getRangeHigh().doubleValue() > 0) {
                         if (lastHistoricData.close > strategy.getRangeHigh().doubleValue()) {
                             Map<String, StrikeData> rangeSelected;
-                            rangeSelected = mathUtils.getPriceRangeSortedWithLowRangeNifty(currentDateStr, strategy.getStrikePriceRangeHigh().intValue(), strategy.getStrikePriceRangeLow().intValue(), candleHourMinStr, strategy.getIndex(), strategy.getOrderType());
+                            rangeSelected = mathUtils.getPriceRangeSortedWithLowRangeNifty(currentDateStr, strategy.getStrikePriceRangeHigh().intValue(), strategy.getStrikePriceRangeLow().intValue(), candleHourMinStr, strategy.getIndex(), strategy.getOrderType(),"CE");
                             Map.Entry<String, StrikeData> finalSelected;
                             OrderParams orderParams = new OrderParams();
                             orderParams.exchange = "NFO";
