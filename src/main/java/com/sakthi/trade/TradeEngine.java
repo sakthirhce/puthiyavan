@@ -656,8 +656,8 @@ public class TradeEngine {
                                             throw new RuntimeException(e);
                                         }
                                     });
-                                    positions.stream().filter(position -> (tradeData.getStockName().equals(position.tradingSymbol) && tradeData.isOrderPlaced() && !tradeData.isExited() && (position.netQuantity != 0)
-                                            && (("MIS".equals(position.product) && strategy.getTradeValidity().equals("MIS")) || ("NRML".equals(position.product) && strategy.getTradeValidity().equals("BTST"))))).forEach(position -> {
+                                    positions.stream().filter(position -> (tradeData.getStockName().equals(position.tradingSymbol)
+                                            && tradeData.isOrderPlaced() && !tradeData.isExited() && (position.netQuantity != 0))).forEach(position -> {
                                         OrderParams orderParams = new OrderParams();
                                         orderParams.tradingsymbol = position.tradingSymbol;
                                         orderParams.exchange = "NFO";
@@ -828,14 +828,7 @@ public class TradeEngine {
                                             orderParams.exchange = "NFO";
                                             orderParams.quantity = trendTradeData.getQty();
                                             orderParams.orderType = "SL";
-                                            if ("MIS".equals(strategy.getTradeValidity())) {
-                                                orderParams.product = "MIS";
-                                            } else {
-                                                orderParams.product = "NRML";
-                                            }
-                                            if ("SELL".equals(strategy.getOrderType()) && "MIS".equals(strategy.getTradeValidity()) && strategy.isRangeBreak() && "NF".equals(strategy.getIndex())) {
-                                                orderParams.product = "NRML";
-                                            }
+                                            orderParams.product=order.product;
                                             orderParams.validity = "DAY";
                                             Order orderd = null;
                                             BigDecimal price;

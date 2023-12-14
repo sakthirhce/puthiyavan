@@ -256,14 +256,13 @@ public class MathUtils {
                         int tempStrikeCE = atmStrike;
                         int tempStrikePE = atmStrike;
                         int i=0;
-                        while (tempStrikeCE > 0 && i<10) {
+                        while (tempStrikeCE > 0 && i<12) {
                             final Map.Entry<String, StrikeData> atmStrikesStraddle = strikeMasterMap.get(String.valueOf(tempStrikeCE)).entrySet().stream().filter(map -> map.getKey().contains("CE")).findFirst().get();
                             if (atmStrikesStraddle.getKey().contains("CE")) {
                                 double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate,checkTime,atmStrikesStraddle.getKey());
                                 Thread.sleep(100);
                                 int tempStrike1 =0;
                                     tempStrike1 = assessRangeWithRange25(index,"CE", closePrice, upperRange, lowerRange, tempStrikeCE, atmStrike, atmStrikesStraddle, ce);
-
                                 if (tempStrike1 == tempStrikeCE) {
                                     try {
                                         final Map.Entry<String, StrikeData> stringStringMap = getMinPremiumStrike(ce);
@@ -283,7 +282,7 @@ public class MathUtils {
                         }
                     //    int tempStrike2 = atmStrike;
                         int j=0;
-                        while (tempStrikePE > 0 && j<10) {
+                        while (tempStrikePE > 0 && j<12) {
                             final Map.Entry<String, StrikeData> atmStrikesStraddle =strikeMasterMap.get(String.valueOf(tempStrikePE)).entrySet().stream().filter(map -> map.getKey().contains("PE")).findFirst().get();
                             if (atmStrikesStraddle.getKey().contains("PE")) {
                                 double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate,checkTime,atmStrikesStraddle.getKey());
@@ -322,7 +321,7 @@ public class MathUtils {
 
     public  Map<String, StrikeData> getPriceRangeSortedWithLowRange(String currentDate, int upperRange, int lowerRange, String checkTime, String index, TradeStrategy strategy) {
         //     String historicURL = "https://api.kite.trade/instruments/historical/" + niftyBank + "/5minute?from=2021-01-01+09:00:00&to=2021-01-01+11:15:00";
-        Map<String, Map<String, StrikeData>> strikeMasterMap1 = strikeData(index,null,null);
+        Map<String, Map<String, StrikeData>> strikeMasterMap1 = strikeData(index,currentDate,strategy.getTradeValidity());
         // Map<String,Map<String,String>> dhanStrikeMasterMap1=new HashMap<>();
         String stockId = strikeId(index);
         Map<Double,Map.Entry<String, StrikeData>> ce=new HashMap<>();
@@ -378,7 +377,7 @@ public class MathUtils {
                             if (atmStrikesStraddle.getKey().contains("PE")) {
                                 double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate,checkTime,atmStrikesStraddle.getKey());
                                 Thread.sleep(100);
-                                int tempStrike1 = assessRangeWithRange25(index,"CE", closePrice, upperRange, lowerRange, tempStrikeCE, atmStrike, atmStrikesStraddle, ce);
+                                int tempStrike1 = assessRangeWithRange25(index,"PE", closePrice, upperRange, lowerRange, tempStrikePE, atmStrike, atmStrikesStraddle, ce);
                                 if (tempStrike1 == tempStrikePE) {
                                     try {
                                         final Map.Entry<String, StrikeData> stringStringMap = getMinPremiumStrike(pe);
