@@ -7,7 +7,6 @@ import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.domain.strategy.StrikeSelectionType;
 import com.sakthi.trade.domain.strategy.TradeValidity;
 import com.sakthi.trade.entity.TradeStrategy;
-import com.sakthi.trade.options.Strategy;
 import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import com.sakthi.trade.zerodha.account.Expiry;
@@ -262,7 +261,7 @@ public class MathUtils {
                                 double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate,checkTime,atmStrikesStraddle.getKey());
                                 Thread.sleep(100);
                                 int tempStrike1 =0;
-                                    tempStrike1 = assessRangeWithRange25(index,"CE", closePrice, upperRange, lowerRange, tempStrikeCE, atmStrike, atmStrikesStraddle, ce);
+                                    tempStrike1 = assessRangeWithRange25(index,"CE", closePrice, upperRange, lowerRange, tempStrikeCE, atmStrike, atmStrikesStraddle, ce, i);
                                 if (tempStrike1 == tempStrikeCE) {
                                     try {
                                         final Map.Entry<String, StrikeData> stringStringMap = getMinPremiumStrike(ce);
@@ -288,7 +287,7 @@ public class MathUtils {
                                 double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate,checkTime,atmStrikesStraddle.getKey());
                                 Thread.sleep(100);
                                 int tempStrike1 =0;
-                                tempStrike1 = assessRangeWithRange25(index,"PE", closePrice, upperRange, lowerRange, tempStrikePE, atmStrike, atmStrikesStraddle, pe);
+                                tempStrike1 = assessRangeWithRange25(index,"PE", closePrice, upperRange, lowerRange, tempStrikePE, atmStrike, atmStrikesStraddle, pe, j);
 
                                 if (tempStrike1 == tempStrikePE) {
                                     try {
@@ -351,7 +350,7 @@ public class MathUtils {
                                 double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate,checkTime,atmStrikesStraddle.getKey());
                                 Thread.sleep(100);
                                 int tempStrike1 =0;
-                                    tempStrike1 = assessRangeWithRange25(index,"CE", closePrice, upperRange, lowerRange, tempStrikeCE, atmStrike, atmStrikesStraddle, ce);
+                                    tempStrike1 = assessRangeWithRange25(index,"CE", closePrice, upperRange, lowerRange, tempStrikeCE, atmStrike, atmStrikesStraddle, ce,i);
 
                                 if (tempStrike1 == tempStrikeCE) {
                                     try {
@@ -377,7 +376,7 @@ public class MathUtils {
                             if (atmStrikesStraddle.getKey().contains("PE")) {
                                 double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate,checkTime,atmStrikesStraddle.getKey());
                                 Thread.sleep(100);
-                                int tempStrike1 = assessRangeWithRange25(index,"PE", closePrice, upperRange, lowerRange, tempStrikePE, atmStrike, atmStrikesStraddle, ce);
+                                int tempStrike1 = assessRangeWithRange25(index,"PE", closePrice, upperRange, lowerRange, tempStrikePE, atmStrike, atmStrikesStraddle, pe,j);
                                 if (tempStrike1 == tempStrikePE) {
                                     try {
                                         final Map.Entry<String, StrikeData> stringStringMap = getMinPremiumStrike(pe);
@@ -604,7 +603,7 @@ public class MathUtils {
                             if (atmStrikesStraddle.getKey().contains("CE")) {
                                 double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate,checkTime,atmStrikesStraddle.getKey());
                                 Thread.sleep(100);
-                                int tempStrike1 = assessRangeWithRange25(index,"CE", closePrice, upperRange, lowerRange, tempStrike,atmStrike,atmStrikesStraddle,ce);
+                                int tempStrike1 = assessRangeWithRange25(index,"CE", closePrice, upperRange, lowerRange, tempStrike,atmStrike,atmStrikesStraddle,ce, i);
                                 if (tempStrike1 == tempStrike) {
                                     final Map.Entry<String, StrikeData> stringStringMap = getMinPremiumStrike(ce);
                                     if(stringStringMap!=null){
@@ -625,7 +624,7 @@ public class MathUtils {
                             if (atmStrikesStraddle.getKey().contains("PE")) {
                                 double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate,checkTime,atmStrikesStraddle.getKey());
                                 Thread.sleep(100);
-                                int tempStrike1 = assessRangeWithRange25(index,"PE", closePrice, upperRange, lowerRange, tempStrike2,atmStrike,atmStrikesStraddle,pe);
+                                int tempStrike1 = assessRangeWithRange25(index,"PE", closePrice, upperRange, lowerRange, tempStrike2,atmStrike,atmStrikesStraddle,pe, j);
                                 if (tempStrike1 == tempStrike2) {
                                     final Map.Entry<String, StrikeData> stringStringMap = getMinPremiumStrike(pe);
                                     if(stringStringMap!=null){
@@ -740,7 +739,7 @@ public class MathUtils {
                             if (atmStrikesStraddle.getKey().contains("CE")) {
                                 double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate,checkTime,atmStrikesStraddle.getKey());
                                 Thread.sleep(100);
-                                int tempStrike1 = assessRangeWithRange25(index,"CE", closePrice, upperRange, lowerRange, tempStrike,atmStrike,atmStrikesStraddle,ce);
+                                int tempStrike1 = assessRangeWithRange25(index,"CE", closePrice, upperRange, lowerRange, tempStrike,atmStrike,atmStrikesStraddle,ce, i);
                                 if (tempStrike1 == tempStrike) {
                                     final Map.Entry<String, StrikeData> stringStringMap = getMinPremiumStrikeWithHigh(ce,breakSide);
                                     if(stringStringMap!=null){
@@ -761,7 +760,7 @@ public class MathUtils {
                             if (atmStrikesStraddle.getKey().contains("PE")) {
                                 double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate,checkTime,atmStrikesStraddle.getKey());
                                 Thread.sleep(100);
-                                int tempStrike1 = assessRangeWithRange25(index,"PE", closePrice, upperRange, lowerRange, tempStrike2,atmStrike,atmStrikesStraddle,pe);
+                                int tempStrike1 = assessRangeWithRange25(index,"PE", closePrice, upperRange, lowerRange, tempStrike2,atmStrike,atmStrikesStraddle,pe, j);
                                 if (tempStrike1 == tempStrike2) {
                                     final Map.Entry<String, StrikeData> stringStringMap = getMinPremiumStrikeWithHigh(pe,breakSide);
                                     if(stringStringMap!=null){
@@ -1138,7 +1137,7 @@ public class MathUtils {
         }
     }
 
-    public static int assessRangeWithRange25(String index,String strikeType, double closePrice, int upperRange, int lowerRange, int currentStrike,int atmStrike,Map.Entry<String, StrikeData> straddle,Map<Double,Map.Entry<String, StrikeData>> mapst) {
+    public static int assessRangeWithRange25(String index, String strikeType, double closePrice, int upperRange, int lowerRange, int currentStrike, int atmStrike, Map.Entry<String, StrikeData> straddle, Map<Double,Map.Entry<String, StrikeData>> mapst,int j) {
         int increment=100;
          if (index.equals("NF") || index.equals("FN")) {
              increment=50;
@@ -1154,13 +1153,15 @@ public class MathUtils {
                 }
                 return currentStrike+increment;
             } else if (closePrice < lowerRange) {
-                if (mapst.size()>0){
+                if (!mapst.isEmpty()){
                     return currentStrike;
                 }
                 return currentStrike - increment;
             } else if (closePrice > upperRange) {
                 return currentStrike + increment;
-            }
+            }/*if (j==9){
+                return currentStrike;
+            }*/
         } else {
             if (closePrice <= upperRange && lowerRange <= closePrice) {
                 mapst.put(closePrice,straddle);
@@ -1169,13 +1170,16 @@ public class MathUtils {
                 }
                 return currentStrike-increment;
             } else if (closePrice < lowerRange) {
-                if (mapst.size()>0){
+                if (!mapst.isEmpty()){
                     return currentStrike;
                 }
                 return currentStrike + increment;
             } else if (closePrice > upperRange) {
                 return currentStrike - increment;
             }
+            /*if (j==9){
+                return currentStrike;
+            }*/
         }
         return 0;
     }

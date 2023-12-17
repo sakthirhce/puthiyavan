@@ -316,10 +316,10 @@ public class TradeEngine {
             Date currentMinDate = calendarCurrentMin.getTime();
             Date candleCurrentMinDate = candleCalenderMin.getTime();
             String candleHourMinStr = hourMinFormat.format(candleCurrentMinDate);
-           //  String candleHourMinStr="10:09";
+            //String candleHourMinStr="09:18";
             // System.out.println(candleHourMinStr);
-            String currentHourMinStr = hourMinFormat.format(currentMinDate);
-           //      String currentHourMinStr="10:10";
+              String currentHourMinStr = hourMinFormat.format(currentMinDate);
+            //String currentHourMinStr="09:19";
             // System.out.println(currentHourMinStr);
             //   log.info(currentHourMinStr + ":" + "executing");
 
@@ -624,7 +624,7 @@ public class TradeEngine {
                         TradeStrategy strategy = tradeData.getTradeStrategy();
                         try {
                             if ((tradeData.getTradeDate().equals(currentDateStr) && strategy != null && strategy.getTradeValidity().equals("MIS")) ||
-                                    (dateFormat.parse(tradeData.getTradeDate()).before(dateFormat.parse(currentDateStr)) && strategy != null && strategy.getTradeValidity().equals("BTST"))) {
+                                    (dateFormat.parse(tradeData.getTradeDate()).before(dateFormat.parse(currentDateStr)) && strategy != null && strategy.getTradeValidity().equals("BTST")) || ("SELL".equals(strategy.getOrderType()) && "MIS".equals(strategy.getTradeValidity()) && strategy.isRangeBreak() && "NF".equals(strategy.getIndex()))) {
                                 if (currentHourMinStr.equals(strategy.getExitTime())) {
                                     orders.stream().filter(order -> ("OPEN".equals(order.status) || "TRIGGER PENDING".equals(order.status)) && order.orderId.equals(tradeData.getSlOrderId())).forEach(orderr -> {
                                         try {
@@ -677,7 +677,7 @@ public class TradeEngine {
                                             orderParams.transactionType = "BUY";
                                         }
                                         if ("SELL".equals(strategy.getOrderType()) && "MIS".equals(strategy.getTradeValidity()) && strategy.isRangeBreak() && "NF".equals(strategy.getIndex())) {
-                                                orderParams.product = "NRML";
+//                                                orderParams.product = "NRML";
                                         }
                                         orderParams.validity = "DAY";
                                         Order orderResponse = null;
@@ -1430,6 +1430,7 @@ public class TradeEngine {
                                             } else {
                                                 orderParams.product = "NRML";
                                             }
+                                            orderParams.product = order.product;
                                             orderParams.validity = "DAY";
                                             Order orderd = null;
                                             BigDecimal price;
