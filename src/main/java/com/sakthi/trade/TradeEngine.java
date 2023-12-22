@@ -302,7 +302,7 @@ public class TradeEngine {
         Date date = new Date();
         //      MDC.put("run_time",candleDateTimeFormat.format(date));
         String currentDateStr = dateFormat.format(date);
-        //     String currentDateStr="2023-06-16";
+     //        String currentDateStr="2023-12-21";
         CSVReader csvHolidayFinReader = new CSVReader(new FileReader(trendPath + "/trading_holiday.csv"));
         String[] lineHoliday;
         while ((lineHoliday = csvHolidayFinReader.readNext()) != null) {
@@ -315,11 +315,11 @@ public class TradeEngine {
             candleCalenderMin.add(Calendar.MINUTE, -1);
             Date currentMinDate = calendarCurrentMin.getTime();
             Date candleCurrentMinDate = candleCalenderMin.getTime();
-            String candleHourMinStr = hourMinFormat.format(candleCurrentMinDate);
-            //String candleHourMinStr="09:18";
+          //  String candleHourMinStr = hourMinFormat.format(candleCurrentMinDate);
+            String candleHourMinStr="15:21";
             // System.out.println(candleHourMinStr);
-              String currentHourMinStr = hourMinFormat.format(currentMinDate);
-            //String currentHourMinStr="09:19";
+            //  String currentHourMinStr = hourMinFormat.format(currentMinDate);
+           String  currentHourMinStr="15:22";
             // System.out.println(currentHourMinStr);
             //   log.info(currentHourMinStr + ":" + "executing");
 
@@ -404,12 +404,13 @@ public class TradeEngine {
                             String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL), stockId, currentHourMinStr);
                             HistoricalData historicalData = new HistoricalData();
                             JSONObject json = new JSONObject(response);
-                            //     log.info(currentHourMinStr+":"+historicURL+":"+response);
+                            log.info(currentHourMinStr+":"+historicURL+":"+response);
                             String status = json.getString("status");
                             if (!status.equals("error")) {
                                 historicalData.parseResponse(json);
                                 Optional<HistoricalData> optionalHistoricalLatestData = historicalData.dataArrayList.stream().filter(candle -> {
                                     try {
+                                  //      System.out.println(candle.timeStamp);
                                         Date candleDateTime = candleDateTimeFormat.parse(candle.timeStamp);
                                         return hourMinFormat.format(candleDateTime).equals(candleHourMinStr);
                                     } catch (ParseException e) {
@@ -624,7 +625,9 @@ public class TradeEngine {
                         TradeStrategy strategy = tradeData.getTradeStrategy();
                         try {
                             if ((tradeData.getTradeDate().equals(currentDateStr) && strategy != null && strategy.getTradeValidity().equals("MIS")) ||
-                                    (dateFormat.parse(tradeData.getTradeDate()).before(dateFormat.parse(currentDateStr)) && strategy != null && strategy.getTradeValidity().equals("BTST")) || ("SELL".equals(strategy.getOrderType()) && "MIS".equals(strategy.getTradeValidity()) && strategy.isRangeBreak() && "NF".equals(strategy.getIndex()))) {
+                                    (dateFormat.parse(tradeData.getTradeDate()).before(dateFormat.parse(currentDateStr)) && strategy != null &&
+                                            strategy.getTradeValidity().equals("BTST")) || ("SELL".equals(strategy.getOrderType())
+                                    && "MIS".equals(strategy.getTradeValidity()) && strategy.isRangeBreak() && "NF".equals(strategy.getIndex()))) {
                                 if (currentHourMinStr.equals(strategy.getExitTime())) {
                                     orders.stream().filter(order -> ("OPEN".equals(order.status) || "TRIGGER PENDING".equals(order.status)) && order.orderId.equals(tradeData.getSlOrderId())).forEach(orderr -> {
                                         try {
@@ -677,7 +680,7 @@ public class TradeEngine {
                                             orderParams.transactionType = "BUY";
                                         }
                                         if ("SELL".equals(strategy.getOrderType()) && "MIS".equals(strategy.getTradeValidity()) && strategy.isRangeBreak() && "NF".equals(strategy.getIndex())) {
-//                                                orderParams.product = "NRML";
+                                                orderParams.product = "NRML";
                                         }
                                         orderParams.validity = "DAY";
                                         Order orderResponse = null;
@@ -1700,7 +1703,7 @@ public class TradeEngine {
                     if (strategy.getRangeLow().doubleValue() > 0) {
                         if (lastHistoricData.close < strategy.getRangeLow().doubleValue()) {
                             Map<String, StrikeData> rangeSelected;
-                            rangeSelected = mathUtils.getPriceRangeSortedWithLowRangeNifty(currentDateStr, strategy.getStrikePriceRangeHigh().intValue(), strategy.getStrikePriceRangeLow().intValue(), candleHourMinStr, strategy.getIndex(), strategy.getOrderType(),"PE");
+                            rangeSelected = mathUtils.getPriceRangeSortedWithLowRangeNifty(currentDateStr, strategy.getStrikePriceRangeHigh().doubleValue(),strategy.getStrikePriceRangeLow().doubleValue(), candleHourMinStr, strategy.getIndex(), strategy.getOrderType(),"PE");
                             Map.Entry<String, StrikeData> finalSelected;
                             System.out.println(gson.toJson(rangeSelected));
                             OrderParams orderParams = new OrderParams();
@@ -1794,7 +1797,7 @@ public class TradeEngine {
                     if (strategy.getRangeHigh().doubleValue() > 0) {
                         if (lastHistoricData.close > strategy.getRangeHigh().doubleValue()) {
                             Map<String, StrikeData> rangeSelected;
-                            rangeSelected = mathUtils.getPriceRangeSortedWithLowRangeNifty(currentDateStr, strategy.getStrikePriceRangeHigh().intValue(), strategy.getStrikePriceRangeLow().intValue(), candleHourMinStr, strategy.getIndex(), strategy.getOrderType(),"CE");
+                            rangeSelected = mathUtils.getPriceRangeSortedWithLowRangeNifty(currentDateStr, strategy.getStrikePriceRangeHigh().doubleValue(), strategy.getStrikePriceRangeLow().doubleValue(), candleHourMinStr, strategy.getIndex(), strategy.getOrderType(),"CE");
                             Map.Entry<String, StrikeData> finalSelected;
                             OrderParams orderParams = new OrderParams();
                             orderParams.exchange = "NFO";
@@ -2389,6 +2392,50 @@ public class TradeEngine {
                     e.printStackTrace();
                 }
                 try {
+                    String nstockId = zerodhaTransactionService.niftyIndics.get("NIFTY MID SELECT");
+                    int niftyAtm = getAtm(nstockId);
+                    int niftyAtmLow = niftyAtm - 400;
+                    int niftyAtmHigh = niftyAtm + 400;
+                    while (niftyAtmLow < niftyAtmHigh) {
+                        Map<String, String> strikes = zerodhaTransactionService.niftyWeeklyOptions.get(String.valueOf(niftyAtmLow));
+                        niftyAtmLow = niftyAtmLow + 50;
+                        strikes.forEach((key, value) -> {
+                            listOfTokens.add(Long.parseLong(value));
+                            try {
+                                String[] dataHeader = {value, key, zerodhaTransactionService.midCpExpDate, "MC"};
+                                csvWriter.writeNext(dataHeader);
+                                csvWriter.flush();
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
+                    String nstockId = zerodhaTransactionService.niftyIndics.get("SENSEX");
+                    int niftyAtm = getAtm(nstockId);
+                    int niftyAtmLow = niftyAtm - 2000;
+                    int niftyAtmHigh = niftyAtm + 2000;
+                    while (niftyAtmLow < niftyAtmHigh) {
+                        Map<String, String> strikes = zerodhaTransactionService.niftyWeeklyOptions.get(String.valueOf(niftyAtmLow));
+                        niftyAtmLow = niftyAtmLow + 50;
+                        strikes.forEach((key, value) -> {
+                            listOfTokens.add(Long.parseLong(value));
+                            try {
+                                String[] dataHeader = {value, key, zerodhaTransactionService.sensexExpDate, "SS"};
+                                csvWriter.writeNext(dataHeader);
+                                csvWriter.flush();
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
                     String fnstockId = zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE");
                     int finAtm = getAtm(fnstockId);
                     int finAtmLow = finAtm - 800;
@@ -2484,12 +2531,20 @@ public class TradeEngine {
         });
         return dataArrayList3M;
     }
-    public void addStriketoWebsocket(Long token){
-        listOfTokens.add(token);
+    public void addStriketoWebsocket(Long token) throws KiteException {
         if(tickerProvider.isConnectionOpen()){
+            listOfTokens.add(token);
             tickerProvider.subscribe(listOfTokens);
             tickerProvider.setMode(listOfTokens, KiteTicker.modeFull);
             System.out.println("added token:"+gson.toJson(listOfTokens));
+        }else {
+            tickerInitialize();
+            if(tickerProvider.isConnectionOpen()){
+                listOfTokens.add(token);
+                tickerProvider.subscribe(listOfTokens);
+                tickerProvider.setMode(listOfTokens, KiteTicker.modeFull);
+                System.out.println("added token:"+gson.toJson(listOfTokens));
+            }
         }
     }
 }

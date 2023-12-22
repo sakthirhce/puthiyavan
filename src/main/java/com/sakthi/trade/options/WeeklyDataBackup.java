@@ -210,6 +210,48 @@ public class WeeklyDataBackup {
             mexpFolder.setReadable(true); //read
             mexpFolder.setWritable(true); //write
             try {
+                String message = "midcap Expiry export date:" + currentMidcpExp;
+                if (currentMidcpExp.equals(format.format(currentDate))) {
+                    // String message = "midcap Expiry export date:" + currentMidcpExp;
+                    telegramClient.sendToTelegram(message, telegramTokenGroup, "-646157933");
+                    zerodhaTransactionService.midcpWeeklyOptions.entrySet().stream().forEach(exp -> {
+
+                        Map<String, String> map = exp.getValue();
+                        map.entrySet().stream().forEach(optionExp -> {
+                            String strikeNo = optionExp.getValue();
+                            String strikeKey = optionExp.getKey();
+                            String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentMidcpExp + "+15:30:00&oi=1";
+                            System.out.println(historicURL);
+                            String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
+                            System.out.println(response);
+                            String fileName;
+                            if (strikeKey.contains("CE")) {
+                                fileName = exp.getKey() + "CE";
+                            } else {
+                                fileName = exp.getKey() + "PE";
+                            }
+
+                            PrintWriter writer = null;
+                            try {
+                                writer = new PrintWriter(new File(mexpFolder + "/" + fileName + ".json"));
+
+                                writer.write(response);
+                                writer.flush();
+                                writer.close();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                        });
+                    });
+                    zippingDirectory.test(mexpPath, "MIDCP_" + format.format(currentDate));
+                    telegramClient.sendDocumentToTelegram(mexpPath + "/MIDCP_" + format.format(currentDate) + ".zip", "MIDCP_" + format.format(currentDate));
+                    // FileUtils.deleteDirectory(new File(sensexpPath));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            try {
                 if (currentBSEExp.equals(format.format(currentDate))) {
                     String message = "sensex Expiry export date:" + currentBSEExp;
                     telegramClient.sendToTelegram(message, telegramTokenGroup, "-646157933");
@@ -250,47 +292,7 @@ public class WeeklyDataBackup {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            try {
-                if (currentMidcpExp.equals(format.format(currentDate))) {
-                    String message = "midcap Expiry export date:" + currentMidcpExp;
-                    telegramClient.sendToTelegram(message, telegramTokenGroup, "-646157933");
-                    zerodhaTransactionService.midcpWeeklyOptions.entrySet().stream().forEach(exp -> {
 
-                        Map<String, String> map = exp.getValue();
-                        map.entrySet().stream().forEach(optionExp -> {
-                            String strikeNo = optionExp.getValue();
-                            String strikeKey = optionExp.getKey();
-                            String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentMidcpExp + "+15:30:00&oi=1";
-                            System.out.println(historicURL);
-                            String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
-                            System.out.println(response);
-                            String fileName;
-                            if (strikeKey.contains("CE")) {
-                                fileName = exp.getKey() + "CE";
-                            } else {
-                                fileName = exp.getKey() + "PE";
-                            }
-
-                            PrintWriter writer = null;
-                            try {
-                                writer = new PrintWriter(new File(mexpFolder + "/" + fileName + ".json"));
-
-                                writer.write(response);
-                                writer.flush();
-                                writer.close();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-
-                        });
-                    });
-                    zippingDirectory.test(mexpPath, "MIDCP_" + format.format(currentDate));
-                    telegramClient.sendDocumentToTelegram(mexpPath + "/MIDCP_" + format.format(currentDate) + ".zip", "MIDCP_" + format.format(currentDate));
-                    // FileUtils.deleteDirectory(new File(sensexpPath));
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
 
             try {
                 String fnPath = trendPath + "/FINNIFTY/" + year.format(currentDate);

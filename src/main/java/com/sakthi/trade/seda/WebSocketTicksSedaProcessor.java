@@ -9,6 +9,7 @@ import com.sakthi.trade.entity.TradeStrategy;
 import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.worker.BrokerWorker;
 import com.sakthi.trade.worker.BrokerWorkerFactory;
+import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import com.sakthi.trade.zerodha.account.User;
 import com.sakthi.trade.zerodha.account.UserList;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
@@ -31,10 +32,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Component
 public class WebSocketTicksSedaProcessor implements Processor {
@@ -46,6 +44,7 @@ public class WebSocketTicksSedaProcessor implements Processor {
     boolean dataExport;
     @Autowired
     BrokerWorkerFactory workerFactory;
+    public Map<String, Map<String, Double>> tickCurrentPrice = new HashMap<>();
     @Autowired
     UserList userList;
     @Autowired
@@ -56,12 +55,23 @@ public class WebSocketTicksSedaProcessor implements Processor {
     String trendPath;
     CSVWriter csvWriter;
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    @Autowired
+    ZerodhaTransactionService zerodhaTransactionService;
     SimpleDateFormat candleDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+    SimpleDateFormat hourtimeFormat = new SimpleDateFormat("HH:mm");
     public WebSocketTicksSedaProcessor() throws IOException {
         try {
                 Date date = new Date();
                 csvWriter = new CSVWriter(new FileWriter("/home/ubuntu/tick_" + dateFormat.format(date) + ".csv", true));
+                String minTime=hourtimeFormat.format(date);
                 String[] dataHeader = {"instrument_token", "tick_time", "last_price"};
+                Map<String, Double> minutePrice=new HashMap<>();
+                minutePrice.put(minTime,0.0);
+                tickCurrentPrice.put(zerodhaTransactionService.niftyIndics.get("NIFTY BANK"),minutePrice);
+                tickCurrentPrice.put(zerodhaTransactionService.niftyIndics.get("NIFTY 50"),minutePrice);
+                tickCurrentPrice.put(zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE"),minutePrice);
+                tickCurrentPrice.put(zerodhaTransactionService.niftyIndics.get("NIFTY MID SELECT"),minutePrice);
+                tickCurrentPrice.put(zerodhaTransactionService.niftyIndics.get("SENSEX"),minutePrice);
                 csvWriter.writeNext(dataHeader);
                 csvWriter.flush();
 
@@ -81,8 +91,19 @@ public class WebSocketTicksSedaProcessor implements Processor {
                     LocalTime tickStartTime = LocalTime.of(9, 14);
                     LocalTime tickEndTime = LocalTime.of(15, 31);
                     if (currentTime.isAfter(tickStartTime) && currentTime.isBefore(tickEndTime)) {
+
                         if (dataExport) {
                             ticks.stream().forEach(tick -> {
+                                try {
+                                    Date date = new Date();
+                                    String minTime = hourtimeFormat.format(date);
+                                    if (tickCurrentPrice.containsKey(String.valueOf(tick.getInstrumentToken()))) {
+                                        Map<String, Double> minutePrice = tickCurrentPrice.get(String.valueOf(tick.getInstrumentToken()));
+                                        minutePrice.put(minTime, tick.getLastTradedPrice());
+                                    }
+                                }catch (Exception e){
+                                    e.printStackTrace();
+                                }
                                 String[] dataHeader = {String.valueOf(tick.getInstrumentToken()), candleDateTimeFormat.format(tick.getTickTimestamp()), String.valueOf(tick.getLastTradedPrice())};
                                 csvWriter.writeNext(dataHeader);
                             });

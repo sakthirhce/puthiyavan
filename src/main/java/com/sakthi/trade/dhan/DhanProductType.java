@@ -3,6 +3,7 @@ package com.sakthi.trade.dhan;
 public enum DhanProductType {
     NRML("CNC"),
     MIS("INTRADAY"),
+    INTRADAY("INTRADAY"),
     CO("CO"),
     BO("BO");
     private String productType;

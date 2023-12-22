@@ -229,7 +229,7 @@ public class MathUtils {
     }
 
 
-    public  Map<String, StrikeData> getPriceRangeSortedWithLowRange( String currentDate, int upperRange, int lowerRange, String checkTime, String index) {
+    public  Map<String, StrikeData> getPriceRangeSortedWithLowRange( String currentDate, double upperRange, double lowerRange, String checkTime, String index) {
         //     String historicURL = "https://api.kite.trade/instruments/historical/" + niftyBank + "/5minute?from=2021-01-01+09:00:00&to=2021-01-01+11:15:00";
         Map<String, Map<String, StrikeData>> strikeMasterMap1 = strikeData(index,null,null);
         // Map<String,Map<String,String>> dhanStrikeMasterMap1=new HashMap<>();
@@ -318,7 +318,7 @@ public class MathUtils {
         return rangeStrike;
     }
 
-    public  Map<String, StrikeData> getPriceRangeSortedWithLowRange(String currentDate, int upperRange, int lowerRange, String checkTime, String index, TradeStrategy strategy) {
+    public  Map<String, StrikeData> getPriceRangeSortedWithLowRange(String currentDate, double upperRange, double lowerRange, String checkTime, String index, TradeStrategy strategy) {
         //     String historicURL = "https://api.kite.trade/instruments/historical/" + niftyBank + "/5minute?from=2021-01-01+09:00:00&to=2021-01-01+11:15:00";
         Map<String, Map<String, StrikeData>> strikeMasterMap1 = strikeData(index,currentDate,strategy.getTradeValidity());
         // Map<String,Map<String,String>> dhanStrikeMasterMap1=new HashMap<>();
@@ -352,7 +352,7 @@ public class MathUtils {
                                 int tempStrike1 =0;
                                     tempStrike1 = assessRangeWithRange25(index,"CE", closePrice, upperRange, lowerRange, tempStrikeCE, atmStrike, atmStrikesStraddle, ce,i);
 
-                                if (tempStrike1 == tempStrikeCE) {
+                                if (tempStrike1 == tempStrikeCE || i==9) {
                                     try {
                                         final Map.Entry<String, StrikeData> stringStringMap = getMinPremiumStrike(ce);
                                         if (stringStringMap != null) {
@@ -377,7 +377,7 @@ public class MathUtils {
                                 double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate,checkTime,atmStrikesStraddle.getKey());
                                 Thread.sleep(100);
                                 int tempStrike1 = assessRangeWithRange25(index,"PE", closePrice, upperRange, lowerRange, tempStrikePE, atmStrike, atmStrikesStraddle, pe,j);
-                                if (tempStrike1 == tempStrikePE) {
+                                if (tempStrike1 == tempStrikePE || j==9) {
                                     try {
                                         final Map.Entry<String, StrikeData> stringStringMap = getMinPremiumStrike(pe);
                                         if(stringStringMap!=null){
@@ -467,7 +467,7 @@ public class MathUtils {
                                     } else if ("MC".equals(index)) {
                                         increment= 25;
                                     }
-                                    tempStrike = tempStrike + increment;
+                                    tempStrike2 = tempStrike2 - increment;
                                     pe.put(closePrice, atmStrikesStraddle);
                                 }
                                 j++;
@@ -517,6 +517,11 @@ public class MathUtils {
                             System.out.println("closePremium:atm:"+atmStrike);
                             if ("CE".equals(byOptionStrikeType)) {
                                 int tempStrike = atmStrike - 300;
+                                if ("NF".equals(index) || "FN".equals(index)) {
+                                    tempStrike=atmStrike - 200;
+                                } else if ("MC".equals(index)) {
+                                    tempStrike=atmStrike - 200;
+                                }
                                 int i = 0;
                                 while (tempStrike > 0 && i < 12) {
                                     final Map.Entry<String, StrikeData> atmStrikesStraddle = strikeMasterMap.get(String.valueOf(tempStrike)).entrySet().stream().filter(map -> map.getKey().contains("CE")).findFirst().get();
@@ -540,6 +545,11 @@ public class MathUtils {
                             }
                             if ("PE".equals(byOptionStrikeType)) {
                                 int tempStrike2 = atmStrike + 300;
+                                if ("NF".equals(index) || "FN".equals(index)) {
+                                    tempStrike2=atmStrike - 200;
+                                } else if ("MC".equals(index)) {
+                                    tempStrike2=atmStrike - 200;
+                                }
                                 int j = 0;
                                 while (tempStrike2 > 0 && j < 12) {
                                     final Map.Entry<String, StrikeData> atmStrikesStraddle = strikeMasterMap.get(String.valueOf(tempStrike2)).entrySet().stream().filter(map -> map.getKey().contains("PE")).findFirst().get();
@@ -708,7 +718,7 @@ public class MathUtils {
         }
         return strikeMasterMap;
     }
-    public Map<String, StrikeData>  getPriceRangeSortedWithLowRangeNifty( String currentDate, int upperRange, int lowerRange, String checkTime, String index,String breakSide,String cEorPE) {
+    public Map<String, StrikeData>  getPriceRangeSortedWithLowRangeNifty( String currentDate, double upperRange, double lowerRange, String checkTime, String index,String breakSide,String cEorPE) {
         //     String historicURL = "https://api.kite.trade/instruments/historical/" + niftyBank + "/5minute?from=2021-01-01+09:00:00&to=2021-01-01+11:15:00";
         Map<String,Map<String, StrikeData>> strikeMasterMap1=strikeData(index,null,null);
         // Map<String,Map<String,String>> dhanStrikeMasterMap1=new HashMap<>();
@@ -885,8 +895,8 @@ public class MathUtils {
             return strikes;
         }
         if (strikeSelectionType.equals(StrikeSelectionType.PRICE_RANGE.getType())) {
-            int high = strategy.getStrikePriceRangeHigh().intValue();
-            int low = strategy.getStrikePriceRangeLow().intValue();
+            double high = strategy.getStrikePriceRangeHigh().doubleValue();
+            double low = strategy.getStrikePriceRangeLow().doubleValue();
             Map<Double, Map<String, StrikeData>> stringMapMap = new HashMap<>();
             Map<String, StrikeData> rangeSelected;
             rangeSelected = getPriceRangeSortedWithLowRange(currentDate, high, low, checkTime, index, strategy);
@@ -1003,7 +1013,6 @@ public class MathUtils {
                 if (!responseStatus.equals("error")) {
                     historicalPriceData.parseResponse(priceJson);
                     historicalPriceData.dataArrayList.forEach(historicalDataPrice -> {
-
                         Date priceDatetime = null;
                         try {
                             priceDatetime = candleDateTimeFormat.parse(historicalDataPrice.timeStamp);
@@ -1137,7 +1146,7 @@ public class MathUtils {
         }
     }
 
-    public static int assessRangeWithRange25(String index, String strikeType, double closePrice, int upperRange, int lowerRange, int currentStrike, int atmStrike, Map.Entry<String, StrikeData> straddle, Map<Double,Map.Entry<String, StrikeData>> mapst,int j) {
+    public static int assessRangeWithRange25(String index, String strikeType, double closePrice, double upperRange, double lowerRange, int currentStrike, int atmStrike, Map.Entry<String, StrikeData> straddle, Map<Double,Map.Entry<String, StrikeData>> mapst,int j) {
         int increment=100;
          if (index.equals("NF") || index.equals("FN")) {
              increment=50;
@@ -1158,6 +1167,9 @@ public class MathUtils {
                 }
                 return currentStrike - increment;
             } else if (closePrice > upperRange) {
+                if(closePrice>(upperRange*10)){
+                    increment=increment*3;
+                }
                 return currentStrike + increment;
             }/*if (j==9){
                 return currentStrike;
@@ -1175,6 +1187,9 @@ public class MathUtils {
                 }
                 return currentStrike + increment;
             } else if (closePrice > upperRange) {
+                if(closePrice>(upperRange*5)){
+                    increment=increment*3;
+                }
                 return currentStrike - increment;
             }
             /*if (j==9){
