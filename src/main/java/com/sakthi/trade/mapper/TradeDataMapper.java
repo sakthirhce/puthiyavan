@@ -218,6 +218,9 @@ public class TradeDataMapper {
             openTradeDataEntity.setEntryOrderId(tradeData.getEntryOrderId());
             openTradeDataEntity.setSlOrderId(tradeData.getSlOrderId());
             openTradeDataEntity.setStockId(tradeData.getStockId());
+            openTradeDataEntity.setTempSlPrice(tradeData.getTempSlPrice());
+            openTradeDataEntity.setWebsocketSlModified(tradeData.isWebsocketSlModified());
+            openTradeDataEntity.setWebsocketSlTime(tradeData.getWebsocketSlTime());
             if(tradeData.getTradeStrategy()!=null) {
                 openTradeDataEntity.setTradeStrategyKey(tradeData.getTradeStrategy().getTradeStrategyKey());
             }
@@ -276,6 +279,7 @@ public class TradeDataMapper {
                             openTradeDataEntity.setCharges(tradeData.charges.setScale(2, RoundingMode.HALF_UP));
                             BigDecimal plAfterCharges = pl.subtract(tradeData.charges).setScale(2, RoundingMode.HALF_UP);;
                             tradeData.plAfterCharges = plAfterCharges;
+                            openTradeDataEntity.setPlAfterCharges(tradeData.plAfterCharges);
                             if (tradeData.getSellPrice() != null && tradeData.getBuyPrice() != null) {
                                 BigDecimal paperPl = tradeData.getSellPrice().subtract(tradeData.getBuyPrice()).setScale(2, RoundingMode.HALF_UP).multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
                             }

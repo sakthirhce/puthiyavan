@@ -77,5 +77,11 @@ public class TradeStrategy {
     int bbsWindow;
     int multiplier;
     boolean sPositionTaken;
+    boolean noSl;
+    boolean noExit;
     double sz;
+    boolean websocketSlEnabled;
+    String tempSlType;
+    BigDecimal tempSlValue;
+    boolean hedge;
 }

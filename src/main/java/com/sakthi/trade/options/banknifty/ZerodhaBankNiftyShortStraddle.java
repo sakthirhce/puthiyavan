@@ -106,7 +106,7 @@ public class ZerodhaBankNiftyShortStraddle {
                     String openDate = format.format(openDatetime);
                     if (sdf.format(openDatetime).equals(openDate + "T09:15:00")) {
                      //   LOGGER.info(historicalData1.close);
-                        int atmStrike = commonUtil.findATM((int) historicalData1.close);
+                        int atmStrike = commonUtil.findATM((int) historicalData1.close,"BNF");
                    //     LOGGER.info("Bank Nifty:" + atmStrike);
                         //check usuage of bankniftyFlyingLot
                      //   int qty = 25 * (Integer.valueOf(bankniftyLot));
@@ -242,7 +242,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                         AtomicDouble triggerPriceAtomic = new AtomicDouble();
 
                                             try {
-                                                String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
+                                                String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:30:00";
                                                 String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                                                 System.out.print(response);
                                                 HistoricalData historicalData = new HistoricalData();

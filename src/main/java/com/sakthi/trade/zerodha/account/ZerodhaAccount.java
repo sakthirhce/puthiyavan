@@ -1,6 +1,7 @@
 package com.sakthi.trade.zerodha.account;
 
 import com.google.gson.Gson;
+import com.sakthi.trade.TradeEngine;
 import com.sakthi.trade.dhan.DhanRoutes;
 import com.sakthi.trade.dhan.schema.FundResponseDTO;
 import com.sakthi.trade.domain.OpenPositionData;
@@ -82,7 +83,7 @@ public class ZerodhaAccount {
     DhanRoutes dhanRoutes;
     @Autowired
     TransactionService transactionService;
-
+    public static final Logger LOGGER = LoggerFactory.getLogger(ZerodhaAccount.class.getName());
     public com.zerodhatech.models.User user;
     public String token = null;
     public KiteConnect kiteConnect;
@@ -244,15 +245,15 @@ public class ZerodhaAccount {
                 Margin margins = kiteConnect.getMargins("equity");
                 System.out.println(margins.available.cash);
                 System.out.println(margins.utilised.debits);
-                sendMessage.sendToTelegram("Token :" + kiteConnect.getAccessToken(), telegramToken);
-                sendMessage.sendToTelegram("Available Cash :" + margins.available.cash, telegramToken);
+                sendMessage.sendToTelegram("Token :" + kiteConnect.getAccessToken(), "exp-trade");
+                sendMessage.sendToTelegram("Available Cash :" + margins.available.cash , "exp-trade");
 
                 webDriver.quit();
             }
         } catch (Exception | KiteException e) {
             e.printStackTrace();
             try {
-                sendMessage.sendToTelegram("Token generation failed", telegramToken);
+                sendMessage.sendToTelegram("Token generation failed", "error");
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -308,12 +309,13 @@ public class ZerodhaAccount {
                 this.takeSnapShot(webDriver, "/home/hasvanth/test3.png");
                 webDriver.findElements(By.xpath("//button")).get(0).click();*/
                             Thread.sleep(2000);
-                            System.out.println(webDriver.getCurrentUrl());
+                            logger.info("user:{}", user1.name);
+                            logger.info(webDriver.getCurrentUrl());
                             List<NameValuePair> queryParams = new URIBuilder(webDriver.getCurrentUrl()).getQueryParams();
                             String requestToken = queryParams.stream().filter(param -> param.getName().equals("request_token")).map(NameValuePair::getValue).findFirst().orElse("");
 
                             User user = kiteConnectLocal.generateSession(requestToken, user1.secret);
-                            System.out.println(user.accessToken);
+                            //System.out.println(user.accessToken);
                             kiteConnectLocal.setAccessToken(user.accessToken);
                             token = user.accessToken;
                             kiteConnectLocal.setPublicToken(user.publicToken);
@@ -334,7 +336,8 @@ public class ZerodhaAccount {
                                 admingroupId.getAndSet(Integer.valueOf(botIdFinal));
                                 kiteConnect = kiteConnectLocal;
                                 try {
-                                    tradeSedaQueue.sendTelemgramSeda("Token for user:" + user.userName + ":" + kiteConnect.getAccessToken(),user1.telegramBot.groupId);
+
+                                    tradeSedaQueue.sendTelemgramSeda("Token for user:" + user.userName + ":" + kiteConnect.getAccessToken(),"exp-trade");
                                 }catch (Exception e){
                                     e.printStackTrace();
                                 }
@@ -342,21 +345,21 @@ public class ZerodhaAccount {
                                 try {
                                //     Double amount = Double.parseDouble(margins.available.cash) - 1000000;
                                  //   sendMessage.sendToTelegram("Available Cash :" + new BigDecimal(amount).setScale(0, RoundingMode.HALF_UP).doubleValue(), telegramToken, botIdFinal);
-                                    tradeSedaQueue.sendTelemgramSeda("Available Cash :" + Double.parseDouble(margins.available.cash),user1.telegramBot.groupId);
+                                    tradeSedaQueue.sendTelemgramSeda("Available Cash :" + Double.parseDouble(margins.available.cash),"exp-trade");
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
                             } else {
                            //     sendMessage.sendToTelegram("Token for user:" + user.userName + ":" + kiteConnect.getAccessToken(), telegramToken, botIdFinal);
                              //   sendMessage.sendToTelegram("Available Cash :" + +new BigDecimal(margins.available.cash).setScale(0, RoundingMode.HALF_UP).doubleValue(), telegramToken, botIdFinal);
-                                tradeSedaQueue.sendTelemgramSeda("Token for user:" + user.userName + ":" + kiteConnect.getAccessToken(),user1.telegramBot.groupId);
-                                tradeSedaQueue.sendTelemgramSeda("Available Cash :" + +new BigDecimal(margins.available.cash).setScale(0, RoundingMode.HALF_UP).doubleValue(),user1.telegramBot.groupId);
+                                tradeSedaQueue.sendTelemgramSeda("Token for user:" + user.userName + ":" + kiteConnectLocal.getAccessToken(),"exp-trade");
+                                tradeSedaQueue.sendTelemgramSeda("Available Cash :" + +new BigDecimal(margins.available.cash).setScale(0, RoundingMode.HALF_UP).doubleValue(),"exp-trade");
                             }
                             user1.tokenCount = user1.tokenCount + 1;
                             webDriver.quit();
                         } catch (URISyntaxException | IOException | KiteException | InterruptedException e) {
                            // sendMessage.sendToTelegram("Token generation failed" + e.getMessage(), telegramToken, "-646157933");
-                            tradeSedaQueue.sendTelemgramSeda("Token generation failed" + e.getMessage(),user1.telegramBot.groupId);
+                            tradeSedaQueue.sendTelemgramSeda("Token generation failed" + e.getMessage(),"error");
                             try {
                                 //takeSnapShot(webDriver, "/home/ubuntu/test1_"+user1.name+".png");
                             } catch (Exception ex) {
@@ -366,17 +369,6 @@ public class ZerodhaAccount {
                             e.printStackTrace();
                         } catch (Exception e) {
                             e.printStackTrace();
-                            try {
-                                if (user1.getStraddleConfigOld().enabled) {
-                                  //  sendMessage.sendToTelegram("Token generation failed", telegramToken);
-                                    tradeSedaQueue.sendTelemgramSeda("Token generation failed",user1.telegramBot.groupId);
-                                } else {
-                                  //  sendMessage.sendToTelegram("Token generation failed", telegramToken, "-646157933");
-                                    tradeSedaQueue.sendTelemgramSeda("Token generation failed",user1.telegramBot.groupId);
-                                }
-                            } catch (Exception ex) {
-                                ex.printStackTrace();
-                            }
                         }
                     }
                 else if (user1.broker.equals("dhan")) {
@@ -393,10 +385,10 @@ public class ZerodhaAccount {
                         System.out.println(response);
                         com.sakthi.trade.dhan.schema.FundResponseDTO fundResponseDTO = new Gson().fromJson(response, FundResponseDTO.class);
                        // sendMessage.sendToTelegram("Dhan client ID :" + fundResponseDTO.getDhanClientId() + ":" + user1.clientName + " : Available cash: " + fundResponseDTO.getAvailabelBalance().setScale(0, RoundingMode.HALF_UP).doubleValue(), telegramToken, botIdFinal);
-                        tradeSedaQueue.sendTelemgramSeda("Dhan client ID :" + fundResponseDTO.getDhanClientId() + ":" + user1.clientName + " : Available cash: " + fundResponseDTO.getAvailabelBalance().setScale(0, RoundingMode.HALF_UP).doubleValue(),user1.telegramBot.groupId);
+                        tradeSedaQueue.sendTelemgramSeda("Dhan client ID :" + fundResponseDTO.getDhanClientId() + ":" + user1.clientName + " : Available cash: " + fundResponseDTO.getAvailabelBalance().setScale(0, RoundingMode.HALF_UP).doubleValue(),"exp-trade");
                     } catch (Exception e) {
                      //   sendMessage.sendToTelegram("Dhan client ID :" + user1.getClientId() + "Token generation failed" + e.getMessage(), telegramToken, "-646157933");
-                        tradeSedaQueue.sendTelemgramSeda("Dhan client ID :" + user1.getClientId() + "Token generation failed" + e.getMessage(),user1.telegramBot.groupId);
+                        tradeSedaQueue.sendTelemgramSeda("Dhan client ID :" + user1.getClientId() + "Token generation failed" + e.getMessage(),"error");
                         e.printStackTrace();
                     }
                 }

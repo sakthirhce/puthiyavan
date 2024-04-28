@@ -180,10 +180,18 @@ public class CommonUtil {
         csvWriter.close();
 
     }
-    public int findATM(int currentValue) {
-        int a = (Integer.valueOf(currentValue) / 100) * 100;
-        int b = a + 100;
-        return (Integer.valueOf(currentValue) - a > b - Integer.valueOf(currentValue)) ? b : a;
+    public int findATM(int currentValue,String index) {
+        int atm=0;
+        if("FN".equals(index)|| "NF".equals(index)){
+            atm= (int) Math.round(currentValue / 50.0) * 50;
+        }else if("MC".equals(index)) {
+            atm= (int) Math.round(currentValue / 25.0) * 25;
+        }else if("BNF".equals(index)|| "SS".equals(index)){
+            int a = (Integer.valueOf(currentValue) / 100) * 100;
+            int b = a + 100;
+            atm= (Integer.valueOf(currentValue) - a > b - Integer.valueOf(currentValue)) ? b : a;
+        }
+        return atm;
     }
      static public HistoricalDataExtended to_larger_timeframe(HistoricalDataExtended historicalDataExtended, int min,String tradeDate) {
          HistoricalDataExtended output = new HistoricalDataExtended();

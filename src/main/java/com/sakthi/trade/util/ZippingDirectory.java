@@ -228,4 +228,55 @@ public class ZippingDirectory
             e.printStackTrace();
         }
     }
+
+    public void zipFile(String inputFileName,String outputFileName,String folderPath,String inputFileName1,String inputFileName2){
+        try {
+            FileOutputStream fos = new FileOutputStream(folderPath+"/"+outputFileName.concat(".zip"));
+            ZipOutputStream zos = new ZipOutputStream(fos);
+            FileInputStream fis = new FileInputStream(inputFileName);
+            BufferedInputStream bis = new BufferedInputStream(fis, BUFFER);
+            // ZipEntry --- Here file name can be created using the source file
+            ZipEntry ze = new ZipEntry(inputFileName);
+            // Putting zipentry in zipoutputstream
+            zos.putNextEntry(ze);
+            byte data[] = new byte[BUFFER];
+            int count;
+            while((count = bis.read(data, 0, BUFFER)) != -1)
+            {
+                zos.write(data, 0, count);
+            }
+            bis.close();
+            FileInputStream fis1 = new FileInputStream(inputFileName1);
+            BufferedInputStream bis1 = new BufferedInputStream(fis1, BUFFER);
+            // ZipEntry --- Here file name can be created using the source file
+            ZipEntry ze1 = new ZipEntry(inputFileName1);
+            // Putting zipentry in zipoutputstream
+            zos.putNextEntry(ze1);
+            byte data1[] = new byte[BUFFER];
+            int count1;
+            while((count1 = bis1.read(data1, 0, BUFFER)) != -1)
+            {
+                zos.write(data1, 0, count1);
+            }
+            bis1.close();
+            FileInputStream fis2 = new FileInputStream(inputFileName2);
+            BufferedInputStream bis2 = new BufferedInputStream(fis2, BUFFER);
+            // ZipEntry --- Here file name can be created using the source file
+            ZipEntry ze2 = new ZipEntry(inputFileName2);
+            // Putting zipentry in zipoutputstream
+            zos.putNextEntry(ze2);
+            byte data2[] = new byte[BUFFER];
+            int count2;
+            while((count2 = bis2.read(data2, 0, BUFFER)) != -1)
+            {
+                zos.write(data2, 0, count2);
+            }
+            bis2.close();
+            zos.closeEntry();
+            zos.close();
+        }catch (Exception e){
+            System.out.println("error:"+inputFileName);
+            e.printStackTrace();
+        }
+    }
 }  

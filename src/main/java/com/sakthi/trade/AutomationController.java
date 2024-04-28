@@ -8,12 +8,11 @@ import com.sakthi.trade.domain.*;
 import com.sakthi.trade.entity.*;
 import com.sakthi.trade.futures.banknifty.BNFFuturesTrendFollowing;
 import com.sakthi.trade.options.OptionDayViceTest;
+import com.sakthi.trade.seda.WebSocketTicksSedaProcessor;
 import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.options.WeeklyDataBackup;
 import com.sakthi.trade.options.banknifty.*;
-import com.sakthi.trade.options.banknifty.buy.BNiftyOptionBuy917;
-import com.sakthi.trade.options.banknifty.buy.BNiftyOptionBuy935;
 import com.sakthi.trade.options.nifty.buy.*;
 import com.sakthi.trade.repo.*;
 import com.sakthi.trade.telegram.DataBot;
@@ -204,39 +203,6 @@ MathUtils mathUtils;
 
     @Autowired
     ZerodhaTransactionService zerodhaTransactionService;
-    @GetMapping("/testRange")
-    public ResponseEntity<String> testRange(@RequestParam String index,String date,int upperRange,int lowerRange) throws Exception, KiteException {
-        Map<String,Map<String,String>> strikeMasterMap;
-String stockId;
-        if ("BNF".equals(index)) {
-            strikeMasterMap=zerodhaTransactionService.bankNiftyWeeklyOptions;
-            stockId="260105";
-        }else {
-            strikeMasterMap=zerodhaTransactionService.niftyWeeklyOptions;
-            stockId="256265";
-        }
-        HttpHeaders responseHeaders = new HttpHeaders();
-        Map<String,String> strike=mathUtils.getPriceRange(date,upperRange,lowerRange,"09:34:00",index);
-        strike.entrySet().stream().forEach(map->{
-            System.out.println(date+":"+map.getKey());
-        });
-        return new ResponseEntity<>(gson.toJson(strike), responseHeaders, HttpStatus.OK);
-    }
-    @Autowired
-    BNiftyOptionBuy917 bNiftyOptionBuy917;
-    @GetMapping("/bNiftyOptionBuy917")
-    public void bNiftyOptionBuy917() throws Exception, KiteException {
-        bNiftyOptionBuy917.buy();
-    }
-
-    @Autowired
-    BNiftyOptionBuy935 bNiftyOptionBuy935;
-
-
-    @GetMapping("/bNiftyOptionBuy935")
-    public void bNiftyOptionBuy935() throws Exception, KiteException {
-        bNiftyOptionBuy935.buy();
-    }
     @Autowired
     UserList userList;
     @GetMapping("/addTrades")
@@ -383,10 +349,6 @@ String stockId;
         }
 
     }
-    @GetMapping("/bNiftyOptionBuy935Test")
-    public void bNiftyOptionBuy935Test() throws Exception, KiteException {
-        bNiftyOptionBuy935.buy();
-    }
 
     @Autowired
     Algotest algotest;
@@ -422,6 +384,12 @@ NiftyOptionBuy935 niftyOptionBuy935;
     @GetMapping("/zerodha_backup")
     public void weeklyDataBackup() throws Exception {
         weeklyDataBackup.dataBackUp();
+        //       zippingDirectory.test();
+
+    }
+    @GetMapping("/plReport")
+    public void plReport() throws Exception {
+        tradeEngine.TableToImage();
         //       zippingDirectory.test();
 
     }
@@ -907,21 +875,6 @@ NiftyOptionBuy935 niftyOptionBuy935;
         /*  });*/
 
     }
-    @GetMapping("/slcode")
-    public void slcode() throws Exception, KiteException {
-
-       /* List<StockEntity> stockEntityList=stockRepository.findAll();
-        stockEntityList.forEach(stockEntity -> {*/
-        String currentDateStr="2023-06-16";
-        String candleHourMinStr="09:34";
-        // System.out.println(candleHourMinStr);
-        //String currentHourMinStr = hourMinFormat.format(currentMinDate);
-        String currentHourMinStr="09:35";
-        oneTradeExecutor.slCode(currentDateStr,currentHourMinStr,candleHourMinStr);
-     //   oneTradeExecutor.executeStrategy();
-        /*  });*/
-
-    }
 
     @GetMapping("/zerodhaBN")
     public void zerodhaBN() throws Exception {
@@ -955,7 +908,8 @@ NiftyOptionBuy935 niftyOptionBuy935;
     }
 
     @Autowired
-    ExpBuy expBuy;
+    WebSocketTicksSedaProcessor webSocketTicksSedaProcessor;
+
     @GetMapping("/expBuy")
     public void expBuy() throws Exception {
        // expBuy.buy();

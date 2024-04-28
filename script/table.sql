@@ -421,7 +421,11 @@ ALTER TABLE open_trade_data_backup ADD COLUMN trade_strategy_key varchar(100) nu
     ALTER TABLE trade_strategy ADD COLUMN bbs_window numeric(60,2) null;
   ALTER TABLE trade_strategy ADD COLUMN sz numeric(60,2) null;
   ALTER TABLE trade_strategy ADD COLUMN s_position_taken boolean default false;
-
+  ALTER TABLE trade_strategy ADD COLUMN no_exit boolean default false;
+    ALTER TABLE trade_strategy ADD COLUMN no_sl boolean default false;
+        ALTER TABLE live_pl_change ADD COLUMN entry_type varchar(100);
+        ALTER TABLE live_pl_change ADD COLUMN index varchar(100);
+         ALTER TABLE live_pl_change ADD COLUMN strike_type varchar(100);
 update trade_strategy set trail_enabled=false where trade_strategy_key not like '%BBS%';
 update trade_strategy set multiplier=0 where trade_strategy_key not like '%BBS%';
 update trade_strategy set s_position_taken=false where trade_strategy_key not like '%BBS%';
@@ -446,3 +450,18 @@ data_key varchar(100), candle_time timestamp,
                                                 FOREIGN KEY(data_key)
                                           	  REFERENCES indicator_high_level_data(data_key),
                                           	  UNIQUE(data_key,candle_time));
+ create table live_pl_change(data_key varchar(100) primary key,
+ trade_strategy_key varchar(100), stock_name varchar(40),
+                                          pl numeric(10,2),
+                                           close numeric(10,2),
+                                          data_time timestamp);
+
+
+ALTER TABLE trade_strategy ADD COLUMN websocket_sl_enabled boolean default false;
+ALTER TABLE trade_strategy ADD COLUMN temp_sl_type varchar(100);
+ALTER TABLE trade_strategy ADD COLUMN temp_sl_percentage numeric(60,2) null;
+ALTER TABLE trade_strategy ADD COLUMN hedge boolean default false;
+
+ALTER TABLE open_trade_data ADD COLUMN websocket_sl_modified boolean default false;
+ALTER TABLE open_trade_data ADD COLUMN websocket_sl_time varchar(100);
+ALTER TABLE open_trade_data ADD COLUMN temp_sl_price numeric(60,2) null;

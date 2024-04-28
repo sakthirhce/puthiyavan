@@ -53,6 +53,9 @@ public class OpenTradeDataEntity {
     public BigDecimal charges;
     public BigDecimal plAfterCharges;
     public String tradeStrategyKey;
+    boolean websocketSlModified;
+    String websocketSlTime;
+    BigDecimal tempSlPrice;
 }
 
 

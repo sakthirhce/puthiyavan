@@ -2,8 +2,10 @@ package com.sakthi.trade.zerodha;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
+import com.sakthi.trade.TradeEngine;
 import com.sakthi.trade.cache.GlobalContextCache;
 import com.sakthi.trade.ratelimit.TokenBucket;
+import com.sakthi.trade.seda.TickData;
 import com.sakthi.trade.seda.WebSocketTicksSedaProcessor;
 import com.sakthi.trade.zerodha.account.User;
 import com.sakthi.trade.zerodha.account.UserList;
@@ -17,6 +19,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Component
@@ -28,10 +31,19 @@ public class TransactionService {
     @Qualifier("createOkHttpClient")
     OkHttpClient okHttpClient;
     TokenBucket tokenBucket = new TokenBucket(5, 5, 1000);
-    @Autowired
-    WebSocketTicksSedaProcessor webSocketTicksSedaProcessor;
+/*    @Autowired
+    WebSocketTicksSedaProcessor webSocketTicksSedaProcessor;*/
     @Autowired
     GlobalContextCache globalContextCache;
+
+    @Autowired
+    TickData tickData;
+
+    public Map<String, Map<String, Double>> tickCurrentPrice = new HashMap<>();
+
+/*    @Autowired
+    WebSocketTicksSedaProcessor webSocketTicksSedaProcessor;*/
+
     @Autowired
     UserList userList;
     KiteConnect kiteConnect;
@@ -171,8 +183,8 @@ public class TransactionService {
         watch1.start();
         String responseStr = globalContextCache.getHistoricData(time, stockId);
         try {
-            if (webSocketTicksSedaProcessor.tickCurrentPrice != null) {
-                Map<String,Double> tickPriceMap=webSocketTicksSedaProcessor.tickCurrentPrice.get(stockId);
+            if (tickData!=null && tickData.tickCurrentPrice != null) {
+                Map<String,Double> tickPriceMap=tickData.tickCurrentPrice.get(stockId);
                 if (tickPriceMap!=null){
                     double tickPrice =tickPriceMap.get(time);
                     LOGGER.info("websocket time:"+time+" price:"+tickPrice);

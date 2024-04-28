@@ -76,6 +76,8 @@ public class TradeData {
     BigDecimal exitSystemPrice;
     BigDecimal slExecutedPrice;
     BigDecimal profitLoss;
+    boolean noSl;
+    boolean noExit;
     int rentryCount;
     public String modifyDate;
     public BigDecimal charges;
@@ -83,4 +85,7 @@ public class TradeData {
 
     String strikeId;
     TradeStrategy tradeStrategy;
+    boolean websocketSlModified;
+    String websocketSlTime;
+    BigDecimal tempSlPrice;
 }

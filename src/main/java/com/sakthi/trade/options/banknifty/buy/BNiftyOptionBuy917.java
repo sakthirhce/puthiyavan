@@ -1,3 +1,4 @@
+/*
 package com.sakthi.trade.options.banknifty.buy;
 
 import com.google.common.util.concurrent.AtomicDouble;
@@ -90,14 +91,17 @@ public class BNiftyOptionBuy917 {
         String currentDate = format.format(date);
       //  String nifty = zerodhaTransactionService.niftyIndics.get("NIFTY 50");
 
-       /* String historicURL = "https://api.kite.trade/instruments/historical/" + nifty + "/5minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+11:15:00";
+       */
+/* String historicURL = "https://api.kite.trade/instruments/historical/" + nifty + "/5minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+11:15:00";
         String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
         LOGGER.info(response);
         HistoricalData historicalData = new HistoricalData();
-        JSONObject json = new JSONObject(response);*/
+        JSONObject json = new JSONObject(response);*//*
+
         Map<String, StrikeData> rangeSelected;
         rangeSelected=mathUtils.getPriceRangeSortedWithLowRange(currentDate,450,350,"09:16:00","BNF");
-     /*   executorService1.submit(() -> {
+     */
+/*   executorService1.submit(() -> {
             try {
                 Map<String,Map<String,String>> atmStrikesStraddle;
                 if (zerodhaTransactionService.expDate.equals(currentDate)) {
@@ -109,7 +113,8 @@ public class BNiftyOptionBuy917 {
             }catch (Exception e){
                 e.printStackTrace();
             }
-        });*/
+        });*//*
+
         rangeSelected.forEach((key, value) -> {
             LOGGER.info(key + ":" + value);
             try {
@@ -119,7 +124,8 @@ public class BNiftyOptionBuy917 {
             }
         });
        // String status = json.getString("status");
-   /*     if (!status.equals("error")) {
+   */
+/*     if (!status.equals("error")) {
             historicalData.parseResponse(json);
             historicalData.dataArrayList.forEach(historicalData1 -> {
                 try {
@@ -138,7 +144,8 @@ public class BNiftyOptionBuy917 {
                         atmStrikesStraddle.forEach((key, value) -> {
                             LOGGER.info(key + ":" + value);
                             atmStrikeMap.put(key, value);
-                        });*/
+                        });*//*
+
         try {
                     rangeSelected.entrySet().stream().forEach(atmNiftyStrikeMap -> {
 
@@ -737,7 +744,8 @@ public class BNiftyOptionBuy917 {
     @Autowired
     TradeDataMapper tradeDataMapper;
     public void mapTradeDataToSaveOpenTradeDataEntity(TradeData tradeData,boolean orderPlaced) {
-        try {/*
+        try {*/
+/*
             OpenTradeDataEntity openTradeDataEntity = new OpenTradeDataEntity();
             openTradeDataEntity.setDataKey(tradeData.getDataKey());
             openTradeDataEntity.setAlgoName(this.getAlgoName());
@@ -768,7 +776,8 @@ public class BNiftyOptionBuy917 {
             }else{
                 openTradeDataEntity.setTradeDate(tradeData.getTradeDate());
             }
-            saveTradeData(openTradeDataEntity);*/
+            saveTradeData(openTradeDataEntity);*//*
+
             tradeDataMapper.mapTradeDataToSaveOpenTradeDataEntity(tradeData,orderPlaced,this.getAlgoName());
             //LOGGER.info("sucessfully saved trade data");
         } catch (Exception e) {
@@ -788,3 +797,4 @@ public class BNiftyOptionBuy917 {
         }
     }
 }
+*/

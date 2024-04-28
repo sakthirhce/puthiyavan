@@ -112,12 +112,12 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                 if (order.orderId.equals(trendTradeData.getSlOrderId()) && trendTradeData.isSlPlaced) {
                                     if ("CANCELLED".equals(order.status)) {
                                         trendTradeData.isSLCancelled = true;
-
                                         String message = MessageFormat.format("Broker Cancelled SL Order for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + strategy.getTradeStrategyKey());
                                         LOGGER.info(message);
                                         try {
-                                            tradeSedaQueue.sendTelemgramSeda(message, user.telegramBot.getGroupId());
+                                            tradeSedaQueue.sendTelemgramSeda(message, "exp-trade");
                                         } catch (Exception e) {
+                                            tradeSedaQueue.sendTelemgramSeda("error while processing", "error");
                                             LOGGER.info("error:" + e);
                                         }
                                     }
@@ -169,7 +169,7 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                         }
                                     }
 
-                                }
+                                }/*
                                 if (trendTradeData.isOrderPlaced && trendTradeData.getEntryOrderId().equals(order.orderId)) {
                                     if (!trendTradeData.isSlPlaced) {
                                         try {
@@ -190,6 +190,9 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                             OrderParams orderParams = new OrderParams();
                                             orderParams.tradingsymbol = trendTradeData.getStockName();
                                             orderParams.exchange = "NFO";
+                                            if("SS".equals(strategy.getIndex())){
+                                                orderParams.exchange = "BFO";
+                                            }
                                             if(strategy.getTradeStrategyKey().length()<=20) {
                                                 orderParams.tag = strategy.getTradeStrategyKey();
                                             }
@@ -256,7 +259,7 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                             LOGGER.info("error while placing sl:" + e.getMessage() + trendTradeData.getEntryOrderId() + ":" + trendTradeData.getStockName());
                                         }
 
-                                    }}
+                                    }}*/
                                     if (("COMPLETE".equals(order.status) || "TRADED".equals(order.status)) && order.orderId.equals(trendTradeData.getSlOrderId()) && !trendTradeData.isExited && trendTradeData.isSlPlaced) {
                                         trendTradeData.isSLHit = true;
                                         trendTradeData.isExited = true;
@@ -271,7 +274,7 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                         BigDecimal slipage = (trendTradeData.getSellTradedPrice().subtract(trendTradeData.getSellPrice())).multiply(new BigDecimal(25)).setScale(0, RoundingMode.UP);
                                         String message = MessageFormat.format("SL Hit for {0}" + ": sl sell slipage" + slipage.toString(), trendTradeData.getStockName() + ":" + user.getName() + ":" + strategy.getTradeStrategyKey() + ":" + strategy.getTradeStrategyKey());
                                         LOGGER.info(message);
-                                        tradeSedaQueue.sendTelemgramSeda(message, user.telegramBot.getGroupId());
+                                        tradeSedaQueue.sendTelemgramSeda(message, "exp-trade");
                                         mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, false);
                                         if (strategy.isReentry() && "SELL".equals(trendTradeData.getEntryType())) {
                                             long tradeCount = userTradeData.getValue().stream().filter(tradeDataTemp ->
@@ -297,6 +300,9 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                                 reentryTradeData.setTradeStrategy(strategy);
                                                 orderParams.tradingsymbol = trendTradeData.getStockName();
                                                 orderParams.exchange = "NFO";
+                                                if("SS".equals(strategy.getIndex())){
+                                                    orderParams.exchange = "BFO";
+                                                }
                                                 orderParams.quantity = trendTradeData.getQty();
                                                 orderParams.orderType = "SL";
                                                 orderParams.triggerPrice = trendTradeData.getSellPrice().doubleValue();
@@ -321,14 +327,15 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
 
                                                     try {
                                                         LOGGER.info("Option " + trendTradeData.getStockName() + ":" + user.getName() + " placed retry");
-                                                        tradeSedaQueue.sendTelemgramSeda("Option " + trendTradeData.getStockName() + ":" + user.getName() + " placed retry" + ":" + strategy.getTradeStrategyKey(), user.telegramBot.getGroupId());
+                                                        tradeSedaQueue.sendTelemgramSeda("Option " + trendTradeData.getStockName() + ":" + user.getName() + " placed retry" + ":" + strategy.getTradeStrategyKey(), "exp-trade");
                                                     } catch (Exception e) {
-                                                        LOGGER.info("error:" + e);
+                                                        tradeSedaQueue.sendTelemgramSeda("Error while placing order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + e.getMessage() + ":" + strategy.getTradeStrategyKey(), "error");
                                                     }
                                                 } catch (Exception e) {
                                                     LOGGER.info("error while placing retry order: " + e.getMessage() + ":" + user.getName());
-                                                    tradeSedaQueue.sendTelemgramSeda("Error while placing retry order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + e.getMessage() + ":" + strategy.getTradeStrategyKey(), user.telegramBot.getGroupId());
+                                                    tradeSedaQueue.sendTelemgramSeda("Error while placing retry order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + e.getMessage() + ":" + strategy.getTradeStrategyKey(), "error");
                                                 } catch (KiteException e) {
+                                                    tradeSedaQueue.sendTelemgramSeda("Error while placing retry order: " + trendTradeData.getStockName() + ":" + user.getName() + ": Status: " + order.status + ": error message:" + e.getMessage() + ":" + strategy.getTradeStrategyKey(), "error");
                                                     throw new RuntimeException(e);
                                                 }
                                             }
@@ -365,14 +372,15 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                                         String currentHourMinStr = hourMinFormat.format(lastCandleTimestamp);
                                                         System.out.println("last candle:"+gson.toJson(lastCandleTimestamp));
                                                         System.out.println("currentHourMinStr:"+currentHourMinStr);
-                                                        Map<Double, Map<String, StrikeData>> rangeStrikes = new HashMap<>();
+                                                        Map<String, Map<String, StrikeData>> rangeStrikes = new HashMap<>();
                                                         rangeStrikes = mathUtils.strikeSelection(currentDateStr, strategy, optionalHistoricalLatestData.close, currentHourMinStr+":00",optionStrikeType);
                                                         rangeStrikes.forEach((indexStrikePrice, strikeDataEntry) -> {
                                                             strikeDataEntry.entrySet().stream().forEach(strikeDataEntry1 -> {
                                                                 StrikeData strikeData = strikeDataEntry1.getValue();
                                                                 OrderParams orderParams = new OrderParams();
                                                                 AtomicDouble triggerPriceTemp = new AtomicDouble();
-                                                                double strikePrice = indexStrikePrice.doubleValue();
+                                                                String[] prices= indexStrikePrice.split("-");
+                                                                double strikePrice = Double.parseDouble(prices[0]);
                                                                 if (strategy.isSimpleMomentum()) {
                                                                     if (strategy.getStrikeSelectionType().equals(StrikeSelectionType.ATM.getType())) {
                                                                         String historicURL1 = "https://api.kite.trade/instruments/historical/" + strikeData.getZerodhaId() + "/minute?from=" + currentDateStr + "+09:00:00&to=" + currentDateStr + "+15:35:00";
@@ -424,6 +432,9 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
 
                                                                 orderParams.tradingsymbol = strikeData.getZerodhaSymbol();
                                                                 orderParams.exchange = "NFO";
+                                                                if("SS".equals(strategy.getIndex())){
+                                                                    orderParams.exchange = "BFO";
+                                                                }
                                                                 if ("MIS".equals(strategy.getTradeValidity())) {
                                                                     orderParams.product = "MIS";
                                                                 } else {
@@ -532,12 +543,12 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                                         orderParams.price = price;
                                                     }
                                                     brokerWorker.modifyOrder(order1.orderId, orderParams, user, tradeDataMod);
-                                                    tradeSedaQueue.sendTelemgramSeda("executed trail sl " + trendTradeData.getStockName() + ":" + user.getName() + ":" + strategy.getTradeStrategyKey(), user.telegramBot.getGroupId());
+                                                    tradeSedaQueue.sendTelemgramSeda("executed trail sl " + trendTradeData.getStockName() + ":" + user.getName() + ":" + strategy.getTradeStrategyKey(),"exp-trade");
                                                 } catch (IOException e) {
-                                                    tradeSedaQueue.sendTelemgramSeda("error while modifying Option " + trendTradeData.getStockName() + ":" + user.getName() + ":" + strategy.getTradeStrategyKey(), user.telegramBot.getGroupId());
+                                                    tradeSedaQueue.sendTelemgramSeda("error while modifying Option " + trendTradeData.getStockName() + ":" + user.getName() + ":" + strategy.getTradeStrategyKey(), "error");
                                                     throw new RuntimeException(e);
                                                 } catch (KiteException e) {
-                                                    tradeSedaQueue.sendTelemgramSeda("error while modifying Option " + trendTradeData.getStockName() + ":" + user.getName() + " placed retry" + ":" + strategy.getTradeStrategyKey(), user.telegramBot.getGroupId());
+                                                    tradeSedaQueue.sendTelemgramSeda("error while modifying Option " + trendTradeData.getStockName() + ":" + user.getName() + " placed retry" + ":" + strategy.getTradeStrategyKey(), "error");
                                                     throw new RuntimeException(e);
                                                 }
                                             });
@@ -548,7 +559,7 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                     String message = MessageFormat.format("SL order placement rejected for {0}", trendTradeData.getStockName() + ":" + user.getName() + ":" + order.status + ":" + order.statusMessage + ":" + strategy.getTradeStrategyKey());
                                     LOGGER.info(message);
                                     trendTradeData.isErrored = true;
-                                    tradeSedaQueue.sendTelemgramSeda(message, user.telegramBot.getGroupId());
+                                    tradeSedaQueue.sendTelemgramSeda(message, "error");
                                 }
                             }
                        // }

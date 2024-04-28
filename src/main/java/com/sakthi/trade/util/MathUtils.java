@@ -47,7 +47,7 @@ public class MathUtils {
     SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
     public static BigDecimal percentageValueOfAmount(BigDecimal percent, BigDecimal amount) {
-        BigDecimal value = amount.divide(new BigDecimal("100"), 2, BigDecimal.ROUND_UP).multiply(percent).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal value = amount.divide(new BigDecimal("100")).multiply(percent);
         return value;
     }
     public static BigDecimal percentageValueOfAmountWithoutRund(BigDecimal percent, BigDecimal amount) {
@@ -114,210 +114,6 @@ public class MathUtils {
         tradeData.setCharges(totalcharges.setScale(2, RoundingMode.HALF_UP));
         return brokerage;
     }
-
-    public Map<String, String> getPriceRange( String currentDate, int upperRange, int lowerRange, String checkTime, String index) {
-        //     String historicURL = "https://api.kite.trade/instruments/historical/" + niftyBank + "/5minute?from=2021-01-01+09:00:00&to=2021-01-01+11:15:00";
-        Map<String,Map<String,String>> strikeMasterMap1=new HashMap<>();
-        String stockId=strikeId(index);
-        if("BNF".equals(index)) {
-            if (zerodhaTransactionService.bankBiftyExpDate.equals(currentDate)) {
-                strikeMasterMap1 = zerodhaTransactionService.bankNiftyNextWeeklyOptions;
-            } else {
-                strikeMasterMap1 = zerodhaTransactionService.bankNiftyWeeklyOptions;
-            }
-        }else if("NF".equals(index)){
-            if (zerodhaTransactionService.expDate.equals(currentDate)) {
-                strikeMasterMap1= zerodhaTransactionService.niftyNextWeeklyOptions;
-            } else {
-                strikeMasterMap1 = zerodhaTransactionService.niftyWeeklyOptions;
-            }
-        }
-
-        if ("FN".equals(index)) {
-            if (zerodhaTransactionService.finExpDate.equals(currentDate)) {
-                strikeMasterMap1= zerodhaTransactionService.finNiftyWeeklyOptions;
-            } else {
-                strikeMasterMap1 = zerodhaTransactionService.finNiftyNextWeeklyOptions;
-            }
-        }
-        if ("SS".equals(index)) {
-            if (zerodhaTransactionService.sensexExpDate.equals(currentDate)) {
-                strikeMasterMap1= zerodhaTransactionService.sensexWeeklyOptions;
-            } else {
-                strikeMasterMap1 = zerodhaTransactionService.sensexNextWeeklyOptions;
-            }
-        }
-        if ("MC".equals(index)) {
-            if (zerodhaTransactionService.midCpExpDate.equals(currentDate)) {
-                strikeMasterMap1 = zerodhaTransactionService.midcpWeeklyOptions;
-            }
-            else {
-                strikeMasterMap1 = zerodhaTransactionService.midcpNextWeeklyOptions;
-            }
-        }
-        Map<String,Map<String,String>> strikeMasterMap=strikeMasterMap1;
-        String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:30:00";
-        String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL),stockId,checkTime);
-        HistoricalData historicalData = new HistoricalData();
-        JSONObject json = new JSONObject(response);
-        Map<String, String> rangeStrike = new HashMap<>();
-        String status = json.getString("status");
-        if (!status.equals("error")) {
-            historicalData.parseResponse(json);
-            historicalData.dataArrayList.forEach(historicalData1 -> {
-                try {
-                    Date openDatetime = sdf.parse(historicalData1.timeStamp);
-                    String openDate = format.format(openDatetime);
-                    if (sdf.format(openDatetime).equals(openDate + "T" + checkTime)) {/*"09:30:00"*/
-                        int atmStrike = commonUtil.findATM((int) historicalData1.close);
-                        int tempStrike = atmStrike;
-                        int i=0;
-                        while (tempStrike > 0 && i<10) {
-                                final Map.Entry<String, String> atmStrikesStraddle = strikeMasterMap.get(String.valueOf(tempStrike)).entrySet().stream().filter(map -> map.getKey().contains("CE")).findFirst().get();
-                                if (atmStrikesStraddle.getKey().contains("CE")) {
-                                    double closePrice = callStrike(atmStrikesStraddle.getValue(), currentDate,checkTime);
-                                    Thread.sleep(200);
-                                    int tempStrike1 = assessRange("CE", closePrice, upperRange, lowerRange, tempStrike);
-                                    if (tempStrike1 == tempStrike) {
-                                        final Map<String, String> stringStringMap = strikeMasterMap.get(String.valueOf(tempStrike));
-                                        stringStringMap.forEach((key1, value1) -> {
-                                          //  LOGGER.info(key1 + ":" + value1);
-                                            if (key1.contains("CE")) {
-                                                rangeStrike.put(key1, value1);
-                                                System.out.println(currentDate+":"+key1);
-                                            }
-                                        });
-                                        break;
-                                    }
-                                    tempStrike = tempStrike1;
-                                }
-                                i++;
-                            }
-                            int tempStrike2 = atmStrike;
-                        int j=0;
-                            while (tempStrike2 > 0 && j<10) {
-                                final Map.Entry<String, String> atmStrikesStraddle =strikeMasterMap.get(String.valueOf(tempStrike2)).entrySet().stream().filter(map -> map.getKey().contains("PE")).findFirst().get();
-                                if (atmStrikesStraddle.getKey().contains("PE")) {
-                                    double closePrice = callStrike(atmStrikesStraddle.getValue(), currentDate,checkTime);
-                                    Thread.sleep(200);
-                                    int tempStrike1 = assessRange("PE", closePrice, upperRange, lowerRange, tempStrike2);
-                                    if (tempStrike1 == tempStrike2) {
-                                        final Map<String, String> stringStringMap = strikeMasterMap.get(String.valueOf(tempStrike2));
-                                        stringStringMap.forEach((key1, value1) -> {
-                                            LOGGER.info(key1 + ":" + value1);
-                                            if (key1.contains("PE")) {
-                                                rangeStrike.put(key1, value1);
-                                                System.out.println(currentDate+":"+key1);
-                                            }
-                                        });
-                                        break;
-                                    }
-                                    tempStrike2 = tempStrike1;
-                                }
-                            j++;
-                            }
-
-
-
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        }
-        return rangeStrike;
-    }
-
-
-    public  Map<String, StrikeData> getPriceRangeSortedWithLowRange( String currentDate, double upperRange, double lowerRange, String checkTime, String index) {
-        //     String historicURL = "https://api.kite.trade/instruments/historical/" + niftyBank + "/5minute?from=2021-01-01+09:00:00&to=2021-01-01+11:15:00";
-        Map<String, Map<String, StrikeData>> strikeMasterMap1 = strikeData(index,null,null);
-        // Map<String,Map<String,String>> dhanStrikeMasterMap1=new HashMap<>();
-        String stockId = strikeId(index);
-        Map<Double,Map.Entry<String, StrikeData>> ce=new HashMap<>();
-        Map<Double,Map.Entry<String, StrikeData>> pe=new HashMap<>();
-        Map<String,Map<String,StrikeData>> strikeMasterMap=strikeMasterMap1;
-        String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + currentDate + "+09:15:00&to=" + currentDate + "+15:30:00";
-        String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL),stockId,checkTime);
-        HistoricalData historicalData = new HistoricalData();
-        JSONObject json = new JSONObject(response);
-        Map<String, StrikeData> rangeStrike = new HashMap<>();
-        String status = json.getString("status");
-        if (!status.equals("error")) {
-            historicalData.parseResponse(json);
-          // HistoricalData lastElement= historicalData.dataArrayList.get(historicalData.dataArrayList.size()-1);
-            historicalData.dataArrayList.forEach(historicalData1 -> {
-                try {
-                    Date openDatetime = sdf.parse(historicalData1.timeStamp);
-                  //  String openDate = format.format(openDatetime);
-                    if (sdf.format(openDatetime).equals(currentDate + "T" + checkTime)) {/*"09:30:00"*/
-                        int atmStrike = commonUtil.findATM((int) historicalData1.close);
-                        int tempStrikeCE = atmStrike;
-                        int tempStrikePE = atmStrike;
-                        int i=0;
-                        while (tempStrikeCE > 0 && i<12) {
-                            final Map.Entry<String, StrikeData> atmStrikesStraddle = strikeMasterMap.get(String.valueOf(tempStrikeCE)).entrySet().stream().filter(map -> map.getKey().contains("CE")).findFirst().get();
-                            if (atmStrikesStraddle.getKey().contains("CE")) {
-                                double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate,checkTime,atmStrikesStraddle.getKey());
-                                Thread.sleep(100);
-                                int tempStrike1 =0;
-                                    tempStrike1 = assessRangeWithRange25(index,"CE", closePrice, upperRange, lowerRange, tempStrikeCE, atmStrike, atmStrikesStraddle, ce, i);
-                                if (tempStrike1 == tempStrikeCE) {
-                                    try {
-                                        final Map.Entry<String, StrikeData> stringStringMap = getMinPremiumStrike(ce);
-                                        if (stringStringMap != null) {
-                                            //  LOGGER.info(key1 + ":" + value1);
-                                            rangeStrike.put(stringStringMap.getKey(), stringStringMap.getValue());
-                                            System.out.println(currentDate + ":" + stringStringMap.getKey());
-                                        }
-                                    }catch (Exception e){
-                                        LOGGER.info("error:"+new Gson().toJson(ce)+":"+atmStrikesStraddle);
-                                    }
-                                    break;
-                                }
-                                tempStrikeCE = tempStrike1;
-                            }
-                            i++;
-                        }
-                    //    int tempStrike2 = atmStrike;
-                        int j=0;
-                        while (tempStrikePE > 0 && j<12) {
-                            final Map.Entry<String, StrikeData> atmStrikesStraddle =strikeMasterMap.get(String.valueOf(tempStrikePE)).entrySet().stream().filter(map -> map.getKey().contains("PE")).findFirst().get();
-                            if (atmStrikesStraddle.getKey().contains("PE")) {
-                                double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate,checkTime,atmStrikesStraddle.getKey());
-                                Thread.sleep(100);
-                                int tempStrike1 =0;
-                                tempStrike1 = assessRangeWithRange25(index,"PE", closePrice, upperRange, lowerRange, tempStrikePE, atmStrike, atmStrikesStraddle, pe, j);
-
-                                if (tempStrike1 == tempStrikePE) {
-                                    try {
-                                    final Map.Entry<String, StrikeData> stringStringMap = getMinPremiumStrike(pe);
-                                    if(stringStringMap!=null){
-                                        rangeStrike.put(stringStringMap.getKey(), stringStringMap.getValue());
-                                        System.out.println(currentDate+":"+stringStringMap.getKey());
-                                    }
-                                    }catch (Exception e){
-                                        LOGGER.info("error:"+new Gson().toJson(pe)+":"+atmStrikesStraddle);
-                                    }
-
-                                    break;
-                                }
-                                tempStrikePE = tempStrike1;
-                            }
-                            j++;
-                        }
-
-
-
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        }
-        return rangeStrike;
-    }
-
     public  Map<String, StrikeData> getPriceRangeSortedWithLowRange(String currentDate, double upperRange, double lowerRange, String checkTime, String index, TradeStrategy strategy) {
         //     String historicURL = "https://api.kite.trade/instruments/historical/" + niftyBank + "/5minute?from=2021-01-01+09:00:00&to=2021-01-01+11:15:00";
         Map<String, Map<String, StrikeData>> strikeMasterMap1 = strikeData(index,currentDate,strategy.getTradeValidity());
@@ -340,7 +136,7 @@ public class MathUtils {
                     Date openDatetime = sdf.parse(historicalData1.timeStamp);
                     //  String openDate = format.format(openDatetime);
                     if (sdf.format(openDatetime).equals(currentDate + "T" + checkTime)) {/*"09:30:00"*/
-                        int atmStrike = commonUtil.findATM((int) historicalData1.close);
+                        int atmStrike = commonUtil.findATM((int) historicalData1.close,index);
                         int tempStrikeCE = atmStrike;
                         int tempStrikePE = atmStrike;
                         int i=0;
@@ -406,15 +202,15 @@ public class MathUtils {
         return rangeStrike;
     }
 //use only for exp for now
-    public Map<Double,Map<String, StrikeData>> getPriceCloseToPremium( String currentDate, int closePremium, String checkTime, String index) {
-        Map<Double, Map<String, StrikeData>> rangeStrike = new HashMap<>();
+    public Map<String,Map<String, StrikeData>> getPriceCloseToPremium( String currentDate, int closePremium, String checkTime, String index,TradeStrategy strategy) {
+        Map<String, Map<String, StrikeData>> rangeStrike = new HashMap<>();
         try {
             //     String historicURL = "https://api.kite.trade/instruments/historical/" + niftyBank + "/5minute?from=2021-01-01+09:00:00&to=2021-01-01+11:15:00";
-            Map<String, Map<String, StrikeData>> strikeMasterMap1 = strikeData(index,null,null);
+            Map<String, Map<String, StrikeData>> strikeMasterMap1 = strikeData(index,currentDate,strategy.getTradeValidity());
             // Map<String,Map<String,String>> dhanStrikeMasterMap1=new HashMap<>();
             String stockId = strikeId(index);
-            Map<Double, Map.Entry<String, StrikeData>> ce = new HashMap<>();
-            Map<Double, Map.Entry<String, StrikeData>> pe = new HashMap<>();
+            Map<String, Map.Entry<String, StrikeData>> ce = new HashMap<>();
+            Map<String, Map.Entry<String, StrikeData>> pe = new HashMap<>();
             //  Map<Double,Map.Entry<String, StrikeData>> cepe=new HashMap<>();
             Map<String, Map<String, StrikeData>> strikeMasterMap = strikeMasterMap1;
             //   Map<String,Map<String,String>> dhanStrikeMasterMap=dhanStrikeMasterMap1;
@@ -431,10 +227,14 @@ public class MathUtils {
                         Date openDatetime = sdf.parse(historicalData1.timeStamp);
                         String openDate = format.format(openDatetime);
                         if (sdf.format(openDatetime).equals(openDate + "T" + checkTime)) {/*"09:30:00"*/
-                            int atmStrike = commonUtil.findATM((int) historicalData1.close);
-                            int tempStrike = atmStrike - 300;
+                            int atmStrike = commonUtil.findATM((int) historicalData1.close,index);
+                            int tempStrike = atmStrike - 200;
                             int i = 0;
-                            while (tempStrike > 0 && i < 12) {
+                            int upperScanLimit=16;
+                            if(strategy.isHedge()){
+                                upperScanLimit=20;
+                            }
+                            while (tempStrike > 0 && i < upperScanLimit) {
                                 final Map.Entry<String, StrikeData> atmStrikesStraddle = strikeMasterMap.get(String.valueOf(tempStrike)).entrySet().stream().filter(map -> map.getKey().contains("CE")).findFirst().get();
                                 if (atmStrikesStraddle.getKey().contains("CE")) {
                                     double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate, checkTime, atmStrikesStraddle.getKey());
@@ -447,15 +247,15 @@ public class MathUtils {
                                         increment= 25;
                                     }
                                     tempStrike = tempStrike + increment;
-                                    ce.put(closePrice, atmStrikesStraddle);
+                                    ce.put(String.valueOf(closePrice), atmStrikesStraddle);
 
                                 }
                                 i++;
                             }
                             selectClosestStrikePrice(ce, closePremium, rangeStrike);
-                            int tempStrike2 = atmStrike +300;
+                            int tempStrike2 = atmStrike +200;
                             int j = 0;
-                            while (tempStrike2 > 0 && j < 12) {
+                            while (tempStrike2 > 0 && j < upperScanLimit) {
                                 final Map.Entry<String, StrikeData> atmStrikesStraddle = strikeMasterMap.get(String.valueOf(tempStrike2)).entrySet().stream().filter(map -> map.getKey().contains("PE")).findFirst().get();
                                 if (atmStrikesStraddle.getKey().contains("PE")) {
                                     double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate, checkTime, atmStrikesStraddle.getKey());
@@ -468,7 +268,7 @@ public class MathUtils {
                                         increment= 25;
                                     }
                                     tempStrike2 = tempStrike2 - increment;
-                                    pe.put(closePrice, atmStrikesStraddle);
+                                    pe.put(String.valueOf(closePrice), atmStrikesStraddle);
                                 }
                                 j++;
                             }
@@ -486,17 +286,17 @@ public class MathUtils {
     }
 
     //use only for exp for now
-    public Map<Double,Map<String, StrikeData>> getPriceCloseToPremium( String currentDate, int closePremium, String checkTime, String index, String byOptionStrikeType) {
+    public Map<String,Map<String, StrikeData>> getPriceCloseToPremium( String currentDate, int closePremium, String checkTime, String index, String byOptionStrikeType) {
         System.out.println("inside getPriceCloseToPremium");
-        Map<Double, Map<String, StrikeData>> rangeStrike = new HashMap<>();
+        Map<String, Map<String, StrikeData>> rangeStrike = new HashMap<>();
         try {
             //     String historicURL = "https://api.kite.trade/instruments/historical/" + niftyBank + "/5minute?from=2021-01-01+09:00:00&to=2021-01-01+11:15:00";
             Map<String, Map<String, StrikeData>> strikeMasterMap1 = strikeData(index,null,null);
             // Map<String,Map<String,String>> dhanStrikeMasterMap1=new HashMap<>();
             String stockId = strikeId(index);
 
-            Map<Double, Map.Entry<String, StrikeData>> ce = new HashMap<>();
-            Map<Double, Map.Entry<String, StrikeData>> pe = new HashMap<>();
+            Map<String, Map.Entry<String, StrikeData>> ce = new HashMap<>();
+            Map<String, Map.Entry<String, StrikeData>> pe = new HashMap<>();
             //  Map<Double,Map.Entry<String, StrikeData>> cepe=new HashMap<>();
             Map<String, Map<String, StrikeData>> strikeMasterMap = strikeMasterMap1;
             //   Map<String,Map<String,String>> dhanStrikeMasterMap=dhanStrikeMasterMap1;
@@ -513,7 +313,7 @@ public class MathUtils {
                         Date openDatetime = sdf.parse(historicalData1.timeStamp);
                         String openDate = format.format(openDatetime);
                         if (sdf.format(openDatetime).equals(openDate + "T" + checkTime)) {/*"09:30:00"*/
-                            int atmStrike = commonUtil.findATM((int) historicalData1.close);
+                            int atmStrike = commonUtil.findATM((int) historicalData1.close,index);
                             System.out.println("closePremium:atm:"+atmStrike);
                             if ("CE".equals(byOptionStrikeType)) {
                                 int tempStrike = atmStrike - 300;
@@ -523,7 +323,7 @@ public class MathUtils {
                                     tempStrike=atmStrike - 200;
                                 }
                                 int i = 0;
-                                while (tempStrike > 0 && i < 12) {
+                                while (tempStrike > 0 && i < 16) {
                                     final Map.Entry<String, StrikeData> atmStrikesStraddle = strikeMasterMap.get(String.valueOf(tempStrike)).entrySet().stream().filter(map -> map.getKey().contains("CE")).findFirst().get();
                                     if (atmStrikesStraddle.getKey().contains("CE")) {
                                         double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate, checkTime, atmStrikesStraddle.getKey());
@@ -536,7 +336,7 @@ public class MathUtils {
                                             increment= 25;
                                         }
                                         tempStrike = tempStrike + increment;
-                                        ce.put(closePrice, atmStrikesStraddle);
+                                        ce.put(String.valueOf(closePrice), atmStrikesStraddle);
 
                                     }
                                     i++;
@@ -551,7 +351,7 @@ public class MathUtils {
                                     tempStrike2=atmStrike - 200;
                                 }
                                 int j = 0;
-                                while (tempStrike2 > 0 && j < 12) {
+                                while (tempStrike2 > 0 && j < 16) {
                                     final Map.Entry<String, StrikeData> atmStrikesStraddle = strikeMasterMap.get(String.valueOf(tempStrike2)).entrySet().stream().filter(map -> map.getKey().contains("PE")).findFirst().get();
                                     if (atmStrikesStraddle.getKey().contains("PE")) {
                                         double closePrice = callStrikeWithName(atmStrikesStraddle.getValue(), currentDate, checkTime, atmStrikesStraddle.getKey());
@@ -564,7 +364,7 @@ public class MathUtils {
                                             increment= 25;
                                         }
                                         tempStrike2 = tempStrike2 + increment;
-                                        pe.put(closePrice, atmStrikesStraddle);
+                                        pe.put(String.valueOf(closePrice), atmStrikesStraddle);
                                     }
                                     j++;
                                 }
@@ -604,7 +404,7 @@ public class MathUtils {
                     Date openDatetime = sdf.parse(historicalData1.timeStamp);
                     String openDate = format.format(openDatetime);
                     if (sdf.format(openDatetime).equals(openDate + "T" + checkTime)) {/*"09:30:00"*/
-                        int atmStrike = commonUtil.findATM((int) historicalData1.close);
+                        int atmStrike = commonUtil.findATM((int) historicalData1.close,index);
                         int tempStrike = atmStrike;
                         int i=0;
                         while (tempStrike > 0 && i<10) {
@@ -687,14 +487,15 @@ public class MathUtils {
                 strikeMasterMap = zerodhaTransactionService.globalOptionsInfo.get(Expiry.BNF_CURRENT.expiryName);
             }
 
-        }else if("NF".equals(index)){
+        }
+        if("NF".equals(index)){
             if (zerodhaTransactionService.expDate.equals(currentDate) && TradeValidity.BTST.getValidity().equals(tradeValidity)) {
                 strikeMasterMap = zerodhaTransactionService.globalOptionsInfo.get(Expiry.NF_NEXT.expiryName);
             }else {
                 strikeMasterMap = zerodhaTransactionService.globalOptionsInfo.get(Expiry.NF_CURRENT.expiryName);
             }
         }
-        else if("FN".equals(index)) {
+         if("FN".equals(index)) {
             if (zerodhaTransactionService.finExpDate.equals(currentDate) &&  TradeValidity.BTST.getValidity().equals(tradeValidity)) {
                 strikeMasterMap = zerodhaTransactionService.globalOptionsInfo.get(Expiry.FN_NEXT.expiryName);
             } else{
@@ -740,7 +541,7 @@ public class MathUtils {
                     Date openDatetime = sdf.parse(historicalData1.timeStamp);
                     String openDate = format.format(openDatetime);
                     if (sdf.format(openDatetime).equals(openDate + "T" + checkTime)) {/*"09:30:00"*/
-                        int atmStrike = commonUtil.findATM((int) historicalData1.close);
+                        int atmStrike = commonUtil.findATM((int) historicalData1.close,index);
                         int tempStrike = atmStrike;
                         int i=0;
                         while (tempStrike > 0 && i<10) {
@@ -828,25 +629,32 @@ public class MathUtils {
         return min.getValue();
     }
 
-    public Map<Double, Map<String, StrikeData>> strikeSelection(String currentDate, TradeStrategy strategy, double close, String checkTime) {
+    public Map<String, Map<String, StrikeData>> strikeSelection(String currentDate, TradeStrategy strategy, double close, String checkTime) {
         String strikeSelectionType = strategy.getStrikeSelectionType();
         String checkTime1 = strategy.getCandleCheckTime();
         System.out.println(checkTime1);
         String index = strategy.getIndex();
         Map<String, Map<String, StrikeData>> strikeMasterMap = strikeData(index,currentDate,strategy.getTradeValidity());
-        int atmStrike = commonUtil.findATM((int) close);
+        int atmStrike = commonUtil.findATM((int) close,index);
         System.out.println("atmStrike:"+atmStrike);
         if (strikeSelectionType.equals(StrikeSelectionType.ATM.getType())) {
-            Map<Double, Map<String, StrikeData>> stringMapMap = new HashMap<>();
+            Map<String, Map<String, StrikeData>> stringMapMap = new HashMap<>();
             Map<String, StrikeData> strikeDataMap1 = strikeMasterMap.get(String.valueOf(atmStrike));
-            stringMapMap.put(close, strikeDataMap1);
+            stringMapMap.put(String.valueOf(close), strikeDataMap1);
             return stringMapMap;
         }
         if (strikeSelectionType.contains(StrikeSelectionType.OTM.getType())) {
-            Map<Double, Map<String, StrikeData>> stringMapMap = new HashMap<>();
+            Map<String, Map<String, StrikeData>> stringMapMap = new HashMap<>();
             String otmStrikeVale = strikeSelectionType.substring(3);
             // String sub=otmStrikeVale.substring(3);
-            int otmValue = Integer.valueOf(otmStrikeVale) * 100;
+           int increment=100;
+            if (index.equals("NF") || index.equals("FN")) {
+                increment=50;
+            }
+            else if (index.equals("MC")) {
+                increment=25;
+            }
+            int otmValue = Integer.valueOf(otmStrikeVale) * increment;
             int ceValue = atmStrike + otmValue;
             int peValue = atmStrike - otmValue;
             Optional<Map.Entry<String, StrikeData>> strikeDataMapCeOp = strikeMasterMap.get(String.valueOf(ceValue)).entrySet().stream().filter(map -> map.getKey().contains("CE")).findFirst();
@@ -854,23 +662,30 @@ public class MathUtils {
                 Map.Entry<String, StrikeData> strikeDataMapCe = strikeDataMapCeOp.get();
                 Map<String, StrikeData> stringMapCE = new HashMap<>();
                 stringMapCE.put(strikeDataMapCe.getKey(), strikeDataMapCe.getValue());
-                stringMapMap.put(Double.parseDouble(String.valueOf(ceValue)), stringMapCE);
+                stringMapMap.put(String.valueOf(ceValue), stringMapCE);
             }
             Optional<Map.Entry<String, StrikeData>> strikeDataMapPeOp = strikeMasterMap.get(String.valueOf(peValue)).entrySet().stream().filter(map -> map.getKey().contains("PE")).findFirst();
             if (strikeDataMapPeOp.isPresent()) {
                 Map.Entry<String, StrikeData> strikeDataMapPe = strikeDataMapPeOp.get();
                 Map<String, StrikeData> stringMapPE = new HashMap<>();
                 stringMapPE.put(strikeDataMapPe.getKey(), strikeDataMapPe.getValue());
-                stringMapMap.put(Double.parseDouble(String.valueOf(peValue)), stringMapPE);
+                stringMapMap.put(String.valueOf(peValue), stringMapPE);
             }
             return stringMapMap;
         }
         if (strikeSelectionType.contains(StrikeSelectionType.ITM.getType())) {
             System.out.println("ITM: check");
-            Map<Double, Map<String, StrikeData>> stringMapMap = new HashMap<>();
+            Map<String, Map<String, StrikeData>> stringMapMap = new HashMap<>();
             String otmStrikeVale = strikeSelectionType.substring(3);
             // String sub=otmStrikeVale.substring(3);
-            int itmValue = Integer.valueOf(otmStrikeVale) * 100;
+            int increment=100;
+            if (index.equals("NF") || index.equals("FN")) {
+                increment=50;
+            }
+            else if (index.equals("MC")) {
+                increment=25;
+            }
+            int itmValue = Integer.valueOf(otmStrikeVale) * increment;
             int ceValue = atmStrike - itmValue;
             int peValue = atmStrike + itmValue;
             Optional<Map.Entry<String, StrikeData>> strikeDataMapCeOp = strikeMasterMap.get(String.valueOf(ceValue)).entrySet().stream().filter(map -> map.getKey().contains("CE")).findFirst();
@@ -878,26 +693,26 @@ public class MathUtils {
                 Map.Entry<String, StrikeData> strikeDataMapCe = strikeDataMapCeOp.get();
                 Map<String, StrikeData> stringMapCE = new HashMap<>();
                 stringMapCE.put(strikeDataMapCe.getKey(), strikeDataMapCe.getValue());
-                stringMapMap.put(Double.parseDouble(String.valueOf(ceValue)), stringMapCE);
+                stringMapMap.put(String.valueOf(ceValue), stringMapCE);
             }
             Optional<Map.Entry<String, StrikeData>> strikeDataMapPeOp = strikeMasterMap.get(String.valueOf(peValue)).entrySet().stream().filter(map -> map.getKey().contains("PE")).findFirst();
             if (strikeDataMapPeOp.isPresent()) {
                 Map.Entry<String, StrikeData> strikeDataMapPe = strikeDataMapPeOp.get();
                 Map<String, StrikeData> stringMapPE = new HashMap<>();
                 stringMapPE.put(strikeDataMapPe.getKey(), strikeDataMapPe.getValue());
-                stringMapMap.put(Double.parseDouble(String.valueOf(peValue)), stringMapPE);
+                stringMapMap.put(String.valueOf(peValue), stringMapPE);
             }
             return stringMapMap;
         }
-        if (strikeSelectionType.equals(StrikeSelectionType.CLOSE_PREMUIM.getType())) {
+        if (strikeSelectionType.equals(StrikeSelectionType.CLOSE_PREMIUM.getType())) {
             int closePremium = strategy.getStrikeClosestPremium().intValue();
-            Map<Double, Map<String, StrikeData>> strikes = getPriceCloseToPremium(currentDate, closePremium, checkTime, index);
+            Map<String, Map<String, StrikeData>> strikes = getPriceCloseToPremium(currentDate, closePremium, checkTime, index,strategy);
             return strikes;
         }
         if (strikeSelectionType.equals(StrikeSelectionType.PRICE_RANGE.getType())) {
             double high = strategy.getStrikePriceRangeHigh().doubleValue();
             double low = strategy.getStrikePriceRangeLow().doubleValue();
-            Map<Double, Map<String, StrikeData>> stringMapMap = new HashMap<>();
+            Map<String, Map<String, StrikeData>> stringMapMap = new HashMap<>();
             Map<String, StrikeData> rangeSelected;
             rangeSelected = getPriceRangeSortedWithLowRange(currentDate, high, low, checkTime, index, strategy);
             rangeSelected.entrySet().stream().forEach(atmNiftyStrikeMap -> {
@@ -906,7 +721,7 @@ public class MathUtils {
                 HistoricalData historicalPriceData = new HistoricalData();
                 JSONObject priceJson = new JSONObject(priceResponse);
                 String responseStatus = priceJson.getString("status");
-
+                System.out.println(historicPriceURL+":priceResponse:"+priceResponse);
                 if (!responseStatus.equals("error")) {
                     historicalPriceData.parseResponse(priceJson);
                     historicalPriceData.dataArrayList.forEach(historicalDataPrice -> {
@@ -921,7 +736,7 @@ public class MathUtils {
                         if (candleDateTimeFormat.format(priceDatetime).equals(priceDate + "T" + checkTime)) {
                             Map<String, StrikeData> strikeDataMap = new HashMap<>();
                             strikeDataMap.put(atmNiftyStrikeMap.getKey(), atmNiftyStrikeMap.getValue());
-                            stringMapMap.put(historicalDataPrice.close, strikeDataMap);
+                            stringMapMap.put(String.valueOf(historicalDataPrice.close), strikeDataMap);
                         }
                     });
                 }
@@ -930,22 +745,22 @@ public class MathUtils {
         }
         return null;
     }
-    public Map<Double, Map<String, StrikeData>> strikeSelection(String currentDate, TradeStrategy strategy, double close, String checkTime,String byOptionStrike) {
+    public Map<String, Map<String, StrikeData>> strikeSelection(String currentDate, TradeStrategy strategy, double close, String checkTime,String byOptionStrike) {
         String strikeSelectionType = strategy.getStrikeSelectionType();
         String checkTime1 = strategy.getCandleCheckTime();
       //  System.out.println(checkTime1);
         String index = strategy.getIndex();
         Map<String, Map<String, StrikeData>> strikeMasterMap = strikeData(index,currentDate,strategy.getTradeValidity());
-        int atmStrike = commonUtil.findATM((int) close);
+        int atmStrike = commonUtil.findATM((int) close,index);
         System.out.println("atmStrike:"+atmStrike);
         if (strikeSelectionType.equals(StrikeSelectionType.ATM.getType())) {
-            Map<Double, Map<String, StrikeData>> stringMapMap = new HashMap<>();
+            Map<String, Map<String, StrikeData>> stringMapMap = new HashMap<>();
             Map<String, StrikeData> strikeDataMap1 = strikeMasterMap.get(String.valueOf(atmStrike));
-            stringMapMap.put(close, strikeDataMap1);
+            stringMapMap.put(String.valueOf(close), strikeDataMap1);
             return stringMapMap;
         }
         if (strikeSelectionType.contains(StrikeSelectionType.OTM.getType())) {
-            Map<Double, Map<String, StrikeData>> stringMapMap = new HashMap<>();
+            Map<String, Map<String, StrikeData>> stringMapMap = new HashMap<>();
             String otmStrikeVale = strikeSelectionType.substring(3);
             // String sub=otmStrikeVale.substring(3);
             int otmValue = Integer.valueOf(otmStrikeVale) * 100;
@@ -956,20 +771,20 @@ public class MathUtils {
                 Map.Entry<String, StrikeData> strikeDataMapCe = strikeDataMapCeOp.get();
                 Map<String, StrikeData> stringMapCE = new HashMap<>();
                 stringMapCE.put(strikeDataMapCe.getKey(), strikeDataMapCe.getValue());
-                stringMapMap.put(Double.parseDouble(String.valueOf(ceValue)), stringMapCE);
+                stringMapMap.put(String.valueOf(ceValue), stringMapCE);
             }
             Optional<Map.Entry<String, StrikeData>> strikeDataMapPeOp = strikeMasterMap.get(String.valueOf(peValue)).entrySet().stream().filter(map -> map.getKey().contains("PE")).findFirst();
             if (strikeDataMapPeOp.isPresent()) {
                 Map.Entry<String, StrikeData> strikeDataMapPe = strikeDataMapPeOp.get();
                 Map<String, StrikeData> stringMapPE = new HashMap<>();
                 stringMapPE.put(strikeDataMapPe.getKey(), strikeDataMapPe.getValue());
-                stringMapMap.put(Double.parseDouble(String.valueOf(peValue)), stringMapPE);
+                stringMapMap.put(String.valueOf(peValue), stringMapPE);
             }
             return stringMapMap;
         }
         if (strikeSelectionType.contains(StrikeSelectionType.ITM.getType())) {
             System.out.println("ITM: check");
-            Map<Double, Map<String, StrikeData>> stringMapMap = new HashMap<>();
+            Map<String, Map<String, StrikeData>> stringMapMap = new HashMap<>();
             String otmStrikeVale = strikeSelectionType.substring(3);
             // String sub=otmStrikeVale.substring(3);
             int itmValue = Integer.valueOf(otmStrikeVale) * 100;
@@ -980,27 +795,27 @@ public class MathUtils {
                 Map.Entry<String, StrikeData> strikeDataMapCe = strikeDataMapCeOp.get();
                 Map<String, StrikeData> stringMapCE = new HashMap<>();
                 stringMapCE.put(strikeDataMapCe.getKey(), strikeDataMapCe.getValue());
-                stringMapMap.put(Double.parseDouble(String.valueOf(ceValue)), stringMapCE);
+                stringMapMap.put(String.valueOf(ceValue), stringMapCE);
             }
             Optional<Map.Entry<String, StrikeData>> strikeDataMapPeOp = strikeMasterMap.get(String.valueOf(peValue)).entrySet().stream().filter(map -> map.getKey().contains("PE")).findFirst();
             if (strikeDataMapPeOp.isPresent()) {
                 Map.Entry<String, StrikeData> strikeDataMapPe = strikeDataMapPeOp.get();
                 Map<String, StrikeData> stringMapPE = new HashMap<>();
                 stringMapPE.put(strikeDataMapPe.getKey(), strikeDataMapPe.getValue());
-                stringMapMap.put(Double.parseDouble(String.valueOf(peValue)), stringMapPE);
+                stringMapMap.put(String.valueOf(peValue), stringMapPE);
             }
             return stringMapMap;
         }
-        if (strikeSelectionType.equals(StrikeSelectionType.CLOSE_PREMUIM.getType())) {
+        if (strikeSelectionType.equals(StrikeSelectionType.CLOSE_PREMIUM.getType())) {
             int closePremium = strategy.getStrikeClosestPremium().intValue();
             System.out.println("CLOSE_PREMUIM: check:"+closePremium);
-            Map<Double, Map<String, StrikeData>> strikes = getPriceCloseToPremium(currentDate, closePremium, checkTime, index,byOptionStrike);
+            Map<String, Map<String, StrikeData>> strikes = getPriceCloseToPremium(currentDate, closePremium, checkTime, index,byOptionStrike);
             return strikes;
         }
         if (strikeSelectionType.equals(StrikeSelectionType.PRICE_RANGE.getType())) {
             int high = strategy.getStrikePriceRangeHigh().intValue();
             int low = strategy.getStrikePriceRangeLow().intValue();
-            Map<Double, Map<String, StrikeData>> stringMapMap = new HashMap<>();
+            Map<String, Map<String, StrikeData>> stringMapMap = new HashMap<>();
             Map<String, StrikeData> rangeSelected;
             rangeSelected = getPriceRangeSortedWithLowRange(currentDate, high, low, checkTime, index, strategy);
             rangeSelected.entrySet().stream().forEach(atmNiftyStrikeMap -> {
@@ -1023,7 +838,7 @@ public class MathUtils {
                         if (candleDateTimeFormat.format(priceDatetime).equals(priceDate + "T" + checkTime)) {
                             Map<String, StrikeData> strikeDataMap = new HashMap<>();
                             strikeDataMap.put(atmNiftyStrikeMap.getKey(), atmNiftyStrikeMap.getValue());
-                            stringMapMap.put(historicalDataPrice.close, strikeDataMap);
+                            stringMapMap.put(String.valueOf(historicalDataPrice.close)+"-"+atmNiftyStrikeMap.getKey(), strikeDataMap);
                         }
                     });
                 }
@@ -1127,22 +942,23 @@ public class MathUtils {
         return 0;
     }
 
-    public static void selectClosestStrikePrice(Map<Double, Map.Entry<String, StrikeData>> strikePrices, double targetPrice,Map<Double, Map<String, StrikeData>> range) {
-        Map<Double, Map<String, StrikeData>>  closestStrikePrice = new HashMap<>();
+    public static void selectClosestStrikePrice(Map<String, Map.Entry<String, StrikeData>> strikePrices, double targetPrice,Map<String, Map<String, StrikeData>> range) {
+        Map<String, Map<String, StrikeData>>  closestStrikePrice = new HashMap<>();
         double minDifference = Double.MAX_VALUE;
-        for (Map.Entry<Double, Map.Entry<String, StrikeData>> entry : strikePrices.entrySet()) {
-            double strikePrice = entry.getKey();
+        for (Map.Entry<String, Map.Entry<String, StrikeData>> entry : strikePrices.entrySet()) {
+            String[] prices=entry.getKey().split("-");
+            double strikePrice = Double.parseDouble(prices[0]);
             double difference = Math.abs(strikePrice - targetPrice);
             if (difference < minDifference) {
                 closestStrikePrice=new HashMap<>();
                 Map<String, StrikeData> closestStrikePrice1=new HashMap<>();
                 closestStrikePrice1.put(entry.getValue().getKey(),entry.getValue().getValue());
-                closestStrikePrice.put(entry.getKey(), closestStrikePrice1);
+                closestStrikePrice.put(String.valueOf(entry.getKey()), closestStrikePrice1);
                 minDifference = difference;
             }
         }
-        for (Map.Entry<Double, Map<String, StrikeData>> entry : closestStrikePrice.entrySet()) {
-            range.put(entry.getKey(), entry.getValue());
+        for (Map.Entry<String, Map<String, StrikeData>> entry : closestStrikePrice.entrySet()) {
+            range.put(String.valueOf(entry.getKey()), entry.getValue());
         }
     }
 
@@ -1330,5 +1146,17 @@ public class MathUtils {
             counter++;
             return rsi;
         }
+    }
+    public static BigDecimal roundToNearestFivePaiseUP(BigDecimal value) {
+            BigDecimal increment = new BigDecimal("0.05");
+            BigDecimal divided = value.divide(increment, 0, RoundingMode.UP);
+            BigDecimal result = divided.multiply(increment);
+            return result.setScale(2, RoundingMode.UP);
+    }
+    public static BigDecimal roundToNearestFivePaiseDown(BigDecimal value) {
+        BigDecimal increment = new BigDecimal("0.05");
+        BigDecimal divided = value.divide(increment, 0, RoundingMode.DOWN);
+        BigDecimal result = divided.multiply(increment);
+        return result.setScale(2, RoundingMode.DOWN);
     }
 }

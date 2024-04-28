@@ -13,6 +13,7 @@ import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.zerodha.account.User;
 import com.zerodhatech.kiteconnect.kitehttp.exceptions.KiteException;
+import com.zerodhatech.models.LTPQuote;
 import com.zerodhatech.models.Order;
 import com.zerodhatech.models.OrderParams;
 import com.zerodhatech.models.Position;
@@ -22,10 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.logging.Logger;
 
 @Component
@@ -89,9 +87,9 @@ public class DhanWorker implements BrokerWorker {
             params.put("orderType", getOrderType(orderPlacementRequest.orderType));
         }
 
-        if (orderPlacementRequest.product != null) {
-            params.put("productType", getProductType(orderPlacementRequest.product));
-        }
+      //  if (orderPlacementRequest.product != null) {
+            params.put("productType", "INTRADAY");
+     //   }
 
         if (orderPlacementRequest.price >0) {
             params.put("price", orderPlacementRequest.price);
@@ -226,6 +224,11 @@ public class DhanWorker implements BrokerWorker {
             return order;
         }
         return null;
+    }
+
+    @Override
+    public Map<String, LTPQuote> getQuotesLtp(User user, String[] instrument) throws IOException, KiteException {
+        return Map.of();
     }
 
     @Override

@@ -69,7 +69,7 @@ public class LoadAllTradeData {
     ZerodhaTransactionService zerodhaTransactionService;
    /* @Autowired
     OrbScheduler orbScheduler;*/
-    @PostConstruct
+  //  @PostConstruct
     public void loadAllData() throws ParseException {
 if(backtestEnabled) {
     zerodhaAccount.kiteConnect = new KiteConnect(zerodhaAppKey);

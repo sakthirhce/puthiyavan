@@ -381,15 +381,8 @@ public class ZerodhaTransactionService {
             log.info("Monthly Exp falling on holiday. recalculated weekly exp date is:" + monthlyExp);
             tradeSedaQueue.sendTelemgramSeda("Monthly Exp falling on holiday. recalculated weekly exp date is:" + monthlyExp);
         }
-        Date bnfnextWeekExpDateRes = null;
-        if (monthlyExp.equals(expDate)) {
-            bnfnextWeekExpDateRes = bnfDate;
-            bnfWeekExp = expDate;
-            bnfDate = date;
+        Date bnfnextWeekExpDateRes = nextWeekExpDate(bankNiftycalendar, bnfWeekExpOff, lsBankNiftyHoliday);
 
-        } else {
-            bnfnextWeekExpDateRes = nextWeekExpDate(bankNiftycalendar, bnfWeekExpOff, lsBankNiftyHoliday);
-        }
         bankBiftyExpDate = bnfWeekExp;
         Date currentWeekExpDate = date;
         Date currentFinWeekExpDate = findate;
@@ -403,24 +396,6 @@ public class ZerodhaTransactionService {
         String nextWeekExpDate = format.format(nextWeekExpDateRes);
         String bnfnextWeekExpDate = format.format(bnfnextWeekExpDateRes);
         String instrumentURI = baseURL + instrumentURL;
-        if (monthlyExp.equals(nextWeekExpDate) && todayDateStr.equals(bankBiftyExpDate)) {
-            bnfnextWeekExpDate = nextWeekExpDate;
-            bnfnextWeekExpDateRes = nextWeekExpDateRes;
-        }
-        if (monthlyExp.equals(expDate)) {
-            bnfWeekExp = expDate;
-            bnfDate = date;
-            bankBiftyExpDate = bnfWeekExp;
-
-        }
-        if (monthlyExp.equals(nextWeekExpDate) && todayDateStr.equals(expDate)) {
-            bnfnextWeekExpDate = nextWeekExpDate;
-            bnfnextWeekExpDateRes = nextWeekExpDateRes;
-            bnfWeekExp = nextWeekExpDate;
-            bnfDate = nextWeekExpDateRes;
-            bankBiftyExpDate = bnfWeekExp;
-
-        }
         String response = null;
         if (!testProfile) {
             response = transactionService.callAPI(transactionService.createZerodhaGetRequest(instrumentURI));
@@ -579,30 +554,30 @@ public class ZerodhaTransactionService {
             System.out.println(map.getKey()+":"+map.getValue());
         });*/
         System.out.println(bankNiftyWeeklyOptions.size());
-        Thread.sleep(2000);
+       // Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total Nifty current week expiry:" + weekExp + " strike count :" + niftyWeeklyOptions.size());
-        Thread.sleep(10000);
+      //  Thread.sleep(10000);
         tradeSedaQueue.sendTelemgramSeda("Total Nifty Next Week expiry expiry:" + nextWeekExpDate + " strike count :" + niftyNextWeeklyOptions.size());
-        Thread.sleep(2000);
+       // Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total BNF current week expiry:" + bnfWeekExp + " strike count :" + bankNiftyWeeklyOptions.size());
-        Thread.sleep(2000);
+       // Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total BNF Next Week expiry expiry:" + bnfnextWeekExpDate + " strike count :" + bankNiftyNextWeeklyOptions.size());
-        Thread.sleep(2000);
+       // Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total Fin nifty expiry:" + finWeekExp + " strike count:" + finNiftyWeeklyOptions.size());
-        Thread.sleep(2000);
+      //  Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total Fin nifty next week expiry:" + nextWeekFinExpDate + " strike count:" + finNiftyNextWeeklyOptions.size());
-        Thread.sleep(2000);
+       // Thread.sleep(2000);
         //log.info("Total Fin nifty next week expiry strike count:" + new Gson().toJson(finNiftyNextWeeklyOptions));
         tradeSedaQueue.sendTelemgramSeda("Total Sensex week expiry:" + sensexWeekExp + " strike count:" + sensexWeeklyOptions.size());
-        Thread.sleep(2000);
+      //  Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total Sensex next week expiry:" + nextWeekSensexExpDate + " strike count:" + sensexNextWeeklyOptions.size());
-        Thread.sleep(2000);
+       // Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total BNF Futures strike Count for monthly exp :" + monthlyExp + ":" + currentFutures.size());
-        Thread.sleep(2000);
+      //  Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total Midcap week expiry:" + midcpWeekExp + " strike count:" + midcpWeeklyOptions.size());
-        Thread.sleep(2000);
+      //  Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total Midcap next week expiry:" + nextWeekMidcpExpDate + " strike count:" + midcpNextWeeklyOptions.size());
-        Thread.sleep(2000);
+       // Thread.sleep(2000);
         try {
             tradeSedaQueue.sendTelemgramSeda("Total BNF current week expiry strike count :" + bankNiftyWeeklyOptions.size());
         } catch (Exception e) {
@@ -617,20 +592,11 @@ public class ZerodhaTransactionService {
             String dhanMidcpNextWeekExpDate = formatddMMM.format(nextWeekMidcapExpDateRes).toUpperCase();
             String dhanSensexCurrentWeekExpDate = formatddMMM.format(sensexDate).toUpperCase();
             String dhanSensexNextWeekExpDate = formatddMMM.format(nextWeekSensexExpDateRes).toUpperCase();
-            if (monthlyExp.equals(expDate)) {
-                dhanBNFCurrentWeekExpDate = dhanCurrentWeekExpDate;
-            }
 
             String dhanFinCurrentWeekExpDate = formatddMMM.format(currentFinWeekExpDate).toUpperCase();
             String dhanFinNextWeekExpDate = formatddMMM.format(nextWeekFinExpDateRes).toUpperCase();
             String dhanNextWeekExpDate = formatddMMM.format(nextWeekExpDateRes).toUpperCase();
             String bnfdhanNextWeekExpDate = formatddMMM.format(bnfnextWeekExpDateRes).toUpperCase();
-            if (monthlyExp.equals(nextWeekExpDate) && todayDateStr.equals(bankBiftyExpDate)) {
-                bnfdhanNextWeekExpDate = dhanNextWeekExpDate;
-            }
-            if (todayDateStr.equals(expDate) && monthlyExp.equals(nextWeekExpDate)) {
-                dhanBNFCurrentWeekExpDate = dhanNextWeekExpDate;
-            }
             System.out.println("dhan output:" + dhanResponse.length());
             for (int j = 0; j < dhanlines.length; j++) {
                 String[] data = dhanlines[j].split(",");
@@ -775,25 +741,25 @@ public class ZerodhaTransactionService {
                 }
 
             }
-            Thread.sleep(10000);
+        //    Thread.sleep(10000);
             tradeSedaQueue.sendTelemgramSeda("Total Dhan BNF current week expiry  :" + dhanBNFCurrentWeekExpDate + " strike count :" + dhanBankNiftyWeeklyOptions.size());
-            Thread.sleep(2000);
+          //  Thread.sleep(2000);
             tradeSedaQueue.sendTelemgramSeda("Total Dhan BNF Next Week expiry:" + bnfdhanNextWeekExpDate + " strike count :" + dhanBankNiftyNextWeeklyOptions.size());
-            Thread.sleep(2000);
+          //  Thread.sleep(2000);
             tradeSedaQueue.sendTelemgramSeda("Total Dhan FN Week expiry strike count :" + dhanFNiftyWeeklyOptions.size());
-            Thread.sleep(2000);
+          //  Thread.sleep(2000);
             tradeSedaQueue.sendTelemgramSeda("Total Dhan FN Next Week expiry strike count :" + dhanFNiftyNextWeeklyOptions.size());
-            Thread.sleep(2000);
+          //  Thread.sleep(2000);
             tradeSedaQueue.sendTelemgramSeda("Total Dhan NF current week expiry strike count :" + dhanNiftyWeeklyOptions.size());
-            Thread.sleep(2000);
+          //  Thread.sleep(2000);
             tradeSedaQueue.sendTelemgramSeda("Total Dhan NF Next Week expiry strike count :" + dhanNiftyNextWeeklyOptions.size());
-            Thread.sleep(2000);
+         //   Thread.sleep(2000);
             tradeSedaQueue.sendTelemgramSeda("Total Dhan Midcap current week expiry strike count :" + dhanMidcpWeeklyOptions.size());
-            Thread.sleep(2000);
+          //  Thread.sleep(2000);
             tradeSedaQueue.sendTelemgramSeda("Total Dhan Midcap Next Week expiry strike count :" + dhanMidCpNextWeeklyOptions.size());
-            Thread.sleep(2000);
+         //   Thread.sleep(2000);
             tradeSedaQueue.sendTelemgramSeda("Total Dhan Sensex current week expiry strike count :" + dhanSensexWeeklyOptions.size());
-            Thread.sleep(2000);
+        //    Thread.sleep(2000);
             tradeSedaQueue.sendTelemgramSeda("Total Dhan Sensex Next Week expiry strike count :" + dhanSensexNextWeeklyOptions.size());
             //   sendMessage.sendToTelegram("Total Dhan NF Futures strike Count for monthly exp :" +monthlyExp+":"+ currentFutures.size(), telegramToken,"-713214125");
             Map<String, Map<String, StrikeData>> strikeFNLevelMap = new HashMap<>();
@@ -899,6 +865,7 @@ public class ZerodhaTransactionService {
                 e.printStackTrace();
             }
             try {
+                Map<String, Map<String, StrikeData>> strikeFNNextLevelMap = new HashMap<>();
                 finNiftyNextWeeklyOptions.entrySet().stream().forEach(stringMapEntry -> {
                     Map<String, StrikeData> strikeTypeMap = new HashMap<>();
                     Map<String, String> dhanData = dhanFNiftyNextWeeklyOptions.get(stringMapEntry.getKey());
@@ -925,9 +892,9 @@ public class ZerodhaTransactionService {
                         }
                         strikeTypeMap.put(strikeData.getStrikeType(), strikeData);
                     });
-                    strikeFNLevelMap.put(stringMapEntry.getKey(), strikeTypeMap);
+                    strikeFNNextLevelMap.put(stringMapEntry.getKey(), strikeTypeMap);
                 });
-                globalOptionsInfo.put(Expiry.FN_NEXT.expiryName, strikeFNLevelMap);
+                globalOptionsInfo.put(Expiry.FN_NEXT.expiryName, strikeFNNextLevelMap);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -1072,7 +1039,7 @@ public class ZerodhaTransactionService {
             //midcap: End
             //Sensex: start
             try {
-                Map<String, Map<String, StrikeData>> nfstrikeLevelMap = new HashMap<>();
+                Map<String, Map<String, StrikeData>> ssstrikeLevelMap = new HashMap<>();
                 sensexWeeklyOptions.entrySet().stream().forEach(stringMapEntry -> {
                     Map<String, StrikeData> strikeTypeMap = new HashMap<>();
                     Map<String, String> dhanData = dhanSensexWeeklyOptions.get(stringMapEntry.getKey());
@@ -1099,14 +1066,14 @@ public class ZerodhaTransactionService {
                         }
                         strikeTypeMap.put(strikeData.getStrikeType(), strikeData);
                     });
-                    nfstrikeLevelMap.put(stringMapEntry.getKey(), strikeTypeMap);
+                    ssstrikeLevelMap.put(stringMapEntry.getKey(), strikeTypeMap);
                 });
-                globalOptionsInfo.put(Expiry.SS_CURRENT.expiryName, nfstrikeLevelMap);
+                globalOptionsInfo.put(Expiry.SS_CURRENT.expiryName, ssstrikeLevelMap);
             } catch (Exception e) {
                 e.printStackTrace();
             }
             try {
-                Map<String, Map<String, StrikeData>> nfStrikeNextWeekLevelMap = new HashMap<>();
+                Map<String, Map<String, StrikeData>> ssStrikeNextWeekLevelMap = new HashMap<>();
                 sensexNextWeeklyOptions.entrySet().stream().forEach(stringMapEntry -> {
                     Map<String, StrikeData> strikeTypeMap = new HashMap<>();
                     Map<String, String> dhanData = dhanSensexNextWeeklyOptions.get(stringMapEntry.getKey());
@@ -1133,9 +1100,9 @@ public class ZerodhaTransactionService {
                         }
                         strikeTypeMap.put(strikeData.getStrikeType(), strikeData);
                     });
-                    nfStrikeNextWeekLevelMap.put(stringMapEntry.getKey(), strikeTypeMap);
+                    ssStrikeNextWeekLevelMap.put(stringMapEntry.getKey(), strikeTypeMap);
                 });
-                globalOptionsInfo.put(Expiry.SS_NEXT.expiryName, nfStrikeNextWeekLevelMap);
+                globalOptionsInfo.put(Expiry.SS_NEXT.expiryName, ssStrikeNextWeekLevelMap);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -1144,25 +1111,25 @@ public class ZerodhaTransactionService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Thread.sleep(10000);
+       // Thread.sleep(10000);
         tradeSedaQueue.sendTelemgramSeda("Total Global BNF current week expiry strike count :" + globalOptionsInfo.get(Expiry.BNF_CURRENT.expiryName).size());
-        Thread.sleep(2000);
+      //  Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total Global BNF next week expiry strike count :" + globalOptionsInfo.get(Expiry.BNF_NEXT.expiryName).size());
-        Thread.sleep(2000);
+       // Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total Global NF current week expiry strike count :" + globalOptionsInfo.get(Expiry.NF_CURRENT.expiryName).size());
-        Thread.sleep(2000);
+      //  Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total Global NF next week expiry strike count :" + globalOptionsInfo.get(Expiry.NF_NEXT.expiryName).size());
-        Thread.sleep(2000);
+      //  Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total Global FN current week expiry strike count :" + globalOptionsInfo.get(Expiry.FN_CURRENT.expiryName).size());
-        Thread.sleep(2000);
+      //  Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total Global FN next week expiry strike count :" + globalOptionsInfo.get(Expiry.FN_NEXT.expiryName).size());
-        Thread.sleep(2000);
+      //  Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total Global Mcap current week expiry strike count :" + globalOptionsInfo.get(Expiry.MC_CURRENT.expiryName).size());
-        Thread.sleep(2000);
+      //  Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total Global Mcap next week expiry strike count :" + globalOptionsInfo.get(Expiry.MC_NEXT.expiryName).size());
-        Thread.sleep(2000);
+      //  Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total Global Sensex current week expiry strike count :" + globalOptionsInfo.get(Expiry.SS_CURRENT.expiryName).size());
-        Thread.sleep(2000);
+       // Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total Global Sensex next week expiry strike count :" + globalOptionsInfo.get(Expiry.SS_NEXT.expiryName).size());
 
     }
