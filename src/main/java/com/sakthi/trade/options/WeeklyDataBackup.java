@@ -223,7 +223,7 @@ public class WeeklyDataBackup {
                             String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentMidcpExp + "+15:30:00&oi=1";
                             System.out.println(historicURL);
                             String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
-                            System.out.println(response);
+                            //System.out.println(response);
                             String fileName;
                             if (strikeKey.contains("CE")) {
                                 fileName = exp.getKey() + "CE";
@@ -264,7 +264,7 @@ public class WeeklyDataBackup {
                             String historicURL = "https://api.kite.trade/instruments/historical/" + strikeNo + "/minute?from=" + format.format(startDate) + "+09:00:00&to=" + currentBSEExp + "+15:30:00&oi=1";
                             System.out.println(historicURL);
                             String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
-                            System.out.println(response);
+                            //System.out.println(response);
                             String fileName;
                             if (strikeKey.contains("CE")) {
                                 fileName = exp.getKey() + "CE";

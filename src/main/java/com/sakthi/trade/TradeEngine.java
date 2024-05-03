@@ -1186,6 +1186,7 @@ public class TradeEngine {
                                                     double price = tradeDataMod.getSellPrice().add(tradeDataMod.getSellPrice().divide(new BigDecimal(100)).multiply(new BigDecimal(20))).setScale(0, RoundingMode.HALF_UP).doubleValue();
                                                     orderParams.price = price;
                                                 }
+                                                mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, false);
                                               //  brokerWorker.modifyOrder(order1.orderId, orderParams, user, tradeDataMod);
                                                 tradeSedaQueue.sendTelemgramSeda("executed trail sl " + trendTradeData.getStockName() + ":" + user.getName() + ":" + strategy.getTradeStrategyKey(), "exp-trade");
                                             } catch (IOException e) {

@@ -313,8 +313,8 @@ public class WebSocketTicksSedaProcessor implements Processor {
             orderSedaData.setUser(userB);
             orderSedaData.setOrderModificationType("modify");
             orderSedaData.setOrderId(orderId);
-            tradeData.isExited=true;
-            tradeData.isSLHit=true;
+           // tradeData.isExited=true;
+           // tradeData.isSLHit=true;
             tradeSedaQueue.sendOrderPlaceSeda(orderSedaData);
        // });
     }
