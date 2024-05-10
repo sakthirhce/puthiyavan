@@ -2058,6 +2058,8 @@ public class TradeEngine {
             try {
                 try {
                     String stockId = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
+                    LOGGER.info("NIFTY BANK:{}", stockId);
+                    listOfTokens.add(Long.parseLong(stockId));
                     int bnfAtm = getAtm(stockId, "BNF");
                     int bnfAtmLow = bnfAtm - 1000;
                     int bnfAtmHigh = bnfAtm + 1000;
@@ -2081,6 +2083,8 @@ public class TradeEngine {
                 }
                 try {
                     String nstockId = zerodhaTransactionService.niftyIndics.get("NIFTY 50");
+                    LOGGER.info("NIFTY :{}", nstockId);
+                    listOfTokens.add(Long.parseLong(nstockId));
                     int niftyAtm = getAtm(nstockId, "NF");
                     int niftyAtmLow = niftyAtm - 400;
                     int niftyAtmHigh = niftyAtm + 400;
@@ -2103,6 +2107,8 @@ public class TradeEngine {
                 }
                 try {
                     String nstockId = zerodhaTransactionService.niftyIndics.get("NIFTY MID SELECT");
+                    listOfTokens.add(Long.parseLong(nstockId));
+                    LOGGER.info("NIFTY MID SELECT :{}", nstockId);
                     int niftyAtm = getAtm(nstockId, "MC");
                     int niftyAtmLow = niftyAtm - 200;
                     int niftyAtmHigh = niftyAtm + 200;
@@ -2125,6 +2131,8 @@ public class TradeEngine {
                 }
                 try {
                     String nstockId = zerodhaTransactionService.niftyIndics.get("SENSEX");
+                    LOGGER.info("SENSEX :{}", nstockId);
+                    listOfTokens.add(Long.parseLong(nstockId));
                     int niftyAtm = getAtm(nstockId, "SS");
                     int niftyAtmLow = niftyAtm - 1000;
                     int niftyAtmHigh = niftyAtm + 1000;
@@ -2147,6 +2155,8 @@ public class TradeEngine {
                 }
                 try {
                     String fnstockId = zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE");
+                    LOGGER.info("NIFTY FIN SERVICE :{}", fnstockId);
+                    listOfTokens.add(Long.parseLong(fnstockId));
                     int finAtm = getAtm(fnstockId, "FN");
                     int finAtmLow = finAtm - 400;
                     int finAtmHigh = finAtm + 400;
@@ -2344,6 +2354,7 @@ public class TradeEngine {
                                     double pl = tradeData.getSellPrice().subtract(tradeData.getBuyPrice()).doubleValue();
                                     double plq = pl * tradeData.getQty();
                                     pnl.getAndAdd(plq);
+                                    LOGGER.info("closed position:{}:pl {}", tradeData.getStockName(), plq);
                                 }
                             } catch (Exception e) {
                                 LOGGER.info("error while calculating pl for closed position:{}:{}", tradeData.getStockName(), e.getMessage());
@@ -2369,12 +2380,14 @@ public class TradeEngine {
                                         double pl = tradeData.getSellPrice().subtract(new BigDecimal(ltpQuote.lastPrice)).doubleValue();
                                         double plq = pl * tradeData.getQty();
                                         pnl.getAndAdd(plq);
+                                        LOGGER.info("open position:{} pl: {},quote: {}", tradeData.getStockName(), plq,ltpQuote.lastPrice);
                                     }
                                     if ("BUY".equals(tradeData.getEntryType()) && tradeData.getBuyPrice() != null && tradeData.getBuyPrice().doubleValue()>0
                                             && ltpQuote.lastPrice > 0) {
                                         double pl =(new BigDecimal(ltpQuote.lastPrice).subtract( tradeData.getSellPrice())).doubleValue();
                                         double plq = pl * tradeData.getQty();
                                         pnl.getAndAdd(plq);
+                                        LOGGER.info("open position:{} pl: {},quote: {}", tradeData.getStockName(), plq,ltpQuote.lastPrice);
                                     }
                                 } else {
                                     LOGGER.info("zerodha ltpquote is empty:{}", tradeData.getStockName());

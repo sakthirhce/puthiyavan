@@ -2,10 +2,12 @@ package com.sakthi.trade.cache;
 
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Data
 public class GlobalTick {
-    Map<String, String> historicalDataMap=new HashMap<>();
+    List<Double> historicalDataMap=new ArrayList<>();
 }

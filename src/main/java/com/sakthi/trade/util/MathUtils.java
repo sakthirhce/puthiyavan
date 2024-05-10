@@ -232,7 +232,7 @@ public class MathUtils {
                             int i = 0;
                             int upperScanLimit=16;
                             if(strategy.isHedge()){
-                                upperScanLimit=20;
+                                upperScanLimit=24;
                             }
                             while (tempStrike > 0 && i < upperScanLimit) {
                                 final Map.Entry<String, StrikeData> atmStrikesStraddle = strikeMasterMap.get(String.valueOf(tempStrike)).entrySet().stream().filter(map -> map.getKey().contains("CE")).findFirst().get();

@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -202,6 +203,47 @@ public class ZerodhaTransactionService {
         return currentWeekExpCal.getTime();
     }
 
+    @Autowired
+    ExpiryDayDetails expiryDayDetails;
+
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    public void initiateExpDetails(){
+        LocalDate localDate=LocalDate.now();
+        if(localDate.format(formatter).equals(sensexExpDate)){
+            expiryDayDetails.sensexExpiry=true;
+            expiryDayDetails.expiryStockId=niftyIndics.get("SENSEX");
+            expiryDayDetails.expiryOptions=sensexWeeklyOptions;
+            expiryDayDetails.expIndexName="SS";
+        }if(localDate.format(formatter).equals(bankBiftyExpDate)){
+            expiryDayDetails.bankNiftyExpiry=true;
+            expiryDayDetails.expiryStockId=niftyIndics.get("NIFTY BANK");
+            expiryDayDetails.expiryOptions=bankNiftyWeeklyOptions;
+            expiryDayDetails.expIndexName="BNF";
+        }
+        if(localDate.format(formatter).equals(expDate)){
+            expiryDayDetails.niftyExpiry=true;
+            expiryDayDetails.expiryStockId=niftyIndics.get("NIFTY 50");
+            expiryDayDetails.expiryOptions=niftyWeeklyOptions;
+            expiryDayDetails.expIndexName="NF";
+        }
+        if(localDate.format(formatter).equals(midCpExpDate)){
+            expiryDayDetails.midCapExpiry=true;
+            expiryDayDetails.expiryStockId=niftyIndics.get("NIFTY MID SELECT");
+            expiryDayDetails.expiryOptions=midcpWeeklyOptions;
+            expiryDayDetails.expIndexName="MC";
+        }
+        if(localDate.format(formatter).equals(finExpDate)){
+            expiryDayDetails.finNiftyExpiry=true;
+            expiryDayDetails.expiryStockId=niftyIndics.get("NIFTY FIN SERVICE");
+            expiryDayDetails.expIndexName="FN";
+            expiryDayDetails.expiryOptions=finNiftyWeeklyOptions;
+        }
+        try{
+            tradeSedaQueue.sendTelemgramSeda("Today expiry: "+expiryDayDetails.expIndexName +":"+expiryDayDetails.expiryStockId);
+        }catch (Exception e){
+            LOGGER.error("error while populating expiry details:{}",e.getMessage());
+        }
+    }
     @Scheduled(cron = "${zerodha.get.instrument}")
     @PostConstruct
     public void getInstrument() throws IOException, CsvValidationException, InterruptedException {
@@ -1131,7 +1173,7 @@ public class ZerodhaTransactionService {
         tradeSedaQueue.sendTelemgramSeda("Total Global Sensex current week expiry strike count :" + globalOptionsInfo.get(Expiry.SS_CURRENT.expiryName).size());
        // Thread.sleep(2000);
         tradeSedaQueue.sendTelemgramSeda("Total Global Sensex next week expiry strike count :" + globalOptionsInfo.get(Expiry.SS_NEXT.expiryName).size());
-
+        initiateExpDetails();
     }
 
     /* public static void main(String args[]){

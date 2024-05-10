@@ -14,13 +14,13 @@ import javax.annotation.PostConstruct;
 @Component
 @Slf4j
 public class GlobalTickCache {
-    private Cache<String,GlobalTick> globalTickCache;
+    private Cache<Integer,GlobalTick> globalTickCache;
     public static final Logger LOGGER = LoggerFactory.getLogger(GlobalTickCache.class.getName());
     @PostConstruct
     private void initCache(){
-        RemovalListener<String,GlobalTick> removalListener=new RemovalListener<String, GlobalTick>() {
+        RemovalListener<Integer,GlobalTick> removalListener=new RemovalListener<Integer, GlobalTick>() {
             @Override
-            public void onRemoval(RemovalNotification<String, GlobalTick> removal) {
+            public void onRemoval(RemovalNotification<Integer, GlobalTick> removal) {
               /*  LOGGER.info("Removed key from global cache:"+removal.getKey());
                 System.out.println("cache size:"+globalContextCache.size());
                 globalContextCache.asMap().entrySet().forEach(stringGlobalContextEntry -> {
@@ -29,27 +29,26 @@ public class GlobalTickCache {
                 });*/
             }
         };
-        globalTickCache= CacheBuilder.newBuilder().maximumSize(2000).removalListener(removalListener).build();
+        globalTickCache= CacheBuilder.newBuilder().maximumSize(1000).removalListener(removalListener).build();
     }
-    public String getHistoricData(String time,String stockId){
-        GlobalTick globalContext=globalTickCache.getIfPresent(time);
+    public GlobalTick getHistoricData(int stockId){
+        GlobalTick globalContext=globalTickCache.getIfPresent(stockId);
         if(globalContext!=null){
-            String historicalData=globalContext.historicalDataMap.get(stockId);
-            return historicalData;
+            return globalContext;
         }
         return null;
     }
 
-    public void setHistoricData(String time,String stockId,String historicalData){
-        synchronized (time) {
-            GlobalTick globalContext = globalTickCache.getIfPresent(time);
+    public void setHistoricData(int stockId,Double tickData){
+        synchronized (String.valueOf(stockId)) {
+            GlobalTick globalContext = globalTickCache.getIfPresent(stockId);
             if (globalContext != null) {
-                globalContext.historicalDataMap.put(stockId, historicalData);
-                globalTickCache.put(time,globalContext);
+                globalContext.historicalDataMap.add(tickData);
+                globalTickCache.put(stockId,globalContext);
             } else {
                 globalContext=new GlobalTick();
-                globalContext.historicalDataMap.put(stockId, historicalData);
-                globalTickCache.put(time,globalContext);
+                globalContext.historicalDataMap.add(tickData);
+                globalTickCache.put(stockId,globalContext);
             }
         }
     }
