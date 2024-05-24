@@ -28,7 +28,7 @@ public class OrderPlaceSedaProcessor implements Processor {
             Object message = camelContextRoute.getIn().getBody();
             OrderSedaData orderSedaContract = (OrderSedaData) message;
             BrokerWorker brokerWorker = brokerWorkerFactory.getWorker(orderSedaContract.getUser());
-            orderSedaContract.getOrderParams().orderType = "MARKET";
+
             LOGGER.info("user:{},order-id:{},order data:{}", orderSedaContract.getUser().getName(), orderSedaContract.getOrderId(), gson.toJson(orderSedaContract.getOrderParams()));
             try {
             if("placeOrder".equals(orderSedaContract.getOrderModificationType())){

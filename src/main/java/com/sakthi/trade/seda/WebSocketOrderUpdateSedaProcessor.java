@@ -531,23 +531,39 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                             userTradeData.getValue().stream().filter(tradeDataTemp -> tradeDataTemp.getTradeStrategy().getTradeStrategyKey().equals(strategy.getTradeStrategyKey())
                                                     && !tradeDataTemp.isSLHit && !tradeDataTemp.isExited).forEach(tradeDataMod -> {
                                                 try {
-                                                    Order order1 = brokerWorker.getOrder(user, tradeDataMod.getSlOrderId());
+                                                    //Order order1 = brokerWorker.getOrder(user, tradeDataMod.getSlOrderId());
                                                     OrderParams orderParams = new OrderParams();
                                                     if ("BUY".equals(trendTradeData.getEntryType())) {
                                                         orderParams.triggerPrice = tradeDataMod.getBuyPrice().setScale(2, RoundingMode.HALF_EVEN).doubleValue();
                                                         double price = tradeDataMod.getBuyPrice().subtract(tradeDataMod.getBuyPrice().divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP).doubleValue();
                                                         orderParams.price = price;
+                                                        tradeDataMod.setSlPrice(tradeDataMod.getBuyPrice());
                                                     } else {
                                                         orderParams.triggerPrice = tradeDataMod.getSellPrice().setScale(2, RoundingMode.HALF_EVEN).doubleValue();
                                                         double price = tradeDataMod.getSellPrice().add(tradeDataMod.getSellPrice().divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP).doubleValue();
                                                         orderParams.price = price;
+                                                        tradeDataMod.setSlPrice(tradeDataMod.getSellPrice());
                                                     }
-                                                    brokerWorker.modifyOrder(order1.orderId, orderParams, user, tradeDataMod);
-                                                    tradeSedaQueue.sendTelemgramSeda("executed trail sl " + trendTradeData.getStockName() + ":" + user.getName() + ":" + strategy.getTradeStrategyKey(),"exp-trade");
-                                                } catch (IOException e) {
-                                                    tradeSedaQueue.sendTelemgramSeda("error while modifying Option " + trendTradeData.getStockName() + ":" + user.getName() + ":" + strategy.getTradeStrategyKey(), "error");
-                                                    throw new RuntimeException(e);
-                                                } catch (KiteException e) {
+                                                    if(tradeDataMod.getTradeStrategy().isWebsocketSlEnabled()) {
+                                                        tradeEngine.openTrade.entrySet().stream().forEach(userTradeData1 -> {
+                                                            List<TradeData> tradeDataList = userTradeData1.getValue();
+                                                            tradeDataList.stream().filter(tradeDataTemp1 -> tradeDataTemp1.getTradeStrategy().getTradeStrategyKey().equals(strategy.getTradeStrategyKey())
+                                                                    && !tradeDataTemp1.isSLHit && !tradeDataTemp1.isExited && tradeDataTemp1.getStockId() == tradeDataMod.getStockId()).forEach(tradeData1 -> {
+                                                                if ("BUY".equals(trendTradeData.getEntryType())) {
+                                                                    tradeData1.setSlPrice(tradeData1.getBuyPrice());
+                                                                } else {
+                                                                    tradeData1.setSlPrice(tradeData1.getSellPrice());
+                                                                }
+                                                                tradeSedaQueue.sendTelemgramSeda("set trail sl for websocket" + tradeData1.getStockName() + ":" + tradeData1.getUserId() + ":" + strategy.getTradeStrategyKey(), "exp-trade");
+                                                                mapTradeDataToSaveOpenTradeDataEntity(tradeData1, false);
+                                                            });
+                                                        });
+                                                    }else {
+                                                        brokerWorker.modifyOrder(tradeDataMod.getSlOrderId(), orderParams, user, tradeDataMod);
+                                                        mapTradeDataToSaveOpenTradeDataEntity(tradeDataMod, false);
+                                                        tradeSedaQueue.sendTelemgramSeda("executed trail sl " + trendTradeData.getStockName() + ":" + user.getName() + ":" + strategy.getTradeStrategyKey(),"exp-trade");
+                                                    }
+                                                    } catch (Exception e) {
                                                     tradeSedaQueue.sendTelemgramSeda("error while modifying Option " + trendTradeData.getStockName() + ":" + user.getName() + " placed retry" + ":" + strategy.getTradeStrategyKey(), "error");
                                                     throw new RuntimeException(e);
                                                 }

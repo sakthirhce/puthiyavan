@@ -114,7 +114,10 @@ public class TradeSedaQueue {
         String webhookUrl = "https://hooks.slack.com/services/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";
         if("exp-trade".equals(chatId)) {
             webhookUrl = "https://hooks.slack.com/services/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";
-        }else if("error".equals(chatId)){
+        }else if("algo".equals(chatId)){
+            webhookUrl = "https://hooks.slack.com/services/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";
+        }
+        else if("error".equals(chatId)){
             webhookUrl = "https://hooks.slack.com/services/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";
         }
         String message1 = "{\"text\": \""+message+"\"}"; // Your message in JSON format

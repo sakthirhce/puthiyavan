@@ -10,6 +10,7 @@ import com.sakthi.trade.domain.OrderSedaData;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.entity.LivePLDataEntity;
 import com.sakthi.trade.entity.TradeStrategy;
+import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.repo.LivePLDataRepo;
 import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.util.CommonUtil;
@@ -65,6 +66,8 @@ public class WebSocketTicksSedaProcessor implements Processor {
     TickData tickData;
     @Autowired
     UserList userList;
+    @Autowired
+    TradeDataMapper tradeDataMapper;
     @Autowired
     TradeSedaQueue tradeSedaQueue;
     DecimalFormat decimalFormat = new DecimalFormat("0.00");
@@ -128,7 +131,6 @@ public class WebSocketTicksSedaProcessor implements Processor {
                     e.printStackTrace();
                 }
 
-
                 tradeEngine.openTrade.entrySet().stream().forEach(userTradeData -> {
                     String userId = userTradeData.getKey();
                     User user = userList.getUser().stream().filter(user1 -> userId.equals(user1.getName())).findFirst().get();
@@ -138,39 +140,28 @@ public class WebSocketTicksSedaProcessor implements Processor {
                             Optional<Tick> tickOp = ticks.stream().filter(tickTemp -> tickTemp.getInstrumentToken() == tradeData.getStockId()).findFirst();
                             if (tickOp.isPresent()) {
                                 Tick tick = tickOp.get();
-                                try {
-                                   // executor.submit(() -> {
-                                        globalTickCache.setHistoricData(tradeData.getStockId(),tick.getLastTradedPrice());
-                                        List<Double> tickData= globalTickCache.getHistoricData(tradeData.getStockId()).getHistoricalDataMap();
-                                        List<Double> subTickData= tickData.subList(tickData.size()-8,tickData.size()-1);
-                                        int tickDiffCount=0;
-                                        double amountSum=0;
-                                        for (int i = 1; i <= subTickData.size(); i++) {
-                                            double diff= subTickData.get(i) - subTickData.get(i - 1);
-                                            if (diff >= 3) {
-                                                String alertTick=tradeData.getStockId()+"-"+tick.getTickTimestamp();
-                                                if(!alertList.contains(alertTick)) {
-                                                    String formattedDiff = String.format("%.2f", diff);
-                                                    LOGGER.info("tick diff of 3 found stock-id: {} : diff amount: {}", tradeData.getStockId(), formattedDiff);
-                                                    tradeSedaQueue.sendTelemgramSeda("tick diff of 3 found stock-id: " + tradeData.getStockId() + ": time"+tick.getTickTimestamp()+": diff amount:" + formattedDiff, "error");
-                                                    alertList.add(alertTick);
-                                                }
-                                                tickDiffCount++;
-                                                amountSum=amountSum+subTickData.get(i);
-                                            }
-                                        }
-                                        if(tickDiffCount>=3){
-                                            String formattedAmount = String.format("%.2f", amountSum);
-                                            LOGGER.info("tick diff of 3 found stock-id: {} : total amount move: {} : {}", tradeData.getStockId(), formattedAmount,tickDiffCount);
-                                            tradeSedaQueue.sendTelemgramSeda("tick diff of 3 found stock-id: "+tradeData.getStockId()+" total amount move: "+formattedAmount+":"+tickDiffCount,"error");
-                                        }
-                                 //   });
-                                }catch (Exception e){
-                                    LOGGER.error("error while calculating tick diff");
-                                }
+
                                 TradeStrategy strategy = tradeData.getTradeStrategy();
                                 if (tradeData.isOrderPlaced && !tradeData.isExited && tradeData.isSlPlaced()) {
                                     double lastTradedPrice = tick.getLastTradedPrice();
+                                    try {
+                                        List<Double> tickData = globalTickCache.getHistoricData(tradeData.getStockId()).getHistoricalDataMap();
+                                        double lastTick = tickData.get(tickData.size() - 1);
+                                        double diff = lastTradedPrice - lastTick;
+                                        double percentageDiffOfLastTradePrice = 0.1 * lastTradedPrice;
+                                        double percentageDiffOfSoldPrice = 0.1 * tradeData.getSellPrice().doubleValue();
+                                        if (diff > 0 && (percentageDiffOfSoldPrice <= diff || percentageDiffOfLastTradePrice <= diff)) {
+                                            LOGGER.info("last traded price difference is more than 10%");
+                                            tradeSedaQueue.sendTelemgramSeda("last traded price difference is more than 10%. stock:"+tradeData.getStockName()+":last trade price"+lastTradedPrice+"diff:"+diff, "algo");
+                                            double percentToSoldPrice = (diff / tradeData.getSellPrice().doubleValue()) * 100;
+                                            if (Math.abs(percentToSoldPrice) <= 20) {
+                                                LOGGER.info("The difference is less than 20% to touch the sold price.");
+                                                tradeSedaQueue.sendTelemgramSeda("The difference is less than 20% to touch the sold price. stock:"+tradeData.getStockName()+":last trade price"+lastTradedPrice+"diff:"+diff+":"+tradeData.getSellPrice(), "algo");
+                                            }
+                                        }
+                                    }catch (Exception e){
+
+                                    }
                                     try{
                                     if(!tradeData.isWebsocketSlModified()) {
                                         if ("SELL".equals(tradeData.getEntryType())) {
@@ -186,11 +177,13 @@ public class WebSocketTicksSedaProcessor implements Processor {
                                                 OrderParams orderParams = new OrderParams();
                                                 orderParams.triggerPrice = MathUtils.roundToNearestFivePaiseUP(tradeData.getSlPrice()).doubleValue();
                                                 orderParams.price = tradeData.getSlPrice().add(tradeData.getSlPrice().divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP).doubleValue();
+                                                orderParams.orderType = "LIMIT";
+                                                orderParams.price = MathUtils.roundToNearestFivePaiseUP(tradeData.getSlPrice()).doubleValue();
                                                 if(!tradeData.isWebsocketSlModified()) {
                                                     postOrderModifyDataToSeda(tradeData, orderParams, order1.orderId);
-                                                    //  brokerWorker.modifyOrder(order1.orderId, orderParams, user, tradeData);
                                                     tradeData.setWebsocketSlModified(true);
                                                     tradeData.setWebsocketSlTime(dateTimeFormatter.format(currentDateTime));
+                                                    mapTradeDataToSaveOpenTradeDataEntity(tradeData,false);
                                                 }
                                             }
                                         } else {
@@ -204,12 +197,18 @@ public class WebSocketTicksSedaProcessor implements Processor {
                                                     throw new RuntimeException(e);
                                                 }
                                                 OrderParams orderParams = new OrderParams();
-                                                    orderParams.triggerPrice = MathUtils.roundToNearestFivePaiseUP(tradeData.getSlPrice()).doubleValue();
+                                               /* orderParams.triggerPrice = MathUtils.roundToNearestFivePaiseUP(tradeData.getSlPrice()).doubleValue();
                                                 orderParams.price = tradeData.getSlPrice().subtract(tradeData.getSlPrice().divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP).doubleValue();
+                                                */
+                                                orderParams.triggerPrice = MathUtils.roundToNearestFivePaiseUP(tradeData.getSlPrice()).doubleValue();
+                                                orderParams.price = tradeData.getSlPrice().subtract(tradeData.getSlPrice().divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP).doubleValue();
+                                                orderParams.orderType = "LIMIT";
+                                                orderParams.price = MathUtils.roundToNearestFivePaiseUP(tradeData.getSlPrice()).doubleValue();
                                                 if(!tradeData.isWebsocketSlModified()) {
                                                     postOrderModifyDataToSeda(tradeData, orderParams, order1.orderId);
                                                     tradeData.setWebsocketSlModified(true);
                                                     tradeData.setWebsocketSlTime(dateTimeFormatter.format(currentDateTime));
+                                                    mapTradeDataToSaveOpenTradeDataEntity(tradeData,false);
                                                 }
                                             }
                                         }
@@ -219,56 +218,7 @@ public class WebSocketTicksSedaProcessor implements Processor {
                                         e.printStackTrace();
                                         tradeSedaQueue.sendTelemgramSeda("Error while processing websocket dynamic SL" +
                                                 " order:" + user.getName() + ",Exception:" + e.getMessage() + ":" + tradeData.getTradeStrategy().getTradeStrategyKey(), "exp-trade");
-                                    }/*
-                                   try {
-                                       if ("BUY".equals(tradeData.getEntryType())) {
-                                           if (tradeData.getBuyPrice().doubleValue() > 0) {
-                                               double pl = lastTradedPrice - tradeData.getBuyPrice().doubleValue();
-                                               LivePLDataEntity livePLDataEntity=new LivePLDataEntity();
-                                               livePLDataEntity.setTradeStrategyKey(strategy.getTradeStrategyKey());
-                                               String dataKey = UUID.randomUUID().toString();
-                                               livePLDataEntity.setDataKey(dataKey);
-                                               livePLDataEntity.setPl(new BigDecimal(pl));
-                                               livePLDataEntity.setClose(new BigDecimal(lastTradedPrice));
-                                               livePLDataEntity.setStockName(tradeData.getStockName());
-                                               LocalDateTime localDateTime=LocalDateTime.now();
-                                               livePLDataEntity.setDataTime(Timestamp.valueOf(localDateTime));
-                                               livePLDataEntity.setEntryType("BUY");
-                                               livePLDataEntity.setIndex(strategy.getIndex());
-                                               livePLDataEntity.setOpenTradeDataKey(tradeData.getDataKey());
-                                               String strikeType="PE";
-                                               if(tradeData.getStockName().contains("CE")){
-                                                   strikeType="CE";
-                                               }
-                                               livePLDataEntity.setStrikeType(strikeType);
-                                               livePLDataRepo.save(livePLDataEntity);
-                                           }
-                                       } else {
-                                           if (tradeData.getSellPrice().doubleValue() > 0) {
-                                               double pl = tradeData.getSellPrice().doubleValue() - lastTradedPrice;
-                                               LivePLDataEntity livePLDataEntity=new LivePLDataEntity();
-                                               livePLDataEntity.setTradeStrategyKey(strategy.getTradeStrategyKey());
-                                               String dataKey = UUID.randomUUID().toString();
-                                               livePLDataEntity.setDataKey(dataKey);
-                                               livePLDataEntity.setPl(new BigDecimal(pl));
-                                               livePLDataEntity.setOpenTradeDataKey(tradeData.getDataKey());
-                                               livePLDataEntity.setClose(new BigDecimal(lastTradedPrice));
-                                               livePLDataEntity.setStockName(tradeData.getStockName());
-                                               LocalDateTime localDateTime=LocalDateTime.now();
-                                               livePLDataEntity.setDataTime(Timestamp.valueOf(localDateTime));
-                                               livePLDataEntity.setEntryType("SELL");
-                                               livePLDataEntity.setIndex(strategy.getIndex());
-                                               String strikeType="PE";
-                                               if(tradeData.getStockName().contains("CE")){
-                                                   strikeType="CE";
-                                               }
-                                               livePLDataEntity.setStrikeType(strikeType);
-                                               livePLDataRepo.save(livePLDataEntity);
-                                           }
-                                       }
-                                   }catch (Exception e){
-                                       LOGGER.info("error while inserting record into live pl db"+e.getMessage());
-                                   }*/
+                                    }
                                 }
                                 if (strategy.isTrailEnabled()) {
                                     if (tradeData.isOrderPlaced && !tradeData.isExited && tradeData.isSlPlaced()) {
@@ -312,6 +262,36 @@ public class WebSocketTicksSedaProcessor implements Processor {
                                             throw new RuntimeException(e);
                                         }
                                     }
+                                }
+                                try {
+                                    // executor.submit(() -> {
+                                    globalTickCache.setHistoricData(tradeData.getStockId(),tick.getLastTradedPrice());
+                                    List<Double> tickData= globalTickCache.getHistoricData(tradeData.getStockId()).getHistoricalDataMap();
+                                    List<Double> subTickData= tickData.subList(tickData.size()-8,tickData.size()-1);
+                                    int tickDiffCount=0;
+                                    double amountSum=0;
+                                    for (int i = 1; i < subTickData.size(); i++) {
+                                        double diff= subTickData.get(i) - subTickData.get(i - 1);
+                                        if (diff >= 3) {
+                                            String alertTick=tradeData.getStockId()+"-"+tick.getTickTimestamp();
+                                            if(!alertList.contains(alertTick)) {
+                                                String formattedDiff = String.format("%.2f", diff);
+                                                LOGGER.info("tick diff of 3 found stock-id: {} : diff amount: {}", tradeData.getStockId(), formattedDiff);
+                                                tradeSedaQueue.sendTelemgramSeda("tick diff of 3 found stock-id: " + tradeData.getStockId() + ": time"+tick.getTickTimestamp()+": diff amount:" + formattedDiff, "error");
+                                                alertList.add(alertTick);
+                                            }
+                                            tickDiffCount++;
+                                            amountSum=amountSum+subTickData.get(i);
+                                        }
+                                    }
+                                    if(tickDiffCount>=3){
+                                        String formattedAmount = String.format("%.2f", amountSum);
+                                        LOGGER.info("tick diff of 3 found stock-id: {} : total amount move: {} : {}", tradeData.getStockId(), formattedAmount,tickDiffCount);
+                                        tradeSedaQueue.sendTelemgramSeda("tick diff of 3 found stock-id: "+tradeData.getStockId()+" total amount move: "+formattedAmount+":"+tickDiffCount,"error");
+                                    }
+                                    //   });
+                                }catch (Exception e){
+                                    LOGGER.error("error while calculating tick diff:{}",e.getMessage());
                                 }
                             }
                         });
@@ -393,6 +373,15 @@ public class WebSocketTicksSedaProcessor implements Processor {
         }catch (Exception e){
             e.printStackTrace();
         }
+    }
+    public void mapTradeDataToSaveOpenTradeDataEntity(TradeData tradeData, boolean orderPlaced) {
+        try {
+            tradeDataMapper.mapTradeDataToSaveOpenTradeDataEntity(tradeData, orderPlaced, "TRADE_ENGINE");
+            LOGGER.info("sucessfully saved trade data");
+        } catch (Exception e) {
+            LOGGER.info(e.getMessage());
+        }
+
     }
     public void postOrderModifyDataToSeda(TradeData tradeData,OrderParams orderParams,String orderId){
       //  tradeData.getTradeStrategy().getUserSubscriptions().getUserSubscriptionList().stream().forEach(userSubscription -> {

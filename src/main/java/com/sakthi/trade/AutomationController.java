@@ -52,7 +52,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
@@ -144,7 +143,6 @@ public class AutomationController {
         mathUtils.getPriceRangeSortedWithLowRangeNifty(currentDate,200,150,"09:34:00","NF");
         //log.info("getOrderTrades:" + gson.toJson(trades));
     }
-
     @GetMapping("/zerodhaTrades")
     public void zerodhaTrades() throws Exception, KiteException {
         List<Trade> trades = zerodhaAccount.kiteConnect.getTrades(); //all executed trades

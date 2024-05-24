@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
+import com.sakthi.trade.domain.OrderSedaData;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.domain.strategy.StrikeSelectionType;
 import com.sakthi.trade.domain.strategy.ValueType;
@@ -54,10 +55,7 @@ import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.List;
@@ -173,7 +171,7 @@ public class TradeEngine {
             try {
                 if ((strategy.getTradeDays() != null && strategy.getTradeDays().toUpperCase().contains(dayFormat.format(date).toUpperCase())) || Objects.equals(strategy.getTradeDays(), "All")) {
                     if (strategy.isRangeBreak()) {
-                        System.out.println("range strategy:" + strategy);
+                      //  System.out.println("range strategy:" + strategy);
                         //TODO: this is outdated
                         List<TradeStrategy> indexTimeMap = rangeStrategyMap.get(index);
                         if (rangeStrategyMap.get(index) != null && !indexTimeMap.isEmpty()) {
@@ -230,7 +228,7 @@ public class TradeEngine {
             //  Map<String, List<TradeStrategy>> stringTradeStrategyMap = stringMapEntry.getValue();
             //  stringTradeStrategyMap.entrySet().forEach(tradeStrategyMap -> {
             List<TradeStrategy> list = stringMapEntry.getValue();
-            System.out.println(gson.toJson(list));
+          //  System.out.println(gson.toJson(list));
             list.forEach(strategy -> {
                 List<String> users = new ArrayList<>();
                 strategy.getUserSubscriptions().getUserSubscriptionList().forEach(userSubscription -> {
@@ -240,7 +238,7 @@ public class TradeEngine {
             });
             // });
         });
-        System.out.println("strategy config:" + new Gson().toJson(strategyMap));
+     //   System.out.println("strategy config:" + new Gson().toJson(strategyMap));
         //  }
     }
 
@@ -536,7 +534,7 @@ public class TradeEngine {
                                                                         }
                                                                         BrokerWorker brokerWorker = workerFactory.getWorker(user);
 
-                                                                        Order order = null;
+                                                                        Order order;
                                                                         int lot = strategy.getLotSize() * userSubscription.getLotSize();
                                                                         orderParams.quantity = lot;
 
@@ -624,9 +622,7 @@ public class TradeEngine {
 
     public void exitCode(String currentDateStr, String currentHourMinStr) {
         exitThread.submit(() -> {
-            openTrade.entrySet().stream().forEach(userTradeData -> {
-                String userId = userTradeData.getKey();
-                List<TradeData> tradeDataList = userTradeData.getValue();
+            openTrade.forEach((userId, tradeDataList) -> {
                 User user = userList.getUser().stream().filter(
                         user1 -> user1.getName().equals(userId)
                 ).findFirst().get();
@@ -714,15 +710,15 @@ public class TradeEngine {
                                                 LOGGER.info(new Gson().toJson(orderResponse));
                                                 String message = MessageFormat.format("Placed exit order {0}", orderParams.tradingsymbol + ":" + strategy.getTradeStrategyKey());
                                                 LOGGER.info(message);
-                                              //  tradeData.isExited = true;
+                                                //  tradeData.isExited = true;
                                                 tradeData.setExitOrderId(orderResponse.orderId);
                                                 mapTradeDataToSaveOpenTradeDataEntity(tradeData, false);
-                                             //   tradeSedaQueue.sendTelemgramSeda(message + ":" + tradeData.getUserId() + ":" + getAlgoName(), "error");
+                                                //   tradeSedaQueue.sendTelemgramSeda(message + ":" + tradeData.getUserId() + ":" + getAlgoName(), "error");
 
                                             } catch (Exception e) {
                                                 LOGGER.info("Error while exiting straddle order: " + e.getMessage());
                                                 tradeSedaQueue.sendTelemgramSeda("Error while exiting order: " + orderParams.tradingsymbol + ": Exception: " + e.getMessage() + " order Input:" + new Gson().toJson(orderParams) + " positions: " + new Gson().toJson(position) + ":" + getAlgoName(), "error");
-                                                LOGGER.error("error:{}",e.getMessage());
+                                                LOGGER.error("error:{}", e.getMessage());
                                             } catch (KiteException e) {
                                                 tradeSedaQueue.sendTelemgramSeda(strategy.getTradeStrategyKey() + ":" + "error while order cancellation:" + tradeData.getUserId() + ":strike:" + tradeData.getStockName(), "error");
                                                 throw new RuntimeException(e);
@@ -734,12 +730,12 @@ public class TradeEngine {
 
 
                             } catch (Exception e) {
-                                LOGGER.error("error:{}",e.getMessage());
+                                LOGGER.error("error:{}", e.getMessage());
                             }
                         }
                     });
                 } catch (IOException | KiteException e) {
-                    LOGGER.error("error:{}",e.getMessage());
+                    LOGGER.error("error:{}", e.getMessage());
                 }
             });
 
@@ -2337,6 +2333,53 @@ public class TradeEngine {
         }
     }
 
+    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
+    @Scheduled(cron = "${tradeEngine.limit.order.monitor}")
+    public void limitOrderMonitor() {
+        openTrade.entrySet().stream().forEach(userTradeData -> {
+            String userId = userTradeData.getKey();
+            User user = userList.getUser().stream().filter(user1 -> userId.equals(user1.getName())).findFirst().get();
+            BrokerWorker brokerWorker = workerFactory.getWorker(user);
+            List<TradeData> tradeDataList = userTradeData.getValue();
+            tradeDataList.stream().filter(trade-> !trade.isSLHit&& !trade.isExited && trade.isOrderPlaced && trade.isSlPlaced).forEach(tradeData -> {
+                if (tradeData.getTradeStrategy().isWebsocketSlEnabled() && tradeData.isWebsocketSlModified()) {
+                    if(tradeData.getWebsocketSlTime()!=null) {
+                        LocalDateTime websocketTime = LocalDateTime.parse(tradeData.getWebsocketSlTime(), dateTimeFormatter);
+                        LocalDateTime now = LocalDateTime.now();
+                        Duration duration = Duration.between(websocketTime, now);
+                        if (duration.getSeconds() > 30) {
+                           String slId=tradeData.getSlOrderId();
+                            OrderParams orderParams = new OrderParams();
+                            orderParams.triggerPrice = MathUtils.roundToNearestFivePaiseUP(tradeData.getSlPrice()).doubleValue();
+                            orderParams.price = tradeData.getSlPrice().add(tradeData.getSlPrice().divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP).doubleValue();
+                            orderParams.orderType = "MARKET";
+                            postOrderModifyDataToSeda(tradeData, orderParams, slId);
+                            tradeSedaQueue.sendTelemgramSeda("converted websocket limit to market order:"+userId+":"+tradeData.getStockName()+":"+tradeData.getWebsocketSlTime(),"exp-trade");
+                        } else {
+                            tradeSedaQueue.sendTelemgramSeda("limit order placed, monitoring sl for 30 sec exit:"+userId+":"+tradeData.getStockName()+":"+tradeData.getWebsocketSlTime(),"error");
+                            LOGGER.info("limit order placed, monitoring sl for 30 sec exit:{},{},{}",userId,tradeData.getStockName(),tradeData.getWebsocketSlTime());
+                        }
+                    }else {
+                        LOGGER.error("websocket time is null:{},{}",userId,tradeData.getStockName());
+                    }
+                }
+            });
+        });
+    }
+
+    public void postOrderModifyDataToSeda(TradeData tradeData,OrderParams orderParams,String orderId) {
+        //  tradeData.getTradeStrategy().getUserSubscriptions().getUserSubscriptionList().stream().forEach(userSubscription -> {
+        User userB = userList.getUser().stream().filter(user -> tradeData.getUserId().equals(user.getName())).findFirst().get();
+        OrderSedaData orderSedaData = new OrderSedaData();
+        orderSedaData.setOrderParams(orderParams);
+        orderSedaData.setUser(userB);
+        orderSedaData.setOrderModificationType("modify");
+        orderSedaData.setOrderId(orderId);
+        // tradeData.isExited=true;
+        // tradeData.isSLHit=true;
+        tradeSedaQueue.sendOrderPlaceSeda(orderSedaData);
+    }
     @Scheduled(cron = "${tradeEngine.position.data}")
     public void sendPositionData() {
         try { //TODO: if everything or open main position closed then override position
@@ -2354,7 +2397,7 @@ public class TradeEngine {
                                     double pl = tradeData.getSellPrice().subtract(tradeData.getBuyPrice()).doubleValue();
                                     double plq = pl * tradeData.getQty();
                                     pnl.getAndAdd(plq);
-                                    LOGGER.info("closed position:{}:pl {}", tradeData.getStockName(), plq);
+                                 //   LOGGER.info("closed position:{}:pl {}", tradeData.getStockName(), plq);
                                 }
                             } catch (Exception e) {
                                 LOGGER.info("error while calculating pl for closed position:{}:{}", tradeData.getStockName(), e.getMessage());
@@ -2380,14 +2423,14 @@ public class TradeEngine {
                                         double pl = tradeData.getSellPrice().subtract(new BigDecimal(ltpQuote.lastPrice)).doubleValue();
                                         double plq = pl * tradeData.getQty();
                                         pnl.getAndAdd(plq);
-                                        LOGGER.info("open position:{} pl: {},quote: {}", tradeData.getStockName(), plq,ltpQuote.lastPrice);
+                                       // LOGGER.info("open position:{} pl: {},quote: {}", tradeData.getStockName(), plq,ltpQuote.lastPrice);
                                     }
                                     if ("BUY".equals(tradeData.getEntryType()) && tradeData.getBuyPrice() != null && tradeData.getBuyPrice().doubleValue()>0
                                             && ltpQuote.lastPrice > 0) {
                                         double pl =(new BigDecimal(ltpQuote.lastPrice).subtract( tradeData.getSellPrice())).doubleValue();
                                         double plq = pl * tradeData.getQty();
                                         pnl.getAndAdd(plq);
-                                        LOGGER.info("open position:{} pl: {},quote: {}", tradeData.getStockName(), plq,ltpQuote.lastPrice);
+                                       // LOGGER.info("open position:{} pl: {},quote: {}", tradeData.getStockName(), plq,ltpQuote.lastPrice);
                                     }
                                 } else {
                                     LOGGER.info("zerodha ltpquote is empty:{}", tradeData.getStockName());
