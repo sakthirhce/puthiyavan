@@ -7,8 +7,13 @@ buildscript {
         maven{
             url "https://mvnrepository.com/artifact/org.jsonschema2pojo/jsonschema2pojo-gradle-plugin"
         }
+        maven { url '// https://mvnrepository.com/artifact/org.mockito/mockito-core'}
         maven { url 'https://repo.spring.io/libs-release' }
         maven { url "https://jitpack.io" }
+        maven { url "https://mvnrepository.com/artifact/junit/junit" }
+        maven { url "https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-engine" }
+        maven { url " https://mvnrepository.com/artifact/org.junit.vintage/junit-vintage-engine" }
+
     }
     dependencies {
 
@@ -19,10 +24,13 @@ buildscript {
 }
 plugins {
     id 'java'
-                                          id 'org.springframework.boot' version '2.2.5.RELEASE'
+    id 'org.springframework.boot' version '2.2.5.RELEASE'
     id 'io.spring.dependency-management' version '1.0.9.RELEASE'
 }
 apply plugin: 'jsonschema2pojo'
+apply plugin: 'jacoco'
+apply from:file('tests.gradle')
+
 group 'com.sakthi.trade'
 version '1.0-SNAPSHOT'
 sourceCompatibility = '11'
@@ -93,6 +101,14 @@ dependencies {
     implementation files('/home/hasvanth/Downloads/kiteconnect.jar')
 // https://mvnrepository.com/artifact/com.alibaba/fastjson
     implementation group: 'com.alibaba', name: 'fastjson', version: '1.2.78'
+// https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api// https://mvnrepository.com/artifact/junit/junit
+testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+    // https://mvnrepository.com/artifact/org.junit.vintage/junit-vintage-engine
+    testImplementation group: 'org.junit.vintage', name: 'junit-vintage-engine', version: '5.9.3'
+    testImplementation 'org.junit.platform:junit-platform-commons:1.9.3'
+    // https://mvnrepository.com/artifact/org.mockito/mockito-core
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '4.2.0'
+
 
     implementation files('libs/kiteconnect.jar')
 }
@@ -121,6 +137,22 @@ sourceSets{
     }
 }
 
+jacoco {
+    toolVersion = "0.8.7"
+    reportsDir = file("$buildDir/customJacocoReportDir")
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true
+        csv.enabled = false
+        html.destination file("${buildDir}/jacocoHtml")
+    }
+    dependsOn test // tests are required to run before generating the report
+}
+test{
+    useJUnitPlatform()
+}
 
 configurations {
     all {

@@ -142,21 +142,22 @@ public class WebSocketTicksSedaProcessor implements Processor {
                                 Tick tick = tickOp.get();
 
                                 TradeStrategy strategy = tradeData.getTradeStrategy();
-                                if (tradeData.isOrderPlaced && !tradeData.isExited && tradeData.isSlPlaced()) {
+                                if (tradeData.isOrderPlaced && !tradeData.isExited && tradeData.isSlPlaced() && !tradeData.isSLCancelled) {
                                     double lastTradedPrice = tick.getLastTradedPrice();
                                     try {
                                         List<Double> tickData = globalTickCache.getHistoricData(tradeData.getStockId()).getHistoricalDataMap();
                                         double lastTick = tickData.get(tickData.size() - 1);
-                                        double diff = lastTradedPrice - lastTick;
-                                        double percentageDiffOfLastTradePrice = 0.1 * lastTradedPrice;
-                                        double percentageDiffOfSoldPrice = 0.1 * tradeData.getSellPrice().doubleValue();
-                                        if (diff > 0 && (percentageDiffOfSoldPrice <= diff || percentageDiffOfLastTradePrice <= diff)) {
-                                            LOGGER.info("last traded price difference is more than 10%");
-                                            tradeSedaQueue.sendTelemgramSeda("last traded price difference is more than 10%. stock:"+tradeData.getStockName()+":last trade price"+lastTradedPrice+"diff:"+diff, "algo");
-                                            double percentToSoldPrice = (diff / tradeData.getSellPrice().doubleValue()) * 100;
-                                            if (Math.abs(percentToSoldPrice) <= 20) {
-                                                LOGGER.info("The difference is less than 20% to touch the sold price.");
-                                                tradeSedaQueue.sendTelemgramSeda("The difference is less than 20% to touch the sold price. stock:"+tradeData.getStockName()+":last trade price"+lastTradedPrice+"diff:"+diff+":"+tradeData.getSellPrice(), "algo");
+                                        double diff = lastTradedPrice - lastTick;if (lastTradedPrice>20) {
+                                            double percentageDiffOfLastTradePrice = 0.1 * lastTradedPrice;
+                                            double percentageDiffOfSoldPrice = 0.1 * tradeData.getSellPrice().doubleValue();
+                                            if (diff > 0 && (percentageDiffOfSoldPrice <= diff || percentageDiffOfLastTradePrice <= diff)) {
+                                                LOGGER.info("last traded price difference is more than 10%,{}",String.format("%,.2f", diff));
+                                                tradeSedaQueue.sendTelemgramSeda("last traded price difference is more than 10%. stock: " + tradeData.getStockName() + " last trade price: " + lastTradedPrice + "diff: " + String.format("%,.2f", diff), "algo");
+                                                double percentToSoldPrice = (diff / tradeData.getSellPrice().doubleValue()) * 100;
+                                                if (percentToSoldPrice >= 15 && percentToSoldPrice <= 20) {
+                                                    LOGGER.info("The difference is {}% to touch the sold price.", String.format("%,.2f", percentToSoldPrice));
+                                                    tradeSedaQueue.sendTelemgramSeda("The difference is less than "+String.format("%,.2f", percentToSoldPrice)+"% to touch the sold price. stock:" + tradeData.getStockName() + " last trade price: " + lastTradedPrice + " diff: " + String.format("%,.2f", diff) + " sell price: " + String.format("%,.2f", tradeData.getSellPrice().doubleValue()), "algo");
+                                                }
                                             }
                                         }
                                     }catch (Exception e){
