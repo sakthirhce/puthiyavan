@@ -83,7 +83,7 @@ public class TradeEngine {
     @Autowired
     CommonUtil commonUtil;
     @Autowired
-    TransactionService transactionService;
+    public TransactionService transactionService;
     Map<String, Map<String, List<TradeStrategy>>> strategyMap = new LinkedHashMap<>();
     List<HistoricalDataExtended> dataArrayList3MHistory = new ArrayList<>();
     ArrayList<Long> listOfTokens = new ArrayList<>();
@@ -102,7 +102,7 @@ public class TradeEngine {
     @Autowired
     TradeDataMapper tradeDataMapper;
     @Autowired
-    UserList userList;
+    public UserList userList;
     @Autowired
     BrokerWorkerFactory workerFactory;
     @Value("${lotSize.config}")
@@ -115,7 +115,7 @@ public class TradeEngine {
     @Autowired
     OpenTradeDataBackupRepo openTradeDataBackupRepo;
     @Autowired
-    TradeSedaQueue tradeSedaQueue;
+    public TradeSedaQueue tradeSedaQueue;
     @Autowired
     IndicatorDataRepo indicatorDataRepo;
     @Value("${filepath.trend}")
