@@ -91,15 +91,11 @@ dependencies {
     implementation group: 'com.squareup.okhttp', name: 'okhttp', version: '2.7.5'
     implementation group: 'org.seleniumhq.selenium', name: 'selenium-java', version: '2.53.1'
     implementation("org.springframework:spring-websocket")
-    // https://mvnrepository.com/artifact/com.alibaba/fastjson
     implementation group: 'com.alibaba', name: 'fastjson', version: '1.2.75'
-// https://mvnrepository.com/artifact/commons-codec/commons-codec
     implementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
 
-    // https://mvnrepository.com/artifact/jfree/jfreechart
     implementation group: 'jfree', name: 'jfreechart', version: '1.0.13'
     implementation files('/home/hasvanth/Downloads/kiteconnect.jar')
-// https://mvnrepository.com/artifact/com.alibaba/fastjson
     implementation group: 'com.alibaba', name: 'fastjson', version: '1.2.78'
 // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api// https://mvnrepository.com/artifact/junit/junit
 testImplementation group: 'junit', name: 'junit', version: '4.13.2'

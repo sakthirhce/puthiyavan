@@ -41,6 +41,9 @@ public class OpenTradeDataEntity {
     public boolean isExited;
     @Column(name="isslhit")
     public boolean isSLHit=false;
+    public boolean range;
+    BigDecimal rangeHigh;
+    BigDecimal rangeLow;
     String entryOrderId;
     String exitOrderId;
     String slOrderId;

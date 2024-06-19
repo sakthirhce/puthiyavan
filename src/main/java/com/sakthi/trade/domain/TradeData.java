@@ -39,6 +39,9 @@ public class TradeData {
     public boolean isSLHit=false;
     public boolean isReverseSLHit=false;
     public boolean isSlPlaced;
+    public boolean range;
+    BigDecimal rangeHigh;
+    BigDecimal rangeLow;
     public boolean isReverseTradePlaced;
     public boolean isReverseSLPlaced;
     public boolean isExited;
@@ -86,6 +89,7 @@ public class TradeData {
     String strikeId;
     TradeStrategy tradeStrategy;
     boolean websocketSlModified;
+    public boolean isSlPriceCalculated;
     String websocketSlTime;
     BigDecimal tempSlPrice;
 }

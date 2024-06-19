@@ -127,7 +127,7 @@ public class TradeSedaQueue {
             httpPost.setHeader("Content-Type", "application/json");
             httpPost.setEntity(new StringEntity(message1));
             HttpResponse response = httpClient.execute(httpPost);
-            System.out.printf(message1);
+            //System.out.printf(message1);
             HttpEntity entity = response.getEntity();
             if (entity != null) {
                 String result = EntityUtils.toString(entity);

@@ -207,6 +207,9 @@ public class TradeDataMapper {
             openTradeDataEntity.isExited = tradeData.isExited();
             openTradeDataEntity.isErrored = tradeData.isErrored;
             openTradeDataEntity.isSLHit = tradeData.isSLHit;
+            openTradeDataEntity.range=tradeData.range;
+            openTradeDataEntity.setRangeHigh(tradeData.getRangeHigh());
+            openTradeDataEntity.setRangeLow(tradeData.getRangeLow());
             openTradeDataEntity.setBuyTradedPrice(tradeData.getBuyTradedPrice());
             openTradeDataEntity.setSellTradedPrice(tradeData.getSellTradedPrice());
             openTradeDataEntity.setExitOrderId(tradeData.getExitOrderId());

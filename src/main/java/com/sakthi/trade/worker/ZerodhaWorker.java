@@ -44,13 +44,13 @@ public class ZerodhaWorker implements BrokerWorker {
             LOGGER.info("order execution time:" + timeElapsed);
             return order;
         } catch (KiteException e) {
-            log.error(e.message + ":" + e.code);
+            log.error("{}:{}", e.message, e.code);
             String message = e.message + ":" + e.code;
             telegramClient.sendToTelegram(message, telegramTokenGroup);
-            throw new RuntimeException(e);
+            throw e;
         } catch (JSONException | IOException e) {
             log.error(e.getMessage());
-            throw new RuntimeException(e);
+            throw e;
         }
 
     }
