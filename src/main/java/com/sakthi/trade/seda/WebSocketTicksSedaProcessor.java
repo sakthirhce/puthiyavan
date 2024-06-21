@@ -177,18 +177,20 @@ public class WebSocketTicksSedaProcessor implements Processor {
                             if (tradeData.getEntryOrderId()!=null && tradeData.isOrderPlaced && !tradeData.isExited  && !tradeData.isSLCancelled) {
                                 try {
                                     List<Double> tickData = globalTickCache.getHistoricData(tradeData.getStockId()).getHistoricalDataMap();
-                                    double lastTick = tickData.get(tickData.size() - 1);
-                                    double diff = lastTradedPrice - lastTick;
-                                    if (lastTradedPrice > 20) {
-                                        double percentageDiffOfLastTradePrice = 0.1 * lastTradedPrice;
-                                        double percentageDiffOfSoldPrice = 0.1 * tradeData.getSellPrice().doubleValue();
-                                        if (diff > 0 && (percentageDiffOfSoldPrice <= diff || percentageDiffOfLastTradePrice <= diff)) {
-                                            LOGGER.info("last traded price difference is more than 10%,{}", String.format("%,.2f", diff));
-                                            tradeSedaQueue.sendTelemgramSeda("last traded price difference is more than 10%. stock: " + tradeData.getStockName() + " last trade price: " + lastTradedPrice + "diff: " + String.format("%,.2f", diff), "algo");
-                                            double percentToSoldPrice = (diff / tradeData.getSellPrice().doubleValue()) * 100;
-                                            if (percentToSoldPrice <= 20) {
-                                                LOGGER.info("The difference is {}% to touch the sold price.", String.format("%,.2f", percentToSoldPrice));
-                                                tradeSedaQueue.sendTelemgramSeda("The difference is less than " + String.format("%,.2f", percentToSoldPrice) + "% to touch the sold price. stock:" + tradeData.getStockName() + " last trade price: " + lastTradedPrice + " diff: " + String.format("%,.2f", diff) + " sell price: " + String.format("%,.2f", tradeData.getSellPrice().doubleValue()), "algo");
+                                    if(!tickData.isEmpty()) {
+                                        double lastTick = tickData.get(tickData.size() - 1);
+                                        double diff = lastTradedPrice - lastTick;
+                                        if (lastTradedPrice > 20 && diff > 0) {
+                                            double percentageDiffOfLastTradePrice = 0.1 * lastTradedPrice;
+                                            double percentageDiffOfSoldPrice = 0.1 * tradeData.getSellPrice().doubleValue();
+                                            if (diff > 0 && (percentageDiffOfSoldPrice <= diff || percentageDiffOfLastTradePrice <= diff)) {
+                                                LOGGER.info("last traded price difference is more than 10%,{}", String.format("%,.2f", diff));
+                                                tradeSedaQueue.sendTelemgramSeda("last traded price difference is more than 10%. stock: " + tradeData.getStockName() + " last trade price: " + lastTradedPrice + "diff: " + String.format("%,.2f", diff), "algo");
+                                                double percentToSoldPrice = (diff / tradeData.getSellPrice().doubleValue()) * 100;
+                                                if (percentToSoldPrice <= 20) {
+                                                    LOGGER.info("The difference is {}% to touch the sold price.", String.format("%,.2f", percentToSoldPrice));
+                                                    tradeSedaQueue.sendTelemgramSeda("The difference is less than " + String.format("%,.2f", percentToSoldPrice) + "% to touch the sold price. stock:" + tradeData.getStockName() + " last trade price: " + lastTradedPrice + " diff: " + String.format("%,.2f", diff) + " sell price: " + String.format("%,.2f", tradeData.getSellPrice().doubleValue()), "algo");
+                                                }
                                             }
                                         }
                                     }
@@ -383,31 +385,53 @@ public class WebSocketTicksSedaProcessor implements Processor {
                             //  ticks.stream().forEach(tick -> {
                             Map<String,String> strikeMap=expiryDayDetails.expiryOptions.get(String.valueOf(expiryDayDetails.expiryCurrentAtmValue));
                            ticks.forEach(tick -> {
-                               if(strikeMap.containsKey(String.valueOf(tick.getInstrumentToken()))){
-                                   int instrumentToken =(int) tick.getInstrumentToken();
-                                   globalTickCache.setHistoricData(instrumentToken,tick.getLastTradedPrice());
-                                   List<Double> tickData= globalTickCache.getHistoricData(instrumentToken).getHistoricalDataMap();
-                                   List<Double> subTickData= tickData.subList(tickData.size()-8,tickData.size()-1);
-                                   int tickDiffCount=0;
-                                   double amountSum=0;
-                                   for (int i = 1; i <= subTickData.size(); i++) {
-                                       double diff= subTickData.get(i) - subTickData.get(i - 1);
-                                       if (diff >= 3) {
-                                           String alertTick=instrumentToken+"-"+tick.getTickTimestamp();
-                                           if(!alertList.contains(alertTick)) {
-                                               String formattedDiff = String.format("%.2f", diff);
-                                               LOGGER.info("exp atm tick diff of 3 found stock-id: {} : diff amount: {}", instrumentToken, formattedDiff);
-                                               tradeSedaQueue.sendTelemgramSeda("exp atm tick diff of 3 found stock-id: " + instrumentToken + ": time"+tick.getTickTimestamp()+": diff amount:" + formattedDiff, "error");
-                                               alertList.add(alertTick);
+                               if(strikeMap.containsKey(String.valueOf(tick.getInstrumentToken()))) {
+                                   int instrumentToken = (int) tick.getInstrumentToken();
+                                   globalTickCache.setHistoricData(instrumentToken, tick.getLastTradedPrice());
+                                   List<Double> tickData = globalTickCache.getHistoricData(instrumentToken).getHistoricalDataMap();
+                                   List<Double> tickData30Sec = globalTickCache.getHistoricData(instrumentToken).getHistoricalDataMap();
+                                   if (tickData.size() > 8) {
+                                       List<Double> subTickData = tickData.subList(tickData.size() - 8, tickData.size() - 1);
+                                       int tickDiffCount = 0;
+                                       double amountSum = 0;
+                                       for (int i = 1; i <= subTickData.size(); i++) {
+                                           double diff = subTickData.get(i) - subTickData.get(i - 1);
+                                           if (diff >= 3) {
+                                               String alertTick = instrumentToken + "-" + tick.getTickTimestamp();
+                                               if (!alertList.contains(alertTick)) {
+                                                   String formattedDiff = String.format("%.2f", diff);
+                                                   //    LOGGER.info("exp atm tick diff of 3 found stock-id: {} : diff amount: {}", instrumentToken, formattedDiff);
+                                                   //  tradeSedaQueue.sendTelemgramSeda("exp atm tick diff of 3 found stock-id: " + instrumentToken + ": time"+tick.getTickTimestamp()+": diff amount:" + formattedDiff, "error");
+                                                   alertList.add(alertTick);
+                                               }
+                                               tickDiffCount++;
+                                               amountSum = amountSum + subTickData.get(i);
                                            }
-                                           tickDiffCount++;
-                                           amountSum=amountSum+subTickData.get(i);
+                                       }
+                                       if (tickDiffCount >= 3) {
+                                           String formattedAmount = String.format("%.2f", amountSum);
+                                           LOGGER.info("exp atm tick diff of 3 found stock-id: {} : total amount move: {} : {}", instrumentToken, formattedAmount, tickDiffCount);
+                                           tradeSedaQueue.sendTelemgramSeda("exp atm tick diff of 3 found stock-id: " + instrumentToken + " total amount move: " + formattedAmount + ":" + tickDiffCount, "error");
                                        }
                                    }
-                                   if(tickDiffCount>=3){
-                                       String formattedAmount = String.format("%.2f", amountSum);
-                                       LOGGER.info("exp atm tick diff of 3 found stock-id: {} : total amount move: {} : {}", instrumentToken, formattedAmount,tickDiffCount);
-                                       tradeSedaQueue.sendTelemgramSeda("exp atm tick diff of 3 found stock-id: "+instrumentToken+" total amount move: "+formattedAmount+":"+tickDiffCount,"error");
+                                   if (tickData30Sec.size() > 30) {
+                                       List<Double> subTickData = tickData.subList(tickData.size() - 30, tickData.size() - 1);
+                                       int tickDiffCount = 0;
+                                       double amountSum = 0;
+                                       for (int i = 1; i <= subTickData.size(); i++) {
+                                           double diff = subTickData.get(i) - subTickData.get(i - 1);
+                                           if (diff >= 3) {
+                                               String alertTick = instrumentToken + "-" + tick.getTickTimestamp();
+                                               if (!alertList.contains(alertTick)) {
+                                                   String formattedDiff = String.format("%.2f", diff);
+                                                   //    LOGGER.info("exp atm tick diff of 3 found stock-id: {} : diff amount: {}", instrumentToken, formattedDiff);
+                                                   //  tradeSedaQueue.sendTelemgramSeda("exp atm tick diff of 3 found stock-id: " + instrumentToken + ": time"+tick.getTickTimestamp()+": diff amount:" + formattedDiff, "error");
+                                                   alertList.add(alertTick);
+                                               }
+                                               tickDiffCount++;
+                                               amountSum = amountSum + subTickData.get(i);
+                                           }
+                                       }
                                    }
                                }
                            });

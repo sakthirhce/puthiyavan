@@ -415,6 +415,27 @@ NiftyOptionBuy935 niftyOptionBuy935;
 
     }
 
+    @GetMapping("/cncSlCode")
+    public void executeCNCSL() throws Exception, KiteException {
+
+       /* List<StockEntity> stockEntityList=stockRepository.findAll();
+        stockEntityList.forEach(stockEntity -> {*/
+        tradeEngine.cncSlCode();
+        /*  });*/
+
+    }
+
+    @GetMapping("/loadTradeEntity")
+    public void loadTradeEntity(@RequestBody String payload) throws Exception, KiteException {
+
+       /* List<StockEntity> stockEntityList=stockRepository.findAll();
+        stockEntityList.forEach(stockEntity -> {*/
+        OpenTradeDataEntity openTradeDataEntity = gson.fromJson(payload,OpenTradeDataEntity.class);
+        tradeDataMapper.saveTradeData(openTradeDataEntity);
+        /*  });*/
+
+    }
+
     @Autowired
     TradeEngine oneTradeExecutor;
     @GetMapping("/oneTradeLoad")
