@@ -927,7 +927,7 @@ public class TradeEngine {
                 tradeData.stream().filter(order -> order.getEntryOrderId() != null && !order.isExited).forEach(trendTradeData -> {
                     LocalTime currentTime = LocalTime.now();
                     LocalTime cncSLTime = LocalTime.of(9, 16);
-                    LocalTime cncSLEndTime = LocalTime.of(22, 59);
+                    LocalTime cncSLEndTime = LocalTime.of(9, 59);
                     TradeStrategy strategy = trendTradeData.getTradeStrategy();
                     try {
                         if (dateFormat.parse(trendTradeData.getTradeDate()).before(dateFormat.parse(currentDateStr))
