@@ -201,6 +201,12 @@ public class WebSocketTicksSedaProcessor implements Processor {
                                         if(lastTick>20 && lastTick<30) {
                                             percentCheck=20;
                                         }
+                                        if(lastTick<20) {
+                                            percentCheck=40;
+                                        }
+                                        if(lastTick<10) {
+                                            percentCheck=80;
+                                        }
                                         if(lastTick>20) {
                                             List<Double> subTickData = tickData.subList(tickData.size() - 30, tickData.size() - 1);
                                             double low = Double.MAX_VALUE;
