@@ -458,15 +458,15 @@ public class TradeEngine {
                                         if (strategies != null) {
                                             if (!strategies.isEmpty()) {
                                                 // log.info(index+":"+currentHourMinStr+":"+historicURL+":"+response);
-                                                LOGGER.info("trade engine: " + gson.toJson(strategies));
+                                                LOGGER.info("trade engine: {}", gson.toJson(strategies));
                                                 strategies.forEach(strategy -> {
                                                     try {
                                                         // executorThreadStrategy.submit(() -> {
-                                                        LOGGER.info("strategy name:" + strategy.getTradeStrategyKey() + ":" + currentHourMinStr + strategy.getEntryTime());
+                                                        LOGGER.info("strategy name:{}:{}{}", strategy.getTradeStrategyKey(), currentHourMinStr, strategy.getEntryTime());
                                                         Map<String, Map<String, StrikeData>> rangeStrikes = new HashMap<>();
 
                                                         if (strategy.getEntryTime().equals(currentHourMinStr)) {
-                                                            LOGGER.info("api data name:" + lastHistoricalData.close + " :response:" + response);
+                                                            LOGGER.info("api data name:{} :response:{}", lastHistoricalData.close, response);
                                                             rangeStrikes = mathUtils.strikeSelection(currentDateStr, strategy, lastHistoricalData.close, candleHourMinStr + ":00");
                                                         }
 
@@ -1745,9 +1745,6 @@ public void rangeBreak(TradeStrategy strategy, HistoricalData historicalData, St
                         orderParams.transactionType = strategy.getOrderType();
                         orderParams.validity = "DAY";
                         orderParams.orderType = "MARKET";
-                        LocalDate localDate = LocalDate.now();
-                        DayOfWeek dow = localDate.getDayOfWeek();
-                        //   String today = dow.getDisplayName(TextStyle.SHORT_STANDALONE, Locale.ENGLISH);
                         strategy.getUserSubscriptions().getUserSubscriptionList().stream().forEach(userSubscription -> {
                             userList.getUser().stream().filter(
                                     user -> user.getName().equals(userSubscription.getUserId())
@@ -1857,8 +1854,6 @@ public void rangeBreak(TradeStrategy strategy, HistoricalData historicalData, St
                                 String dataKey = UUID.randomUUID().toString();
                                 TradeData tradeData = new TradeData();
                                 tradeData.setQty(strategy.getLotSize());
-                                //  tradeData.setSellTime(candleDateTimeFormat.format(lastHistoricData.timeStamp));
-                                //  tradeData.setSellPrice(new BigDecimal(lastHistoricData.close));
                                 tradeData.setStockId(Integer.parseInt(finalSelected.getValue().getZerodhaId()));
                                 tradeData.setTradeStrategy(strategy);
                                 tradeData.setDataKey(dataKey);

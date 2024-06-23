@@ -5,11 +5,16 @@ import com.google.common.util.concurrent.AtomicDouble;
 import com.google.gson.Gson;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
+import com.sakthi.trade.TradeEngine;
 import com.sakthi.trade.models.CandlestickExtended;
 import com.sakthi.trade.domain.Brokerage;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.entity.StockDataEntity;
+import com.sakthi.trade.zerodha.ExpiryDayDetails;
 import com.sakthi.trade.zerodha.models.HistoricalDataExtended;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -27,15 +32,9 @@ public class CommonUtil {
     @Value("${home.path}")
     String homeFilePath;
 
-    public static String[] suffixes =
-            //    0     1     2     3     4     5     6     7     8     9
-            {"th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th",
-                    //    10    11    12    13    14    15    16    17    18    19
-                    "th", "th", "th", "th", "th", "th", "th", "th", "th", "th",
-                    //    20    21    22    23    24    25    26    27    28    29
-                    "th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th",
-                    //    30    31
-                    "th", "st"};
+    public static final Logger LOGGER = LoggerFactory.getLogger(TradeEngine.class.getName());
+    @Autowired
+    ExpiryDayDetails expiryDayDetails;
 
     public static Brokerage calculateBrokerage(TradeData tradeData, boolean isOptions, boolean isEquityIntraday, boolean isFutures, String slipage){
         Brokerage brokerage=new Brokerage();
@@ -187,9 +186,15 @@ public class CommonUtil {
         }else if("MC".equals(index)) {
             atm= (int) Math.round(currentValue / 25.0) * 25;
         }else if("BNF".equals(index)|| "SS".equals(index)){
-            int a = (Integer.valueOf(currentValue) / 100) * 100;
+            int a = (currentValue / 100) * 100;
             int b = a + 100;
-            atm= (Integer.valueOf(currentValue) - a > b - Integer.valueOf(currentValue)) ? b : a;
+            atm= (currentValue - a > b - currentValue) ? b : a;
+        }
+        try {
+            long expiryCurrentAtmValue = expiryDayDetails.expiryCurrentAtmValue;
+            LOGGER.info("candle atm: {},tick atm: {}", atm,expiryCurrentAtmValue);
+        }catch (Exception e) {
+            e.printStackTrace();
         }
         return atm;
     }
