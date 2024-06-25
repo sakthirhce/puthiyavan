@@ -198,6 +198,19 @@ public class CommonUtil {
         }
         return atm;
     }
+    public int findATMTick(int currentValue,String index) {
+        int atm=0;
+        if("FN".equals(index)|| "NF".equals(index)){
+            atm= (int) Math.round(currentValue / 50.0) * 50;
+        }else if("MC".equals(index)) {
+            atm= (int) Math.round(currentValue / 25.0) * 25;
+        }else if("BNF".equals(index)|| "SS".equals(index)){
+            int a = (currentValue / 100) * 100;
+            int b = a + 100;
+            atm= (currentValue - a > b - currentValue) ? b : a;
+        }
+        return atm;
+    }
      static public HistoricalDataExtended to_larger_timeframe(HistoricalDataExtended historicalDataExtended, int min,String tradeDate) {
          HistoricalDataExtended output = new HistoricalDataExtended();
          int current_tick = 1;
