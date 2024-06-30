@@ -8,6 +8,7 @@ import com.sakthi.trade.domain.strategy.StrikeSelectionType;
 import com.sakthi.trade.domain.strategy.ValueType;
 import com.sakthi.trade.entity.TradeStrategy;
 import com.sakthi.trade.mapper.TradeDataMapper;
+import com.sakthi.trade.service.ZerodhaWebsocket;
 import com.sakthi.trade.util.MathUtils;
 import com.sakthi.trade.worker.BrokerWorker;
 import com.sakthi.trade.worker.BrokerWorkerFactory;
@@ -57,6 +58,8 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
 
     @Autowired
     TransactionService transactionService;
+    @Autowired
+    ZerodhaWebsocket zerodhaWebsocket;
 
     @Autowired
     MathUtils mathUtils;
@@ -477,7 +480,7 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                                                             tradeDataRetry.setTradeDate(currentDateStr);
                                                                             tradeDataRetry.setStockId(Integer.valueOf(strikeData.getZerodhaId()));
                                                                             try {
-                                                                                tradeEngine.addStriketoWebsocket(Long.parseLong(strikeData.getZerodhaId()));
+                                                                                zerodhaWebsocket.addStriketoWebsocket(Long.parseLong(strikeData.getZerodhaId()));
                                                                             } catch (Exception e) {
                                                                                 e.printStackTrace();
                                                                             }

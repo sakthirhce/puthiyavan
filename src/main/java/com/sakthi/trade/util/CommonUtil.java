@@ -198,8 +198,8 @@ public class CommonUtil {
         }
         return atm;
     }
-    public int findATMTick(int currentValue,String index) {
-        int atm=0;
+    public long findATMTick(int currentValue,String index) {
+        long atm=0;
         if("FN".equals(index)|| "NF".equals(index)){
             atm= (int) Math.round(currentValue / 50.0) * 50;
         }else if("MC".equals(index)) {

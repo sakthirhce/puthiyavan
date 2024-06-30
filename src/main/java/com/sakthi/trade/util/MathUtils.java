@@ -7,6 +7,7 @@ import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.domain.strategy.StrikeSelectionType;
 import com.sakthi.trade.domain.strategy.TradeValidity;
 import com.sakthi.trade.entity.TradeStrategy;
+import com.sakthi.trade.zerodha.ExpiryDayDetails;
 import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.zerodha.ZerodhaTransactionService;
 import com.sakthi.trade.zerodha.account.Expiry;
@@ -39,6 +40,8 @@ public class MathUtils {
     ZerodhaTransactionService zerodhaTransactionService;
     SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
 
+    @Autowired
+    ExpiryDayDetails expiryDayDetails;
     /**
      * Simple Moving Average
      */
@@ -636,7 +639,7 @@ public class MathUtils {
         String index = strategy.getIndex();
         Map<String, Map<String, StrikeData>> strikeMasterMap = strikeData(index,currentDate,strategy.getTradeValidity());
         int atmStrike = commonUtil.findATM((int) close,index);
-        System.out.println("atmStrike:"+atmStrike);
+        LOGGER.info("atmStrike:"+atmStrike);
         if (strikeSelectionType.equals(StrikeSelectionType.ATM.getType())) {
             Map<String, Map<String, StrikeData>> stringMapMap = new HashMap<>();
             Map<String, StrikeData> strikeDataMap1 = strikeMasterMap.get(String.valueOf(atmStrike));

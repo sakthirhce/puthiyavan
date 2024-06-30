@@ -2,7 +2,9 @@ package com.sakthi.trade.zerodha;
 
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 @Component
 public class ExpiryDayDetails {
@@ -20,5 +22,6 @@ public class ExpiryDayDetails {
     public long niftyCurrentAtmValue;
     public long bankNiftyCurrentAtmValue;
     public long sensexCurrentAtmValue;
-
+    public Map<Long,String> indexIdList = new HashMap<>();
+    public Map<Long, Long> currentATMList = new HashMap<>();;
 }

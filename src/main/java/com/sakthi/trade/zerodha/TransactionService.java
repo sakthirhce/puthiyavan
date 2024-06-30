@@ -31,8 +31,8 @@ public class TransactionService {
     @Qualifier("createOkHttpClient")
     OkHttpClient okHttpClient;
     TokenBucket tokenBucket = new TokenBucket(5, 5, 1000);
-/*    @Autowired
-    WebSocketTicksSedaProcessor webSocketTicksSedaProcessor;*/
+    /*    @Autowired
+        WebSocketTicksSedaProcessor webSocketTicksSedaProcessor;*/
     @Autowired
     GlobalContextCache globalContextCache;
 
@@ -183,15 +183,15 @@ public class TransactionService {
         watch1.start();
         String responseStr = globalContextCache.getHistoricData(time, stockId);
         try {
-            if (tickData!=null && tickData.tickCurrentPrice != null) {
-                Map<String,Double> tickPriceMap=tickData.tickCurrentPrice.get(stockId);
-                if (tickPriceMap!=null){
-                    double tickPrice =tickPriceMap.get(time);
-                    LOGGER.info("websocket time:"+time+" price:"+tickPrice);
+            if (tickData != null && tickData.tickCurrentPrice != null) {
+                Map<String, Double> tickPriceMap = tickData.tickCurrentPrice.get(stockId);
+                if (tickPriceMap != null) {
+                    double tickPrice = tickPriceMap.get(time);
+                    LOGGER.info("websocket time:" + time + " price:" + tickPrice);
                 }
             }
         } catch (Exception e) {
-            LOGGER.error("error while getting websocket price:"+e.getMessage());
+            LOGGER.error("error while getting websocket price:" + e.getMessage());
             e.printStackTrace();
         }
         try {
@@ -214,7 +214,7 @@ public class TransactionService {
             e.printStackTrace();
         }
         watch1.stop();
-        //     LOGGER.info("Total time taken for api call in millisecs: "+ watch1.getTotalTimeMillis());
+        LOGGER.info("Total time taken for api call in millisecond: {}", watch1.getTotalTimeMillis());
         return responseStr;
     }
 

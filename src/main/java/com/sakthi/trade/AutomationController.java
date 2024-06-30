@@ -9,6 +9,7 @@ import com.sakthi.trade.entity.*;
 import com.sakthi.trade.futures.banknifty.BNFFuturesTrendFollowing;
 import com.sakthi.trade.options.OptionDayViceTest;
 import com.sakthi.trade.seda.WebSocketTicksSedaProcessor;
+import com.sakthi.trade.service.ZerodhaWebsocket;
 import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.mapper.TradeDataMapper;
 import com.sakthi.trade.options.WeeklyDataBackup;
@@ -934,22 +935,24 @@ NiftyOptionBuy935 niftyOptionBuy935;
        // expBuy.buy();
 
     }
+    @Autowired
+    ZerodhaWebsocket zerodhaWebsocket;
     @GetMapping("/triggerWebsocket")
     public void tickerInitialize() throws Exception, KiteException {
-        tradeEngine.tickerInitialize();
-        tradeEngine.addStriketoWebsocket(Long.parseLong("65611015"));
+        zerodhaWebsocket.tickerInitialize();
+        zerodhaWebsocket.addStriketoWebsocket(Long.parseLong("65611015"));
 
     }
     @GetMapping("/triggerWebsocket1")
     public void tickerInitialize1() throws Exception, KiteException {
      //   tradeEngine.tickerInitialize();
-        tradeEngine.addStriketoWebsocket(Long.parseLong("63590407"));
+        zerodhaWebsocket.addStriketoWebsocket(Long.parseLong("63590407"));
 
     }
     @GetMapping("/tickExport")
     public void tickExport() throws Exception, KiteException {
         //   tradeEngine.tickerInitialize();
-        tradeEngine.tickExport();
+        zerodhaWebsocket.tickExport();
 
     }
 

@@ -84,4 +84,6 @@ public class TradeStrategy {
     String tempSlType;
     BigDecimal tempSlValue;
     boolean hedge;
+    @Column(name="freak_sl_place")
+    boolean freakSlPlace;
 }
