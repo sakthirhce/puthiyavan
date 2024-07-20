@@ -28,7 +28,7 @@ public class TradeData {
     String sellTime;
     String slTime;
     String reverseSlTime;
-    int stockId;
+    int zerodhaStockId;
     BigDecimal slPercentage;
     String userId;
     String zerodhaExchangeId;
@@ -51,6 +51,8 @@ public class TradeData {
     BigDecimal slPrice;
     BigDecimal initialSLPrice;
     BigDecimal targetPrice;
+    boolean targetOrderPlaced;
+    String targetOrderId;
     BigDecimal slTradedPrice;
     String reverseSLOrderId;
     String entryType;

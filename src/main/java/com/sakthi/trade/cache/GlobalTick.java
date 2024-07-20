@@ -9,5 +9,6 @@ import java.util.Map;
 
 @Data
 public class GlobalTick {
-    List<Double> historicalDataMap=new ArrayList<>();
+    public static final int MAX_SIZE = 100;
+    List<Double> historicalDataMap=new ArrayList<>(MAX_SIZE);
 }

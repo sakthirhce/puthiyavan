@@ -4,6 +4,7 @@ import com.sakthi.trade.TradeEngine;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.entity.TradeStrategy;
 import com.sakthi.trade.seda.TradeSedaQueue;
+import com.sakthi.trade.service.RangeExecution;
 import com.sakthi.trade.util.MathUtils;
 import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.zerodha.account.StrikeData;
@@ -27,16 +28,20 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-
+import com.sakthi.trade.service.TradingStrategyAndTradeData;
 @RunWith(SpringJUnit4ClassRunner.class)
 public class TradeEngineTest {
 
     @InjectMocks
     TradeEngine tradeEngine;
+    @InjectMocks
+    TradingStrategyAndTradeData tradingStrategyAndTradeData;
 
     @Mock
     TransactionService transactionService;
 
+    @InjectMocks
+    RangeExecution rangeExecution;
     @Mock
     TradeSedaQueue tradeSedaQueue;
 
@@ -52,6 +57,7 @@ public class TradeEngineTest {
         tradeEngine.userList=  userList;
         tradeEngine.transactionService=transactionService;
         tradeEngine.tradeSedaQueue=tradeSedaQueue;
+        tradeEngine.tradingStrategyAndTradeData=tradingStrategyAndTradeData;
         MockitoAnnotations.openMocks(this);
     }
 
@@ -64,7 +70,7 @@ public class TradeEngineTest {
 
         TradeData tradeData = new TradeData();
         tradeData.setSlPrice(new BigDecimal(100));
-        tradeData.setStockId(12345);
+        tradeData.setZerodhaStockId(12345);
         tradeData.isOrderPlaced =true;
         tradeData.setUserId("LTK728");
         tradeData.isSlPlaced=true;
@@ -77,7 +83,7 @@ public class TradeEngineTest {
         tradeData.setTradeStrategy(tradeStrategy);
         tradeDataList.add(tradeData);
         openTrade.put("userId", tradeDataList);
-        tradeEngine.openTrade=openTrade;
+        tradingStrategyAndTradeData.openTrade=openTrade;
         // When
         tradeEngine.candleMonitor();
 
@@ -94,13 +100,13 @@ public class TradeEngineTest {
         List<TradeData> tradeDataList = new ArrayList<>();
         TradeData tradeData = new TradeData();
         tradeData.setSlPrice(new BigDecimal(100));
-        tradeData.setStockId(12345);
+        tradeData.setZerodhaStockId(12345);
         TradeStrategy tradeStrategy = new TradeStrategy();
         tradeStrategy.setWebsocketSlEnabled(false);
         tradeData.setTradeStrategy(tradeStrategy);
         tradeDataList.add(tradeData);
         openTrade.put("userId", tradeDataList);
-        tradeEngine.openTrade=openTrade;
+        tradingStrategyAndTradeData.openTrade=openTrade;
 
         // When
         tradeEngine.candleMonitor();
@@ -118,14 +124,14 @@ public class TradeEngineTest {
         List<TradeData> tradeDataList = new ArrayList<>();
         TradeData tradeData = new TradeData();
         tradeData.setSlPrice(new BigDecimal(100));
-        tradeData.setStockId(12345);
+        tradeData.setZerodhaStockId(12345);
         TradeStrategy tradeStrategy = new TradeStrategy();
         tradeStrategy.setWebsocketSlEnabled(true);
         tradeData.setTradeStrategy(tradeStrategy);
         tradeData.setWebsocketSlModified(true);
         tradeDataList.add(tradeData);
         openTrade.put("userId", tradeDataList);
-        tradeEngine.openTrade=openTrade;
+        tradingStrategyAndTradeData.openTrade=openTrade;
 
         // When
         tradeEngine.candleMonitor();
@@ -161,7 +167,7 @@ public class TradeEngineTest {
                     .thenReturn(rangeStrikes);
 
             // When
-            tradeEngine.rangeBreakOptions(strategy, historicalData, currentDateStr, currentHourMinStr, candleHourMinStr, lastHistoricalData, index);
+            rangeExecution.rangeBreakOptions(strategy, historicalData, currentDateStr, currentHourMinStr, candleHourMinStr, lastHistoricalData, index);
 
             // Then
             verify(mathUtils, times(1)).strikeSelection(anyString(), any(TradeStrategy.class), anyDouble(), anyString());
@@ -185,7 +191,7 @@ public class TradeEngineTest {
                     .thenThrow(new RuntimeException());
 
             // When
-            tradeEngine.rangeBreakOptions(strategy, historicalData, currentDateStr, currentHourMinStr, candleHourMinStr, lastHistoricalData, index);
+            rangeExecution.rangeBreakOptions(strategy, historicalData, currentDateStr, currentHourMinStr, candleHourMinStr, lastHistoricalData, index);
 
             // Then
             verify(mathUtils, times(1)).strikeSelection(anyString(), any(TradeStrategy.class), anyDouble(), anyString());
@@ -202,7 +208,7 @@ public class TradeEngineTest {
 
         TradeData tradeData = new TradeData();
         tradeData.setSlPrice(new BigDecimal(100));
-        tradeData.setStockId(12345);
+        tradeData.setZerodhaStockId(12345);
         tradeData.isOrderPlaced = true;
         tradeData.setUserId("LTK728");
         tradeData.isSlPlaced = true;
@@ -213,10 +219,10 @@ public class TradeEngineTest {
 
         tradeDataList.add(tradeData);
         openTrade.put("userId", tradeDataList);
-        tradeEngine.openTrade = openTrade;
+        tradingStrategyAndTradeData.openTrade = openTrade;
 
         // When
-        tradeEngine.slImmediate();
+        tradeEngine.slImmediateAndTarget();
 
         // Then
         verify(transactionService, times(0)).callAPI(any(), any(), any());
@@ -229,10 +235,10 @@ public class TradeEngineTest {
         // Given
         Map<String, List<TradeData>> openTrade = new HashMap<>();
         List<TradeData> tradeDataList = new ArrayList<>();
-
+        tradeEngine.tradingStrategyAndTradeData=tradingStrategyAndTradeData;
         TradeData tradeData = new TradeData();
         tradeData.setSlPrice(new BigDecimal(100));
-        tradeData.setStockId(12345);
+        tradeData.setZerodhaStockId(12345);
         tradeData.isOrderPlaced = true;
         tradeData.setUserId("LTK728");
         tradeData.isSlPlaced = false;
@@ -243,10 +249,10 @@ public class TradeEngineTest {
 
         tradeDataList.add(tradeData);
         openTrade.put("userId", tradeDataList);
-        tradeEngine.openTrade = openTrade;
+        tradingStrategyAndTradeData.openTrade = openTrade;
 
         // When
-        tradeEngine.slImmediate();
+        tradeEngine.slImmediateAndTarget();
 
         // Then
         verify(transactionService, never()).callAPI(any(), any(), any());
@@ -262,7 +268,7 @@ public class TradeEngineTest {
 
         TradeData tradeData = new TradeData();
         tradeData.setSlPrice(new BigDecimal(100));
-        tradeData.setStockId(12345);
+        tradeData.setZerodhaStockId(12345);
         tradeData.isOrderPlaced = false;
         tradeData.setUserId("LTK728");
         tradeData.isSlPlaced = true;
@@ -273,10 +279,10 @@ public class TradeEngineTest {
 
         tradeDataList.add(tradeData);
         openTrade.put("userId", tradeDataList);
-        tradeEngine.openTrade = openTrade;
+        tradingStrategyAndTradeData.openTrade = openTrade;
 
         // When
-        tradeEngine.slImmediate();
+        tradeEngine.slImmediateAndTarget();
 
         // Then
         verify(transactionService, never()).callAPI(any(), any(), any());

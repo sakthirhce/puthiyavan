@@ -22,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
@@ -140,7 +139,7 @@ public class BNFFuturesTrendFollowing {
                                     trendTradeData.setBuyPrice(longTrigger);
                                     trendTradeData.setEntryType("BUY");
                                     trendTradeData.isOrderPlaced = true;
-                                    trendTradeData.setStockId(Integer.parseInt(futuresValue));
+                                    trendTradeData.setZerodhaStockId(Integer.parseInt(futuresValue));
                                     // mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
                                     sendMessage.sendToTelegram("Placed BUY order for: " + trendTradeData.getStockName() + ":" + futuresName + "-BUY" + ":" + user.getName() + ":" + getAlgoName(), telegramToken);
                                 } catch (Exception e) {
@@ -192,7 +191,7 @@ public class BNFFuturesTrendFollowing {
                                     trendTradeData.setEntryType("SELL");
                                     trendTradeData.setSellPrice(longTrigger);
                                     trendTradeData.isOrderPlaced = true;
-                                    trendTradeData.setStockId(Integer.parseInt(futuresValue));
+                                    trendTradeData.setZerodhaStockId(Integer.parseInt(futuresValue));
                                     // mapTradeDataToSaveOpenTradeDataEntity(trendTradeData);
                                     sendMessage.sendToTelegram("Placed Condition Sell order for: " + trendTradeData.getStockName() + ":" + futuresName + "-SELL" + ":" + user.getName() + ":" + getAlgoName(), telegramToken);
                                 } catch (Exception | KiteException e) {
@@ -700,7 +699,7 @@ public class BNFFuturesTrendFollowing {
             openTradeDataEntity.setSlPercentage(tradeData.getSlPercentage());
             openTradeDataEntity.setEntryOrderId(tradeData.getEntryOrderId());
             openTradeDataEntity.setSlOrderId(tradeData.getSlOrderId());
-            openTradeDataEntity.setStockId(tradeData.getStockId());
+            openTradeDataEntity.setZerodhaStockId(tradeData.getZerodhaStockId());
             Date date = new Date();
             if(orderPlaced) {
                 String tradeDate = format.format(date);

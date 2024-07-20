@@ -10,7 +10,9 @@ public enum Expiry {
     MC_CURRENT("MC_CURRENT"),
     MC_NEXT("MC_NEXT"),
     SS_CURRENT("SS_CURRENT"),
-    SS_NEXT("SS_NEXT");
+    SS_NEXT("SS_NEXT"),
+    BANKEX_CURRENT("BANKEX_CURRENT"),
+    BANKEX_NEXT("BANKEX_NEXT");
     public String expiryName;
     private Expiry(String expiryName){
         this.expiryName=expiryName;

@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
@@ -228,7 +227,7 @@ public class NiftyOptionBuy935 {
                                         tradeData.setQty(50 * qty.get());
                                         tradeData.setEntryType("BUY");
                                         tradeData.setUserId(user.getName());
-                                        tradeData.setStockId(Integer.parseInt(atmNiftyStrikeMap.getValue().getZerodhaId()));
+                                        tradeData.setZerodhaStockId(Integer.parseInt(atmNiftyStrikeMap.getValue().getZerodhaId()));
                                         tradeData.setBuyPrice(BigDecimal.valueOf(triggerPriceAtomic.get()));
                                         tradeData.setBuyTradedPrice(BigDecimal.valueOf(triggerPriceAtomic.get()));
                                         if(user.getBroker().equals("dhan")){
@@ -878,7 +877,7 @@ public class NiftyOptionBuy935 {
             openTradeDataEntity.setSlPercentage(tradeData.getSlPercentage());
             openTradeDataEntity.setEntryOrderId(tradeData.getEntryOrderId());
             openTradeDataEntity.setSlOrderId(tradeData.getSlOrderId());
-            openTradeDataEntity.setStockId(tradeData.getStockId());
+            openTradeDataEntity.setZerodhaStockId(tradeData.getZerodhaStockId());
             Date date = new Date();
             if(orderPlaced) {
                 String tradeDate = format.format(date);

@@ -58,7 +58,7 @@ public class DhanWorker implements BrokerWorker {
 
          */
 
-        JSONObject params = new JSONObject();
+        org.json.JSONObject params = new org.json.JSONObject();
         if (tradeData.getStrikeId() != null) {
             params.put("securityId", tradeData.getStrikeId());
         }

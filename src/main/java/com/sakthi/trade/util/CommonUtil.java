@@ -185,7 +185,7 @@ public class CommonUtil {
             atm= (int) Math.round(currentValue / 50.0) * 50;
         }else if("MC".equals(index)) {
             atm= (int) Math.round(currentValue / 25.0) * 25;
-        }else if("BNF".equals(index)|| "SS".equals(index)){
+        }else if("BNF".equals(index)|| "SS".equals(index)||"BNX".equals(index)){
             int a = (currentValue / 100) * 100;
             int b = a + 100;
             atm= (currentValue - a > b - currentValue) ? b : a;

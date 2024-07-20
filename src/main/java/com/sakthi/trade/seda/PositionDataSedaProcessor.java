@@ -82,7 +82,7 @@ public class PositionDataSedaProcessor implements Processor {
                     if (userId.equals(user.getName())) {
                         List<TradeData> tradeDataList = userTradeData.getValue();
                         tradeDataList.forEach(tradeData -> {
-                            Optional<Tick> tickOp = ticks.stream().filter(tickTemp -> tickTemp.getInstrumentToken() == tradeData.getStockId()).findFirst();
+                            Optional<Tick> tickOp = ticks.stream().filter(tickTemp -> tickTemp.getInstrumentToken() == tradeData.getZerodhaStockId()).findFirst();
                             if (tickOp.isPresent()) {
                                 Tick tick = tickOp.get();
                                 TradeStrategy strategy = tradeData.getTradeStrategy();

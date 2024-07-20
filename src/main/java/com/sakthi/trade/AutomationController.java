@@ -1,5 +1,6 @@
 package com.sakthi.trade;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.opencsv.CSVWriter;
@@ -9,6 +10,7 @@ import com.sakthi.trade.entity.*;
 import com.sakthi.trade.futures.banknifty.BNFFuturesTrendFollowing;
 import com.sakthi.trade.options.OptionDayViceTest;
 import com.sakthi.trade.seda.WebSocketTicksSedaProcessor;
+import com.sakthi.trade.service.TradeEngineCleanUp;
 import com.sakthi.trade.service.ZerodhaWebsocket;
 import com.sakthi.trade.zerodha.TransactionService;
 import com.sakthi.trade.mapper.TradeDataMapper;
@@ -16,8 +18,6 @@ import com.sakthi.trade.options.WeeklyDataBackup;
 import com.sakthi.trade.options.banknifty.*;
 import com.sakthi.trade.options.nifty.buy.*;
 import com.sakthi.trade.repo.*;
-import com.sakthi.trade.telegram.DataBot;
-import com.sakthi.trade.telegram.TelegramMessenger;
 import com.sakthi.trade.truedata.HistoricRequestDTO;
 import com.sakthi.trade.util.MathUtils;
 import com.sakthi.trade.util.ZippingDirectory;
@@ -38,8 +38,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import javax.websocket.Session;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -60,59 +58,20 @@ import java.util.logging.Logger;
 @Slf4j
 public class AutomationController {
     Gson gson=new Gson();
-    public Session session = null;
-    public Boolean trendCompleted = false;
-    @Value("${filepath.trend}")
-    String trendPath;
-    /* @Autowired
-     OrbScheduler orbScheduler;*/
-    @Value("${fyers.order.place.api}")
-    String orderPlaceURL;
-    String truedataURL = null;
-    @Value("${telegram.orb.bot.token}")
-    String telegramToken;
-    @Value("${fyers.get.order.status.api}")
-    String orderStatusAPIUrl;
-    @Autowired
     ZerodhaTransactionService instrumentService;
     @Autowired
     TransactionService transactionService;
-    @Autowired
-    TelegramMessenger sendMessage;
 
-    @Autowired
-    DataBot dataBot;
-    /*@Autowired
-    HistoricWebsocket historicWebsocket;*/
- /*
-    @Autowired
-    BankNIftyStraddleLongBackTest bankNIftyStraddleLongBackTest;*/
     @Autowired
     ZerodhaBankNiftyShortStraddle zerodhaBankNiftyShortStraddle;
     @Value("${preoopen.filepath:/home/hasvanth/Downloads/PreOpen_FO_}")
     String preOpenFile;
-/*
 
-    @Autowired
-    TrendScheduler trendScheduler;
-*/
-
-   /* @Autowired
-    BankNiftyShortStraddle bankNiftyShortStraddle;*/
-
-   /* @Autowired
-    NiftyShortStraddle niftyShortStraddle;*/
     @Value("${secban.filepath:/home/hasvanth/Downloads/}")
     String secBan;
     @Autowired
     ZerodhaAccount zerodhaAccount;
 
-
-    /*@Autowired
-    VwapRsiOiVolumeBuy vwapRsiOiVolumeBuy;*/
-
-    @Autowired
-    ZerodhaTransactionService ztransactionService;
 
 
     @Autowired
@@ -120,12 +79,6 @@ public class AutomationController {
 
     @Autowired
     WeeklyDataBackup weeklyDataBackup;
- /*   @Autowired
-    FyerTrendTest fyerTrendTest;*/
-    @Autowired
-    StockRepository stockRepository;
-    @Autowired
-    IndexRepository indexRepository;
     @Autowired
     BankNiftyOptionRepository bankNiftyOptionRepository;
     @Autowired
@@ -228,7 +181,7 @@ MathUtils mathUtils;
                 tradeData.setEntryType(order.transactionType);
                 tradeData.setOrderPlaced(true);
                 tradeData.setQty(Integer.parseInt(order.quantity));
-                tradeData.setStockId(Integer.parseInt(addTrade.getStockId()));
+                tradeData.setZerodhaStockId(Integer.parseInt(addTrade.getStockId()));
                 if("BUY".equals(order.transactionType)){
                     if("SL".equals(order.orderType)){
                         tradeData.setBuyPrice(new BigDecimal(order.price));
@@ -331,7 +284,7 @@ MathUtils mathUtils;
             openTradeDataEntity.setSlPercentage(tradeData.getSlPercentage());
             openTradeDataEntity.setEntryOrderId(tradeData.getEntryOrderId());
             openTradeDataEntity.setSlOrderId(tradeData.getSlOrderId());
-            openTradeDataEntity.setStockId(tradeData.getStockId());
+            openTradeDataEntity.setZerodhaStockId(tradeData.getZerodhaStockId());
             Date date = new Date();
             if(orderPlaced) {
                 String tradeDate = format.format(date);
@@ -386,11 +339,12 @@ NiftyOptionBuy935 niftyOptionBuy935;
         //       zippingDirectory.test();
 
     }
+    @Autowired
+    TradeEngineCleanUp tradeEngineCleanUp;
     @GetMapping("/plReport")
     public void plReport() throws Exception {
-        tradeEngine.TableToImage();
+        tradeEngineCleanUp.TableToImage();
         //       zippingDirectory.test();
-
     }
     @GetMapping("/sendLog")
     public void sendLog() throws Exception {
@@ -415,6 +369,16 @@ NiftyOptionBuy935 niftyOptionBuy935;
         /*  });*/
 
     }
+    @GetMapping("/loadMISPositions")
+    public void loadMISPositions() throws Exception, KiteException {
+
+       /* List<StockEntity> stockEntityList=stockRepository.findAll();
+        stockEntityList.forEach(stockEntity -> {*/
+        tradeEngine.loadMISPositions();
+        /*  });*/
+
+    }
+
 
     @GetMapping("/cncSlCode")
     public void executeCNCSL() throws Exception, KiteException {
@@ -641,7 +605,7 @@ NiftyOptionBuy935 niftyOptionBuy935;
             try {
 
                 String stockId = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
-                // stockId = "260105";
+                // zerodhaStockId = "260105";
                 String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + startDate + "+00:00:00&to=" + df1.format(startDate) + "+23:59:59";
                 String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                 HistoricalData historicalData = new HistoricalData();
@@ -771,7 +735,7 @@ NiftyOptionBuy935 niftyOptionBuy935;
             try {
 
                 String stockId = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
-                // stockId = "260105";
+                // zerodhaStockId = "260105";
                 String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/3minute?from=" + startDate + "+00:00:00&to=" + df1.format(startDate) + "+23:59:59";
                 String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                 HistoricalData historicalData = new HistoricalData();
@@ -1074,15 +1038,69 @@ NiftyOptionBuy935 niftyOptionBuy935;
     TradeUserRepository tradeUserRepository;
     @Autowired
     TradeStrategyRepo tradeStrategyRepo;
-    @GetMapping("/saveStrategy")
-    public ResponseEntity<?> saveStrategy(@RequestBody String payload) throws Exception {
-        List<TradeStrategy> tradeStrategies=gson.fromJson(payload, new TypeToken<List<TradeStrategy>>(){}.getType());
-        System.out.println(gson.toJson(tradeStrategies));
-        tradeStrategyRepo.saveAll(tradeStrategies);
-        tradeStrategyRepo.flush();
-        return new ResponseEntity<>(null,HttpStatus.OK);
-    }
 
+    @Autowired
+    UserSubscriptionRepo userSubscriptionRepo;
+    @PostMapping("/saveStrategy")
+    public ResponseEntity<?> saveStrategy(@RequestBody String payload) throws Exception {
+        System.out.println(payload);
+        TradeStrategy tradeStrategies=gson.fromJson(payload, TradeStrategy.class);
+        String tradeStrategyKey=tradeStrategies.getIndex()+"-"+tradeStrategies.getOrderType()+"-"+tradeStrategies.getTradeValidity();
+        if(!tradeStrategies.isSimpleMomentum()){
+            tradeStrategyKey=tradeStrategyKey+"-WT-"+tradeStrategies.getSimpleMomentumValue();
+        }
+        if(!tradeStrategies.isRangeBreak()){
+            tradeStrategyKey=tradeStrategyKey+"-RANGE-"+tradeStrategies.getRangeBreakInstrument()+"-"+tradeStrategies.getRangeStartTime()+"-"+tradeStrategies.getRangeBreakTime();
+        }else {
+            tradeStrategyKey=tradeStrategyKey+"-"+tradeStrategies.getEntryTime();
+        }
+        String userList=getAttributeFromJson(payload,"selectUser");
+        String[] splitUser=userList.split(",");
+        if (splitUser.length==0){
+            return new ResponseEntity<String>("user subscription missing",HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        if (tradeStrategies.getTradeDays()==null || tradeStrategies.getTradeDays().isEmpty()){
+
+            return new ResponseEntity<String>("trade days not selected",HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        if(tradeStrategies.getLotSize()==0){
+            return new ResponseEntity<String>("lot size should be greater than 0",HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        if(!tradeStrategies.isNoSl()){
+            tradeStrategyKey=tradeStrategyKey+"-SL-"+tradeStrategies.getSlValue();
+        }else {
+            tradeStrategyKey=tradeStrategyKey+"NO-SL";
+        }
+        tradeStrategies.setTradeStrategyKey(tradeStrategyKey);
+        TradeStrategy tradeStrategy=tradeStrategyRepo.getStrategyByStrategyKey(tradeStrategyKey);
+        if (tradeStrategy!=null && tradeStrategyKey.equals(tradeStrategy.getTradeStrategyKey())){
+            return new ResponseEntity<String>("strategy already exist with key:"+tradeStrategyKey,HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        String tradeStrategyKeyFinal= tradeStrategyKey;
+        int lotsizeu=tradeStrategies.getLotSize();
+        tradeStrategies.setLotSize(1);
+        System.out.println(gson.toJson(tradeStrategies));
+        tradeStrategyRepo.save(tradeStrategies);
+        tradeStrategyRepo.flush();
+        Arrays.stream(splitUser).forEach(user->{
+            UserSubscription userSubscription=new UserSubscription();
+            userSubscription.setTradeStrategyKey(tradeStrategyKeyFinal);
+            userSubscription.setUserSubscriptionKey(tradeStrategyKeyFinal+"-"+user);
+            userSubscription.setUserId(user);
+            userSubscription.setLotSize(lotsizeu);
+            userSubscriptionRepo.save(userSubscription);
+            userSubscriptionRepo.flush();
+
+        });
+        LOGGER.info("Successfully saved strategy with key:"+tradeStrategyKey);
+        return new ResponseEntity<String>("Successfully saved strategy with key:"+tradeStrategyKey,HttpStatus.OK);
+    }
+    public static String getAttributeFromJson(String jsonString, String attributeName) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode jsonNode = objectMapper.readTree(jsonString);
+        return jsonNode.get(attributeName).asText();
+    }
     @Autowired
     OptionDayViceTest optionDayViceTest;
     @GetMapping("/dayTrade")
@@ -1200,7 +1218,7 @@ NiftyOptionBuy935 niftyOptionBuy935;
                     tradeData.setSlPercentage(tradeDataEntity.getSlPercentage());
                     tradeData.setEntryOrderId(tradeDataEntity.getEntryOrderId());
                     tradeData.setSlOrderId(tradeDataEntity.getSlOrderId());
-                    tradeData.setStockId(tradeDataEntity.getStockId());
+                    tradeData.setZerodhaStockId(tradeDataEntity.getStockId());
                     tradeData.setTradeDate(tradeDataEntity.getTradeDate());
                     tradeDataList.add(tradeData);
                 } catch (Exception e) {

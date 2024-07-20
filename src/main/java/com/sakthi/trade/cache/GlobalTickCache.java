@@ -10,11 +10,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.List;
 
 @Component
 @Slf4j
 public class GlobalTickCache {
-    private Cache<Integer,GlobalTick> globalTickCache;
+    public Cache<Integer,GlobalTick> globalTickCache;
     public static final Logger LOGGER = LoggerFactory.getLogger(GlobalTickCache.class.getName());
     @PostConstruct
     private void initCache(){
@@ -43,15 +44,22 @@ public class GlobalTickCache {
         synchronized (String.valueOf(stockId)) {
             GlobalTick globalContext = globalTickCache.getIfPresent(stockId);
             if (globalContext != null) {
-                globalContext.historicalDataMap.add(tickData);
+                add(tickData,globalContext);
                 globalTickCache.put(stockId,globalContext);
             } else {
                 globalContext=new GlobalTick();
-                globalContext.historicalDataMap.add(tickData);
+                add(tickData,globalContext);
                 globalTickCache.put(stockId,globalContext);
             }
         }
     }
+    public void add(double item, GlobalTick globalTick) {
+        if (globalTick.historicalDataMap.size() >= GlobalTick.MAX_SIZE) {
+            globalTick.historicalDataMap.remove(0);
+        }
+        globalTick.historicalDataMap.add(item);
+    }
+
 
 
 }

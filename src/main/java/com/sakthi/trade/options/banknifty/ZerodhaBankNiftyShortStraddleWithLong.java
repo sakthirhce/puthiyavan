@@ -186,7 +186,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                         tradeData.setQty(25 * qty.get());
                                         tradeData.setEntryType("SELL");
                                         tradeData.setUserId(user.getName());
-                                        tradeData.setStockId(Integer.valueOf(atmBankStrikeMap.getValue()));
+                                        tradeData.setZerodhaStockId(Integer.valueOf(atmBankStrikeMap.getValue()));
                                         mapTradeDataToSaveOpenTradeDataEntity(tradeData,true);
                                         sendMessage.sendToTelegram("Straddle option sold for user:" + user.getName() + " strike: " + atmBankStrikeMap.getKey()+":"+getAlgoName(), telegramTokenGroup, "-646157933");
                                     } catch (KiteException e) {
@@ -255,9 +255,9 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                     String currentDate = format.format(date);
                                                     BigDecimal triggerPrice = ((new BigDecimal(order.averagePrice).divide(new BigDecimal(5))).add(new BigDecimal(order.averagePrice))).setScale(0, RoundingMode.HALF_UP);
                                                     AtomicDouble triggerPriceAtomic = new AtomicDouble();
-                                                   // if (slPrice.get(trendTradeData.getStockId()) == null) {
+                                                   // if (slPrice.get(trendTradeData.getZerodhaStockId()) == null) {
                                                         try {
-                                                            String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
+                                                            String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getZerodhaStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
                                                             String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
                                                             System.out.print(response);
                                                             HistoricalData historicalData = new HistoricalData();
@@ -276,8 +276,8 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                                             BigDecimal triggerPriceTemp = (MathUtils.percentageValueOfAmount(slPercent, new BigDecimal(historicalData1.close)).add(new BigDecimal(historicalData1.close))).setScale(0, RoundingMode.HALF_UP);
                                                                             trendTradeData.setSellPrice(new BigDecimal(historicalData1.close));
                                                                             triggerPriceAtomic.addAndGet(triggerPriceTemp.doubleValue());
-                                                                          //  slPrice.put(trendTradeData.getStockId(), triggerPriceTemp);
-                                                                            LOGGER.info("setting sl price based on 9:34 close :" + trendTradeData.getStockId() + ":" + triggerPriceTemp);
+                                                                          //  slPrice.put(trendTradeData.getZerodhaStockId(), triggerPriceTemp);
+                                                                            LOGGER.info("setting sl price based on 9:34 close :" + trendTradeData.getZerodhaStockId() + ":" + triggerPriceTemp);
                                                                         }
                                                                     } catch (ParseException e) {
                                                                         throw new RuntimeException(e);
@@ -394,7 +394,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                 BigDecimal triggerPrice = ((new BigDecimal(order.averagePrice).divide(new BigDecimal(5))).add(new BigDecimal(order.averagePrice))).setScale(0, RoundingMode.HALF_UP);
                                                 AtomicDouble triggerPriceAtomic = new AtomicDouble();
                                                 try {
-                                                    String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
+                                                    String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getZerodhaStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
                                                     String response = transactionService.callAPI(transactionService.createZerodhaGetRequestWithoutLog(historicURL));
                                                     System.out.print(response);
                                                     HistoricalData historicalData = new HistoricalData();
@@ -411,7 +411,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                                     BigDecimal triggerPriceTemp = (MathUtils.percentageValueOfAmount(slPercent, new BigDecimal(historicalData1.close)).add(new BigDecimal(historicalData1.close))).setScale(0, RoundingMode.HALF_UP);
                                                                     trendTradeData.setSellPrice(new BigDecimal(historicalData1.close));
                                                                     triggerPriceAtomic.addAndGet(triggerPriceTemp.doubleValue());
-                                                                    LOGGER.info("setting sl price based on 9:34 close :" + trendTradeData.getStockId() + ":" + triggerPriceTemp);
+                                                                    LOGGER.info("setting sl price based on 9:34 close :" + trendTradeData.getZerodhaStockId() + ":" + triggerPriceTemp);
                                                                 }
                                                             } catch (ParseException e) {
                                                                 throw new RuntimeException(e);
@@ -423,7 +423,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                 }
                                            */
 /* } else {
-                                                triggerPrice = slPrice.get(trendTradeData.getStockId());
+                                                triggerPrice = slPrice.get(trendTradeData.getZerodhaStockId());
                                             }*//*
 
                                                 if (triggerPriceAtomic.get() > 0) {
@@ -552,7 +552,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                                     doubleToptradeData.isSlPlaced = true;
                                                                     doubleToptradeData.setBuyPrice(trendTradeData.getSlPrice());
                                                                     doubleToptradeData.setBuyTradedPrice(new BigDecimal(order.averagePrice));
-                                                                    doubleToptradeData.setStockId(trendTradeData.getStockId());
+                                                                    doubleToptradeData.setZerodhaStockId(trendTradeData.getZerodhaStockId());
                                                                     doubleToptradeData.setSlPrice(triggerPriceTemp);
                                                                     doubleToptradeData.setQty(trendTradeData.getQty());
                                                                     doubleToptradeData.setSlOrderId(orderd.orderId);
@@ -629,7 +629,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                 Date date = new Date();
                                 SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
                                 String currentDate = format.format(date);
-                                String historicURL = "https://api.kite.trade/instruments/historical/" + tradeData.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
+                                String historicURL = "https://api.kite.trade/instruments/historical/" + tradeData.getZerodhaStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
                                 String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                                 System.out.print(tradeData.getStockName() + " history api response:" + response);
 
@@ -717,7 +717,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                             try {
 
 
-                                String historicURL = "https://api.kite.trade/instruments/historical/" + openTradeDataEntity.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
+                                String historicURL = "https://api.kite.trade/instruments/historical/" + openTradeDataEntity.getZerodhaStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
                                 String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                              //   System.out.print(openTradeDataEntity.getStockName() + " history api response:" + response);
                                 HistoricalData historicalData = new HistoricalData();
@@ -738,7 +738,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                 } else {
                                                     openTradeDataEntity.setBuyPrice(new BigDecimal(orderr.averagePrice));
                                                 }
-                                                LOGGER.info("setting  9:34 exit :" + openTradeDataEntity.getStockId() + ":" + historicalData1.close);
+                                                LOGGER.info("setting  9:34 exit :" + openTradeDataEntity.getZerodhaStockId() + ":" + historicalData1.close);
                                             }
                                         } catch (ParseException e) {
                                             throw new RuntimeException(e);
@@ -892,7 +892,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                 SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
                                 String currentDate = format.format(date);
                                 try {
-                                    String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:11:00";
+                                    String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getZerodhaStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:11:00";
                                     String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                                     System.out.print(trendTradeData.getStockName() + " history api 3:10 response:" + response);
                                     HistoricalData historicalData = new HistoricalData();
@@ -1009,7 +1009,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                                 LOGGER.info("order payload:"+gson.toJson(orderParams));
                                                                 orderd = brokerWorker.placeOrder(orderParams,user,tradeData);
                                                                 tradeBuy.isOrderPlaced = true;
-                                                                tradeBuy.setStockId(Integer.parseInt(value));
+                                                                tradeBuy.setZerodhaStockId(Integer.parseInt(value));
                                                                 tradeBuy.setQty(value1);
                                                                 tradeBuy.setEntryOrderId(orderd.orderId);
                                                                 tradeBuy.setUserId(user.getName());
@@ -1105,7 +1105,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                                                 if ("BUY".equals(order.transactionType)) {
                                                     Date date = new Date();
                                                     String currentDate = format.format(date);
-                                                    String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getStockId() + "/minute?from=" + currentDate + "+15:10:00&to=" + currentDate + "+15:25:00";
+                                                    String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getZerodhaStockId() + "/minute?from=" + currentDate + "+15:10:00&to=" + currentDate + "+15:25:00";
                                                     String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                                                     System.out.print(response);
                                                     HistoricalData historicalData = new HistoricalData();
@@ -1184,7 +1184,7 @@ public class ZerodhaBankNiftyShortStraddleWithLong {
                 HistoricalData historicalData = new HistoricalData();
                 String status = "error";
                 try {
-                    String historicURL = "https://api.kite.trade/instruments/historical/" + openTradeDataEntity.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+11:15:00";
+                    String historicURL = "https://api.kite.trade/instruments/historical/" + openTradeDataEntity.getZerodhaStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+11:15:00";
                     String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                     System.out.print(openTradeDataEntity.getStockName() + " history api response:" + response);
 

@@ -16,7 +16,7 @@ public class OrbTradeDataEntity {
     int qty;
     BigDecimal highPrice;
     BigDecimal lowPrice;
-    int stockId;
+    int zerodhaStockId;
     public boolean isOrderPlaced;
     public boolean isSlPlaced;
     public boolean isExited;

@@ -465,3 +465,9 @@ ALTER TABLE trade_strategy ADD COLUMN hedge boolean default false;
 ALTER TABLE open_trade_data ADD COLUMN websocket_sl_modified boolean default false;
 ALTER TABLE open_trade_data ADD COLUMN websocket_sl_time varchar(100);
 ALTER TABLE open_trade_data ADD COLUMN temp_sl_price numeric(60,2) null;
+
+insert into user_subscription(user_subscription_key,lot_size,trade_strategy_key,user_id) values('ss-fri-atm-09:35-buy-LTK728',1,'ss-fri-atm-09:35-buy','LTK728');
+insert into user_subscription(user_subscription_key,lot_size,trade_strategy_key,user_id) values('ss-fri-atm-09:35-buy-YC0209',1,'ss-fri-atm-09:35-buy','YC0209');
+insert into user_subscription(user_subscription_key,lot_size,trade_strategy_key,user_id) values('ss-fri-atm-09:35-buy-AAJ686',1,'ss-fri-atm-09:35-buy','AAJ686');
+
+Tick

@@ -90,7 +90,7 @@ public class OrderUtil {
                                             AtomicDouble triggerPriceAtomic = new AtomicDouble();
 
                                             try {
-                                                String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
+                                                String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getZerodhaStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
                                                 String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                                                 System.out.print(response);
                                                 HistoricalData historicalData = new HistoricalData();
@@ -108,8 +108,8 @@ public class OrderUtil {
                                                                 BigDecimal triggerPriceTemp = (((new BigDecimal(historicalData1.close).setScale(0, RoundingMode.HALF_UP).divide(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP).add(new BigDecimal(historicalData1.close)))).setScale(0, RoundingMode.HALF_UP);
                                                                 trendTradeData.setSellPrice(new BigDecimal(historicalData1.close));
                                                                 triggerPriceAtomic.addAndGet(triggerPriceTemp.doubleValue());
-                                                                //  slPrice.put(trendTradeData.getStockId(), triggerPriceTemp);
-                                                                LOGGER.info("setting sl price based on 9:19 close :" + trendTradeData.getStockId() + ":" + triggerPriceTemp + ":" + trendTradeData.getUserId());
+                                                                //  slPrice.put(trendTradeData.getZerodhaStockId(), triggerPriceTemp);
+                                                                LOGGER.info("setting sl price based on 9:19 close :" + trendTradeData.getZerodhaStockId() + ":" + triggerPriceTemp + ":" + trendTradeData.getUserId());
                                                             }
                                                         } catch (ParseException e) {
                                                             throw new RuntimeException(e);
@@ -194,13 +194,13 @@ public class OrderUtil {
                                                         totalRetry = parentTradeData.getRentryCount();
                                                         LOGGER.info("retry count:"+totalRetry);
                                                         LOGGER.info("triggerPrice:"+triggerPrice);
-                                                        stockId=parentTradeData.getStockId();
+                                                        stockId=parentTradeData.getZerodhaStockId();
                                                     } else {
                                                         totalRetry = trendTradeData.getRentryCount();
                                                         triggerPrice = trendTradeData.getSellPrice().doubleValue();
                                                         LOGGER.info("retry count:"+totalRetry);
                                                         LOGGER.info("triggerPrice:"+triggerPrice);
-                                                        stockId=trendTradeData.getStockId();
+                                                        stockId=trendTradeData.getZerodhaStockId();
                                                     }
                                                     if (totalRetry < retryCount.get()) {
                                                         LOGGER.info("inside reverse entry sell:retry count:"+retryCount.get());
@@ -220,7 +220,7 @@ public class OrderUtil {
                                                         orderParams.price = price.doubleValue();
                                                         TradeData reverseTrade = new TradeData();
                                                         reverseTrade.setParentEntry(trendTradeData.getStockName());
-                                                        reverseTrade.setStockId(stockId);
+                                                        reverseTrade.setZerodhaStockId(stockId);
                                                         reverseTrade.setUserId(user.getName());
                                                         String dataKey = UUID.randomUUID().toString();
                                                         reverseTrade.setDataKey(dataKey);
@@ -290,7 +290,7 @@ public class OrderUtil {
                                 SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
                                 String currentDate = format.format(date);
                                 try {
-                                    String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:11:00";
+                                    String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getZerodhaStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:11:00";
                                     String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                                     System.out.print(trendTradeData.getStockName() + " history api 3:10 response:" + response);
                                     HistoricalData historicalData = new HistoricalData();
@@ -364,7 +364,7 @@ public class OrderUtil {
             openTradeDataEntity.setSlPercentage(tradeData.getSlPercentage());
             openTradeDataEntity.setEntryOrderId(tradeData.getEntryOrderId());
             openTradeDataEntity.setSlOrderId(tradeData.getSlOrderId());
-            openTradeDataEntity.setStockId(tradeData.getStockId());
+            openTradeDataEntity.setZerodhaStockId(tradeData.getZerodhaStockId());
             Date date = new Date();
             if(orderPlaced) {
                 String tradeDate = format.format(date);

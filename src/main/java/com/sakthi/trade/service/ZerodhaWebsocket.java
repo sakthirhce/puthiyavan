@@ -329,6 +329,31 @@ public class ZerodhaWebsocket {
                     e.printStackTrace();
                 }
                 try {
+                    String nstockId = zerodhaTransactionService.niftyIndics.get("BANKEX");
+                    LOGGER.info("BANKEX :{}", nstockId);
+                    listOfTokens.add(Long.parseLong(nstockId));
+                    expiryDayDetails.indexIdList.put(Long.parseLong(nstockId), "BNX");
+                    int niftyAtm = getAtm(nstockId, "BNX");
+                    int niftyAtmLow = niftyAtm - 2000;
+                    int niftyAtmHigh = niftyAtm + 2000;
+                    while (niftyAtmLow < niftyAtmHigh) {
+                        Map<String, String> strikes = zerodhaTransactionService.bankExWeeklyOptions.get(String.valueOf(niftyAtmLow));
+                        niftyAtmLow = niftyAtmLow + 100;
+                        strikes.forEach((key, value) -> {
+                            listOfTokens.add(Long.parseLong(value));
+                            try {
+                                String[] dataHeader = {value, key, zerodhaTransactionService.bankExDate, "BNX"};
+                                csvWriter.writeNext(dataHeader);
+                                csvWriter.flush();
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                try {
                     String fnstockId = zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE");
                     LOGGER.info("NIFTY FIN SERVICE :{}", fnstockId);
                     expiryDayDetails.indexIdList.put(Long.parseLong(fnstockId), "FN");

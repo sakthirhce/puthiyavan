@@ -117,7 +117,7 @@ public class NiftyORB {
                         tradeData.setQty(50);
                         tradeData.setSellTime(sdf.format(lastTradingDatetime));
                         tradeData.setSellPrice(new BigDecimal(lastElement.close));
-                        tradeData.setStockId(Integer.parseInt(finalSelected.getValue().getZerodhaId()));
+                        tradeData.setZerodhaStockId(Integer.parseInt(finalSelected.getValue().getZerodhaId()));
                         straddleTradeMap.put(finalSelected.getKey(),tradeData);
                         String message="option orb range low broke, strike selected :"+finalSelected.getValue().getZerodhaSymbol();
                         sendMessage.sendToTelegram(message, telegramToken);
@@ -138,7 +138,7 @@ public class NiftyORB {
                         tradeData.setQty(50);
                         tradeData.setBuyTime(sdf.format(lastTradingDatetime));
                         tradeData.setBuyPrice(new BigDecimal(lastElement.close));
-                        tradeData.setStockId(Integer.parseInt(finalSelected.getValue().getZerodhaId()));
+                        tradeData.setZerodhaStockId(Integer.parseInt(finalSelected.getValue().getZerodhaId()));
                         straddleTradeMap.put(finalSelected.getKey(),tradeData);
                         String message="option orb range high broke, strike selected :"+finalSelected.getValue().getZerodhaSymbol();
                         sendMessage.sendToTelegram(message, telegramToken);

@@ -68,7 +68,6 @@ public class RangeExecution {
                 if (stockId == null) {
                     return;
                 }
-
                 String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + currentDateStr + "+09:00:00&to=" + currentDateStr + "+15:30:00";
                 String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL), stockId, currentHourMinStr);
                 HistoricalData historicalData = new HistoricalData();
@@ -90,9 +89,13 @@ public class RangeExecution {
                         HistoricalData lastHistoricalData = optionalHistoricalLatestData.get();
                         try {
                             if ("INDEX".equals(strategy.getRangeBreakInstrument())) {
-                                rangeBreak(strategy, historicalData, currentDateStr, currentHourMinStr, candleHourMinStr + ":00", lastHistoricalData);
+                                if ((strategy.getRangeBreakTime()).equals(currentHourMinStr)|| (dateTimeFormat.parse(currentDateStr + " " + currentHourMinStr).after(dateTimeFormat.parse(currentDateStr + " " + strategy.getRangeBreakTime())))) {
+                                    rangeBreak(strategy, historicalData, currentDateStr, currentHourMinStr, candleHourMinStr + ":00", lastHistoricalData);
+                                }
                             } else {
-                                rangeBreakOptions(strategy, historicalData, currentDateStr, currentHourMinStr, candleHourMinStr, lastHistoricalData, index);
+                                if(currentHourMinStr.equals(strategy.getRangeStartTime())) {
+                                    rangeBreakOptions(strategy, historicalData, currentDateStr, currentHourMinStr, candleHourMinStr, lastHistoricalData, index);
+                                }
                             }
                         } catch (Exception e) {
                             LOGGER.error("error1 while executing range:{}", e.getMessage());
@@ -194,7 +197,7 @@ public class RangeExecution {
                                     tradeData.setEntryType(strategy.getOrderType());
                                     tradeData.setUserId(user.getName());
                                     tradeData.setTradeDate(currentDateStr);
-                                    tradeData.setStockId(Integer.valueOf(strikeData.getZerodhaId()));
+                                    tradeData.setZerodhaStockId(Integer.valueOf(strikeData.getZerodhaId()));
                                     try {
                                         zerodhaWebsocket.addTradeStriketoWebsocket(Long.parseLong(strikeData.getZerodhaId()), tradeData.getStockName(), index);
                                     } catch (Exception e) {
@@ -214,8 +217,9 @@ public class RangeExecution {
                                         tradeDataList = new ArrayList<>();
                                     }
                                     tradeDataList.add(tradeData);
+                                    LOGGER.info("trade data during range start time:"+gson.toJson(tradeData));
                                     tradingStrategyAndTradeData.openTrade.put(user.getName(), tradeDataList);
-                                    LOGGER.info("trade data" + new Gson().toJson(tradeData));
+                                    //LOGGER.info("trade data" + new Gson().toJson(tradeData));
                                     tradeSedaQueue.sendTelemgramSeda("Options traded for user:" + user.getName() + " strike: "
                                             + strikeData.getZerodhaSymbol() + ":" + strategy.getTradeStrategyKey(), "exp-trade");
                                 } catch (Exception e) {
@@ -307,6 +311,7 @@ public class RangeExecution {
         strategy.setRangeHigh(new BigDecimal(high));
         tradeData.setRangeLow(new BigDecimal(low));
         tradeData.setRangeHigh(new BigDecimal(high));
+        LOGGER.info("trade data after setting high low:"+gson.toJson(tradeData));
     }
     public void rangeBreak(TradeStrategy strategy, HistoricalData historicalData, String currentDateStr, String currentHourMinStr, String candleHourMinStr, HistoricalData lastHistoricData) throws Exception {
         Map<String, Double> orbHighLow = new HashMap<>();
@@ -331,7 +336,7 @@ public class RangeExecution {
                                 orderParams.tag = strategy.getTradeStrategyKey();
                             }
                             orderParams.exchange = "NFO";
-                            if ("SS".equals(strategy.getIndex())) {
+                            if ("SS".equals(strategy.getIndex()) || "BNX".equals(strategy.getIndex())) {
                                 orderParams.exchange = "BFO";
                             }
                             if ("MIS".equals(strategy.getTradeValidity())) {
@@ -364,7 +369,7 @@ public class RangeExecution {
                                     TradeData tradeData = new TradeData();
                                     tradeData.setQty(strategy.getLotSize());
                                     //TODO: add logic to set limit price
-                                    tradeData.setStockId(Integer.parseInt(finalSelected.getValue().getZerodhaId()));
+                                    tradeData.setZerodhaStockId(Integer.parseInt(finalSelected.getValue().getZerodhaId()));
                                     tradeData.setTradeStrategy(strategy);
                                     String dataKey = UUID.randomUUID().toString();
                                     tradeData.setDataKey(dataKey);
@@ -376,7 +381,7 @@ public class RangeExecution {
                                         tradeData.setEntryType(strategy.getOrderType());
                                         tradeData.setUserId(user.getName());
                                         tradeData.setTradeDate(currentDateStr);
-                                        tradeData.setStockId(Integer.valueOf(finalSelected.getValue().getZerodhaId()));
+                                        tradeData.setZerodhaStockId(Integer.valueOf(finalSelected.getValue().getZerodhaId()));
                                         tradeData.setTradeStrategy(strategy);
                                         order = brokerWorker.placeOrder(orderParams, user, tradeData);
                                         if (order != null) tradeData.setEntryOrderId(order.orderId);
@@ -421,7 +426,7 @@ public class RangeExecution {
                             Map.Entry<String, StrikeData> finalSelected;
                             OrderParams orderParams = new OrderParams();
                             orderParams.exchange = "NFO";
-                            if ("SS".equals(strategy.getIndex())) {
+                            if ("SS".equals(strategy.getIndex()) || "BNX".equals(strategy.getIndex())) {
                                 orderParams.exchange = "BFO";
                             }
                             orderParams.orderType = "MARKET";
@@ -459,7 +464,7 @@ public class RangeExecution {
                                     String dataKey = UUID.randomUUID().toString();
                                     TradeData tradeData = new TradeData();
                                     tradeData.setQty(strategy.getLotSize());
-                                    tradeData.setStockId(Integer.parseInt(finalSelected.getValue().getZerodhaId()));
+                                    tradeData.setZerodhaStockId(Integer.parseInt(finalSelected.getValue().getZerodhaId()));
                                     tradeData.setTradeStrategy(strategy);
                                     tradeData.setDataKey(dataKey);
 
@@ -470,7 +475,7 @@ public class RangeExecution {
                                         tradeData.setEntryType(strategy.getOrderType());
                                         tradeData.setUserId(user.getName());
                                         tradeData.setTradeDate(currentDateStr);
-                                        tradeData.setStockId(Integer.valueOf(finalSelected.getValue().getZerodhaId()));
+                                        tradeData.setZerodhaStockId(Integer.valueOf(finalSelected.getValue().getZerodhaId()));
                                         order = brokerWorker.placeOrder(orderParams, user, tradeData);
                                         if (order != null) tradeData.setEntryOrderId(order.orderId);
                                         //  tradeData.isOrderPlaced = true;
@@ -561,16 +566,16 @@ public class RangeExecution {
                     }
                     strategy.setSPositionTaken(true);
                     try {
-                        String stockId = "";
+                        String zerodhaStockId = "";
                         String index = strategy.getIndex();
                         if ("BNF".equals(index)) {
-                            stockId = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
+                            zerodhaStockId = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
                         } else if ("NF".equals(index)) {
-                            stockId = zerodhaTransactionService.niftyIndics.get("NIFTY 50");
+                            zerodhaStockId = zerodhaTransactionService.niftyIndics.get("NIFTY 50");
                         } else if ("FN".equals(index)) {
-                            stockId = zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE");
+                            zerodhaStockId = zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE");
                         }
-                        String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + currentDateStr + "+09:00:00&to=" + currentDateStr + "+15:35:00";
+                        String historicURL = "https://api.kite.trade/instruments/historical/" + zerodhaStockId + "/minute?from=" + currentDateStr + "+09:00:00&to=" + currentDateStr + "+15:35:00";
                         String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                         HistoricalData historicalDataBBS = new HistoricalData();
                         JSONObject json = new JSONObject(response);
@@ -628,7 +633,7 @@ public class RangeExecution {
                                                 tradeDataRetry.setUserId(user1.getName());
                                                 tradeDataRetry.setTradeDate(currentDateStr);
                                                 tradeDataRetry.isOrderPlaced=true;
-                                                tradeDataRetry.setStockId(Integer.valueOf(strikeData.getZerodhaId()));
+                                                tradeDataRetry.setZerodhaStockId(Integer.valueOf(strikeData.getZerodhaId()));
                                                 try {
                                                     addStriketoWebsocket(Long.parseLong(strikeData.getZerodhaId()));
                                                 } catch (Exception e) {
@@ -737,6 +742,7 @@ public class RangeExecution {
 
 
     }
+
     private String getStockId(String index) {
         switch (index) {
             case "BNF":

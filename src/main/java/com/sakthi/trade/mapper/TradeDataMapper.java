@@ -1,13 +1,10 @@
 package com.sakthi.trade.mapper;
 
 import com.google.gson.Gson;
-import com.sakthi.trade.TradeEngine;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.entity.OpenTradeDataBackupEntity;
 import com.sakthi.trade.entity.OpenTradeDataEntity;
 import com.sakthi.trade.entity.TradeStrategy;
-import com.sakthi.trade.options.banknifty.ZerodhaBankNiftyShortStraddle;
-import com.sakthi.trade.repo.OpenTradeDataBackupRepo;
 import com.sakthi.trade.repo.OpenTradeDataRepo;
 import com.sakthi.trade.repo.TradeStrategyRepo;
 import com.sakthi.trade.util.MathUtils;
@@ -19,7 +16,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.logging.Logger;
 
 @Service
 public class TradeDataMapper {
@@ -47,7 +43,7 @@ public class TradeDataMapper {
         tradeData.setSlPercentage(openTradeDataEntity.getSlPercentage());
         tradeData.setEntryOrderId(openTradeDataEntity.getEntryOrderId());
         tradeData.setSlOrderId(openTradeDataEntity.getSlOrderId());
-        tradeData.setStockId(openTradeDataEntity.getStockId());
+        tradeData.setZerodhaStockId(openTradeDataEntity.getStockId());
 
         if(tradeData.isExited) {
             try {
@@ -92,8 +88,7 @@ public class TradeDataMapper {
                         }
                         MathUtils.calculateBrokerage(tradeData, isOptions, false, isFutures, "0");
                         openTradeDataEntity.setCharges(tradeData.charges.setScale(2, RoundingMode.HALF_UP));
-                        BigDecimal plAfterCharges = pl.subtract(tradeData.charges).setScale(2, RoundingMode.HALF_UP);;
-                        tradeData.plAfterCharges = plAfterCharges;
+                        tradeData.plAfterCharges = pl.subtract(tradeData.charges).setScale(2, RoundingMode.HALF_UP);
                         if (tradeData.getSellPrice() != null && tradeData.getBuyPrice() != null) {
                             BigDecimal paperPl = tradeData.getSellPrice().subtract(tradeData.getBuyPrice()).setScale(2, RoundingMode.HALF_UP).multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
                         }
@@ -129,7 +124,7 @@ public class TradeDataMapper {
         tradeData.setSlPercentage(openTradeDataEntity.getSlPercentage());
         tradeData.setEntryOrderId(openTradeDataEntity.getEntryOrderId());
         tradeData.setSlOrderId(openTradeDataEntity.getSlOrderId());
-        tradeData.setStockId(openTradeDataEntity.getStockId());
+        tradeData.setZerodhaStockId(openTradeDataEntity.getStockId());
         if(tradeData.isExited) {
             try {
                 if (tradeData.getBuyTradedPrice() != null && tradeData.getBuyPrice() != null) {
@@ -173,8 +168,7 @@ public class TradeDataMapper {
                         }
                         MathUtils.calculateBrokerage(tradeData, isOptions, false, isFutures, "0");
                         openTradeDataEntity.setCharges(tradeData.charges.setScale(2, RoundingMode.HALF_UP));
-                        BigDecimal plAfterCharges = pl.subtract(tradeData.charges).setScale(2, RoundingMode.HALF_UP);
-                        tradeData.plAfterCharges = plAfterCharges;
+                        tradeData.plAfterCharges = pl.subtract(tradeData.charges).setScale(2, RoundingMode.HALF_UP);
                         if (tradeData.getSellPrice() != null && tradeData.getBuyPrice() != null) {
                             BigDecimal paperPl = tradeData.getSellPrice().subtract(tradeData.getBuyPrice()).setScale(2, RoundingMode.HALF_UP).multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
                         }
@@ -188,9 +182,6 @@ public class TradeDataMapper {
             }}
         return tradeData;
     }
-  //  public static final Logger LOGGER = Logger.getLogger(TradeDataMapper.class.getName());
-    @Autowired
-    OpenTradeDataBackupRepo openTradeDataBackupRepo;
 
     @Autowired
     OpenTradeDataRepo openTradeDataRepo;
@@ -220,7 +211,7 @@ public class TradeDataMapper {
             openTradeDataEntity.setSlPercentage(tradeData.getSlPercentage());
             openTradeDataEntity.setEntryOrderId(tradeData.getEntryOrderId());
             openTradeDataEntity.setSlOrderId(tradeData.getSlOrderId());
-            openTradeDataEntity.setStockId(tradeData.getStockId());
+            openTradeDataEntity.setStockId(tradeData.getZerodhaStockId());
             openTradeDataEntity.setTempSlPrice(tradeData.getTempSlPrice());
             openTradeDataEntity.setWebsocketSlModified(tradeData.isWebsocketSlModified());
             openTradeDataEntity.setWebsocketSlTime(tradeData.getWebsocketSlTime());
@@ -280,8 +271,7 @@ public class TradeDataMapper {
                             }
                             MathUtils.calculateBrokerage(tradeData, isOptions, false, isFutures, "0");
                             openTradeDataEntity.setCharges(tradeData.charges.setScale(2, RoundingMode.HALF_UP));
-                            BigDecimal plAfterCharges = pl.subtract(tradeData.charges).setScale(2, RoundingMode.HALF_UP);;
-                            tradeData.plAfterCharges = plAfterCharges;
+                            tradeData.plAfterCharges = pl.subtract(tradeData.charges).setScale(2, RoundingMode.HALF_UP);
                             openTradeDataEntity.setPlAfterCharges(tradeData.plAfterCharges);
                             if (tradeData.getSellPrice() != null && tradeData.getBuyPrice() != null) {
                                 BigDecimal paperPl = tradeData.getSellPrice().subtract(tradeData.getBuyPrice()).setScale(2, RoundingMode.HALF_UP).multiply(new BigDecimal(tradeData.getQty())).setScale(2, RoundingMode.HALF_UP);
@@ -328,7 +318,7 @@ public class TradeDataMapper {
             tradeData.setSlPercentage(openTradeDataEntity.getSlPercentage());
             tradeData.setEntryOrderId(openTradeDataEntity.getEntryOrderId());
             tradeData.setSlOrderId(openTradeDataEntity.getSlOrderId());
-            tradeData.setStockId(openTradeDataEntity.getStockId());
+            tradeData.setZerodhaStockId(openTradeDataEntity.getStockId());
             if(openTradeDataEntity.getTradeStrategyKey()!=null) {
                 TradeStrategy tradeStrategy=tradeStrategyRepo.getStrategyByStrategyKey(openTradeDataEntity.getTradeStrategyKey());
                 tradeData.setTradeStrategy(tradeStrategy);

@@ -1,17 +1,22 @@
 package com.sakthi.trade.zerodha;
 
-import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import com.sakthi.trade.TradeEngine;
 import com.sakthi.trade.cache.GlobalContextCache;
+import com.sakthi.trade.cache.GlobalTickCache;
 import com.sakthi.trade.ratelimit.TokenBucket;
 import com.sakthi.trade.seda.TickData;
 import com.sakthi.trade.seda.WebSocketTicksSedaProcessor;
+import com.sakthi.trade.service.TradingStrategyAndTradeData;
+import com.sakthi.trade.util.CommonUtil;
+import com.sakthi.trade.util.MathUtils;
 import com.sakthi.trade.zerodha.account.User;
 import com.sakthi.trade.zerodha.account.UserList;
 import com.zerodhatech.kiteconnect.KiteConnect;
+import com.zerodhatech.models.HistoricalData;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,14 +24,19 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
+import java.text.ParseException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 @Slf4j
 public class TransactionService {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionService.class.getName());
+    @Autowired
+    CommonUtil commonUtil;
     @Autowired
     @Qualifier("createOkHttpClient")
     OkHttpClient okHttpClient;
@@ -35,9 +45,15 @@ public class TransactionService {
         WebSocketTicksSedaProcessor webSocketTicksSedaProcessor;*/
     @Autowired
     GlobalContextCache globalContextCache;
-
+    @Autowired
+    public TradingStrategyAndTradeData tradingStrategyAndTradeData;
+    @Autowired
+    ExpiryDayDetails expiryDayDetails;
     @Autowired
     TickData tickData;
+
+    @Autowired
+    GlobalTickCache globalTickCache;
 
     public Map<String, Map<String, Double>> tickCurrentPrice = new HashMap<>();
 
@@ -196,19 +212,19 @@ public class TransactionService {
         }
         try {
             if (responseStr == null) {
-                //log.info("details not found in cache:"+stockId+":"+responseStr);
+                //log.info("details not found in cache:"+zerodhaStockId+":"+responseStr);
                 if (tokenBucket.tryConsumeWithWait()) {
                     StopWatch watch = new StopWatch();
                     watch.start();
                     Response response = okHttpClient.newCall(request).execute();
                     watch.stop();
-                    //log.info("Total time taken for zerodha api cal"+stockId+" in millisecs: "+ watch.getTotalTimeMillis());
+                    //log.info("Total time taken for zerodha api cal"+zerodhaStockId+" in millisecs: "+ watch.getTotalTimeMillis());
                     responseStr = response.body().string();
-                    //     log.info("api response"+stockId+":"+responseStr);
+                    //     log.info("api response"+zerodhaStockId+":"+responseStr);
                     globalContextCache.setHistoricData(time, stockId, responseStr);
                 }
             } else {
-                // LOGGER.info("api response:"+stockId+" from cache:");
+                // LOGGER.info("api response:"+zerodhaStockId+" from cache:");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -218,6 +234,62 @@ public class TransactionService {
         return responseStr;
     }
 
+    public Long callAPI(Request request, String stockId, String time, String index,String candleHourMin) {
+        StopWatch watch1 = new StopWatch();
+        watch1.start();
+        String responseStr = globalContextCache.getHistoricData(time, stockId);
+        Long atm=expiryDayDetails.currentATMList.get(Long.parseLong(stockId));
+        if(atm!=null && atm>0){
+            return atm;
+        }else {
+            try {
+                if (responseStr == null) {
+                    //log.info("details not found in cache:"+zerodhaStockId+":"+responseStr);
+                    if (tokenBucket.tryConsumeWithWait()) {
+                        StopWatch watch = new StopWatch();
+                        watch.start();
+                        Response response = okHttpClient.newCall(request).execute();
+                        watch.stop();
+                        //log.info("Total time taken for zerodha api cal"+zerodhaStockId+" in millisecs: "+ watch.getTotalTimeMillis());
+                        responseStr = response.body().string();
+                        //     log.info("api response"+zerodhaStockId+":"+responseStr);
+                        globalContextCache.setHistoricData(time, stockId, responseStr);
+                    }
+                } else {
+                    // LOGGER.info("api response:"+zerodhaStockId+" from cache:");
+                }
+                try {
+                    HistoricalData historicalData = new HistoricalData();
+                    //response1 = response;
+                    JSONObject json = new JSONObject(responseStr);
+                    String status = json.getString("status");
+                    if (!status.equals("error")) {
+                        historicalData.parseResponse(json);
+                        Optional<HistoricalData> optionalHistoricalLatestData = historicalData.dataArrayList.stream().filter(candle -> {
+                            try {
+                                Date candleDateTime = tradingStrategyAndTradeData.candleDateTimeFormat.parse(candle.timeStamp);
+                                return tradingStrategyAndTradeData.hourMinFormat.format(candleDateTime).equals(candleHourMin);
+                            } catch (ParseException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }).findFirst();
+                        if (optionalHistoricalLatestData.isPresent()) {
+                            return (long) commonUtil.findATM((int) optionalHistoricalLatestData.get().close, index);
+                        }
+                    }
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+        watch1.stop();
+        LOGGER.info("Total time taken for api call/tick in millisecond: {}", watch1.getTotalTimeMillis());
+       return 0L;
+    }
     public String callOrderPlaceAPI(Request request) {
         String responseStr = null;
         try {

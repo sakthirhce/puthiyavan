@@ -85,25 +85,25 @@ public class IOChange implements Strategy {
             LOGGER.info("index get atm:"+index);
             Map<String,Map<String, StrikeData>> strikeMasterMap1=new HashMap<>();
             // Map<String,Map<String,String>> dhanStrikeMasterMap1=new HashMap<>();
-            String stockId=null;
+            String zerodhaStockId=null;
         if("BNF".equals(index)) {
-            stockId = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
+            zerodhaStockId = zerodhaTransactionService.niftyIndics.get("NIFTY BANK");
             //  if (zerodhaTransactionService.expDate.equals(currentDate)) {
             strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.BNF_CURRENT.expiryName);
             //   }
         }else if("NF".equals(index)){
-            stockId = zerodhaTransactionService.niftyIndics.get("NIFTY 50");
+            zerodhaStockId = zerodhaTransactionService.niftyIndics.get("NIFTY 50");
             //if (zerodhaTransactionService.expDate.equals(currentDate)) {
             strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.NF_CURRENT.expiryName);
             //  }
         }
         else if("FN".equals(index)){
-            stockId = zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE");
+            zerodhaStockId = zerodhaTransactionService.niftyIndics.get("NIFTY FIN SERVICE");
             //  if (zerodhaTransactionService.finExpDate.equals(currentDate)) {
             strikeMasterMap1 = zerodhaTransactionService.globalOptionsInfo.get(Expiry.FN_CURRENT.expiryName);
             //  }
         }
-            String historicURL = "https://api.kite.trade/instruments/historical/" + stockId + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:30:00";
+            String historicURL = "https://api.kite.trade/instruments/historical/" + zerodhaStockId + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:30:00";
             String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
             HistoricalData historicalData = new HistoricalData();
             JSONObject json = new JSONObject(response);

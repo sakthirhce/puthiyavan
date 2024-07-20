@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StopWatch;
 
@@ -163,7 +162,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                         tradeData.isOrderPlaced = true;
                                         tradeData.setQty(25 * qty.get());
                                         tradeData.setEntryType("SELL");
-                                        tradeData.setStockId(Integer.valueOf(atmBankStrikeMap.getValue()));
+                                        tradeData.setZerodhaStockId(Integer.valueOf(atmBankStrikeMap.getValue()));
                                         mapTradeDataToSaveOpenTradeDataEntity(tradeData,true);
                                         sendMessage.sendToTelegram("Straddle option sold for user:"+user.getName()+" strike: " + atmBankStrikeMap.getKey()+":"+user.getName()+":"+getAlgoName(), telegramToken,botIdFinal);
 
@@ -242,7 +241,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                         AtomicDouble triggerPriceAtomic = new AtomicDouble();
 
                                             try {
-                                                String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:30:00";
+                                                String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getZerodhaStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:30:00";
                                                 String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                                                 System.out.print(response);
                                                 HistoricalData historicalData = new HistoricalData();
@@ -260,8 +259,8 @@ public class ZerodhaBankNiftyShortStraddle {
                                                                 BigDecimal triggerPriceTemp = (((new BigDecimal(historicalData1.close).setScale(0, RoundingMode.HALF_UP).divide(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP).add(new BigDecimal(historicalData1.close)))).setScale(0, RoundingMode.HALF_UP);
                                                                 trendTradeData.setSellPrice(new BigDecimal(historicalData1.close));
                                                                 triggerPriceAtomic.addAndGet(triggerPriceTemp.doubleValue());
-                                                              //  slPrice.put(trendTradeData.getStockId(), triggerPriceTemp);
-                                                                LOGGER.info("setting sl price based on 9:19 close :" + trendTradeData.getStockId() + ":" + triggerPriceTemp + ":" + trendTradeData.getUserId());
+                                                              //  slPrice.put(trendTradeData.getZerodhaStockId(), triggerPriceTemp);
+                                                                LOGGER.info("setting sl price based on 9:19 close :" + trendTradeData.getZerodhaStockId() + ":" + triggerPriceTemp + ":" + trendTradeData.getUserId());
                                                             }
                                                         } catch (ParseException e) {
                                                             throw new RuntimeException(e);
@@ -346,13 +345,13 @@ public class ZerodhaBankNiftyShortStraddle {
                                                     totalRetry = parentTradeData.getRentryCount();
                                                     LOGGER.info("retry count:"+totalRetry);
                                                     LOGGER.info("triggerPrice:"+triggerPrice);
-                                                    stockId=parentTradeData.getStockId();
+                                                    stockId=parentTradeData.getZerodhaStockId();
                                                 } else {
                                                     totalRetry = trendTradeData.getRentryCount();
                                                     triggerPrice = trendTradeData.getSellPrice().doubleValue();
                                                     LOGGER.info("retry count:"+totalRetry);
                                                     LOGGER.info("triggerPrice:"+triggerPrice);
-                                                    stockId=trendTradeData.getStockId();
+                                                    stockId=trendTradeData.getZerodhaStockId();
                                                 }
                                                 if (totalRetry < retryCount.get()) {
                                                     LOGGER.info("inside reverse entry sell:retry count:"+retryCount.get());
@@ -372,7 +371,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                                     orderParams.price = price.doubleValue();
                                                     TradeData reverseTrade = new TradeData();
                                                     reverseTrade.setParentEntry(trendTradeData.getStockName());
-                                                    reverseTrade.setStockId(stockId);
+                                                    reverseTrade.setZerodhaStockId(stockId);
                                                     reverseTrade.setUserId(user.getName());
                                                     String dataKey = UUID.randomUUID().toString();
                                                     reverseTrade.setDataKey(dataKey);
@@ -465,7 +464,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                         AtomicDouble triggerPriceAtomic = new AtomicDouble();
 
                                         try {
-                                            String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
+                                            String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getZerodhaStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
                                             String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                                             System.out.print(response);
                                             HistoricalData historicalData = new HistoricalData();
@@ -483,8 +482,8 @@ public class ZerodhaBankNiftyShortStraddle {
                                                             BigDecimal triggerPriceTemp = (((new BigDecimal(historicalData1.close).setScale(0, RoundingMode.HALF_UP).divide(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP).add(new BigDecimal(historicalData1.close)))).setScale(0, RoundingMode.HALF_UP);
                                                             trendTradeData.setSellPrice(new BigDecimal(historicalData1.close));
                                                             triggerPriceAtomic.addAndGet(triggerPriceTemp.doubleValue());
-                                                           // slPrice.put(trendTradeData.getStockId(), triggerPriceTemp);
-                                                            LOGGER.info("setting sl price based on 9:19 close :" + trendTradeData.getStockId() + ":" + triggerPriceTemp + ":" + trendTradeData.getUserId());
+                                                           // slPrice.put(trendTradeData.getZerodhaStockId(), triggerPriceTemp);
+                                                            LOGGER.info("setting sl price based on 9:19 close :" + trendTradeData.getZerodhaStockId() + ":" + triggerPriceTemp + ":" + trendTradeData.getUserId());
                                                         }
                                                     } catch (ParseException e) {
                                                         throw new RuntimeException(e);
@@ -595,11 +594,11 @@ public class ZerodhaBankNiftyShortStraddle {
                                                         retryCountN = parentTradeData.getRentryCount() + 1;
                                                         parentTradeData.setRentryCount(retryCountN);
                                                         reverseTrade.setParentEntry(parentTradeData.getStockName());
-                                                        stockId=parentTradeData.getStockId();
+                                                        stockId=parentTradeData.getZerodhaStockId();
                                                     } else if (!key.contains("REENTRY")) {
                                                         retryCountN = 1;
                                                         trendTradeData.setRentryCount(retryCountN);
-                                                        stockId=trendTradeData.getStockId();
+                                                        stockId=trendTradeData.getZerodhaStockId();
                                                     }
                                                     reverseTrade.setStockName(trendTradeData.getStockName());
                                                     String retryKey = trendTradeData.getStockName() + "_REENTRY_" + retryCountN;
@@ -610,7 +609,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                                         reverseTrade.isOrderPlaced = true;
                                                         reverseTrade.setQty(trendTradeData.getQty());
                                                         reverseTrade.setEntryType("SELL");
-                                                        reverseTrade.setStockId(stockId);
+                                                        reverseTrade.setZerodhaStockId(stockId);
                                                         sendMessage.sendToTelegram("reentry Straddle option order placed for strike: " + retryKey + ":" + reverseTrade.getStockName() + ":" + user.getName() + ":" + getAlgoName(), telegramToken, botIdFinal);
                                                         user.getStraddleConfigOld().straddleTradeMap.put(retryKey, reverseTrade);
 
@@ -759,7 +758,7 @@ public class ZerodhaBankNiftyShortStraddle {
                                 SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
                                 String currentDate = format.format(date);
                                 try {
-                                    String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:11:00";
+                                    String historicURL = "https://api.kite.trade/instruments/historical/" + trendTradeData.getZerodhaStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+15:11:00";
                                     String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                            //         System.out.print(trendTradeData.getStockName() + " history api 3:10 response:" + response);
                                     HistoricalData historicalData = new HistoricalData();
@@ -850,7 +849,7 @@ public class ZerodhaBankNiftyShortStraddle {
             openTradeDataEntity.setSlPercentage(tradeData.getSlPercentage());
             openTradeDataEntity.setEntryOrderId(tradeData.getEntryOrderId());
             openTradeDataEntity.setSlOrderId(tradeData.getSlOrderId());
-            openTradeDataEntity.setStockId(tradeData.getStockId());
+            openTradeDataEntity.setZerodhaStockId(tradeData.getZerodhaStockId());
             Date date = new Date();
             if(orderPlaced) {
                 String tradeDate = format.format(date);

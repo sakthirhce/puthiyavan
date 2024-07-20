@@ -1,13 +1,12 @@
 package com.sakthi.trade.seda;
-
+import com.sakthi.trade.service.TradingStrategyAndTradeData;
 import com.google.common.util.concurrent.AtomicDouble;
 import com.google.gson.Gson;
-import com.sakthi.trade.TradeEngine;
 import com.sakthi.trade.domain.TradeData;
 import com.sakthi.trade.domain.strategy.StrikeSelectionType;
 import com.sakthi.trade.domain.strategy.ValueType;
 import com.sakthi.trade.entity.TradeStrategy;
-import com.sakthi.trade.mapper.TradeDataMapper;
+import com.sakthi.trade.service.TradeHelperService;
 import com.sakthi.trade.service.ZerodhaWebsocket;
 import com.sakthi.trade.util.MathUtils;
 import com.sakthi.trade.worker.BrokerWorker;
@@ -30,7 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.MessageFormat;
@@ -55,7 +53,8 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
 
     @Autowired
     ZerodhaTransactionService zerodhaTransactionService;
-
+    @Autowired
+    TradingStrategyAndTradeData tradingStrategyAndTradeData;
     @Autowired
     TransactionService transactionService;
     @Autowired
@@ -63,28 +62,16 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
 
     @Autowired
     MathUtils mathUtils;
-    @Autowired
-    TradeEngine tradeEngine;
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     SimpleDateFormat exchangeDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     SimpleDateFormat candleDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-    SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
     SimpleDateFormat hourMinFormat = new SimpleDateFormat("HH:mm");
-    @Autowired
-    TradeDataMapper tradeDataMapper;
 
+    @Autowired
+    TradeHelperService tradeHelperService;
     @Value("${websocket.userId}")
     String websocketUserId;
 
-    public void mapTradeDataToSaveOpenTradeDataEntity(TradeData tradeData, boolean orderPlaced) {
-        try {
-            tradeDataMapper.mapTradeDataToSaveOpenTradeDataEntity(tradeData, orderPlaced, "TRADE_ENGINE");
-            LOGGER.info("successfully saved trade data");
-        } catch (Exception e) {
-            LOGGER.info(e.getMessage());
-        }
-
-    }
     @Override
     public void process(Exchange camelContextRoute) throws Exception {
         try {
@@ -101,7 +88,7 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
         Calendar candleCalenderMin = Calendar.getInstance();
         candleCalenderMin.add(Calendar.MINUTE, -1);
         String currentDateStr = dateFormat.format(date);
-        tradeEngine.openTrade.entrySet().stream().forEach(userTradeData -> {
+        tradingStrategyAndTradeData.openTrade.entrySet().stream().forEach(userTradeData -> {
             String userId = userTradeData.getKey();
             if(userId.equals(websocketUserId)) {
                 List<TradeData> tradeData = userTradeData.getValue();
@@ -278,7 +265,7 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                         String message = MessageFormat.format("SL Hit for {0}" + ": sl sell slipage" + slipage.toString(), trendTradeData.getStockName() + ":" + user.getName() + ":" + strategy.getTradeStrategyKey() + ":" + strategy.getTradeStrategyKey());
                                         LOGGER.info(message);
                                         tradeSedaQueue.sendTelemgramSeda(message, "exp-trade");
-                                        mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, false);
+                                        tradeHelperService.mapTradeDataToSaveOpenTradeDataEntity(trendTradeData, false);
                                         if (strategy.isReentry() && "SELL".equals(trendTradeData.getEntryType())) {
                                             long tradeCount = userTradeData.getValue().stream().filter(tradeDataTemp ->
                                                     trendTradeData.getStockName().equals(tradeDataTemp.getStockName())
@@ -298,7 +285,7 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                                 reentryTradeData.setEntryType(strategy.getOrderType());
                                                 reentryTradeData.setUserId(user.getName());
                                                 reentryTradeData.setTradeDate(currentDateStr);
-                                                reentryTradeData.setStockId(trendTradeData.getStockId());
+                                                reentryTradeData.setZerodhaStockId(trendTradeData.getZerodhaStockId());
                                                 reentryTradeData.setStrikeId(trendTradeData.getStrikeId());
                                                 reentryTradeData.setTradeStrategy(strategy);
                                                 orderParams.tradingsymbol = trendTradeData.getStockName();
@@ -323,10 +310,10 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                                     LOGGER.info("input:" + gson.toJson(orderParams));
                                                     orderd = brokerWorker.placeOrder(orderParams, user, trendTradeData);
                                                     reentryTradeData.setEntryOrderId(orderd.orderId);
-                                                    List<TradeData> tradeDataList = tradeEngine.openTrade.get(user.getName());
+                                                    List<TradeData> tradeDataList = tradingStrategyAndTradeData.openTrade.get(user.getName());
                                                     tradeDataList.add(reentryTradeData);
-                                                    tradeEngine.openTrade.put(user.getName(), tradeDataList);
-                                                    mapTradeDataToSaveOpenTradeDataEntity(reentryTradeData, false);
+                                                    tradingStrategyAndTradeData.openTrade.put(user.getName(), tradeDataList);
+                                                    tradeHelperService.mapTradeDataToSaveOpenTradeDataEntity(reentryTradeData, false);
 
                                                     try {
                                                         LOGGER.info("Option " + trendTradeData.getStockName() + ":" + user.getName() + " placed retry");
@@ -478,7 +465,7 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                                                             tradeDataRetry.setEntryType(strategy.getOrderType());
                                                                             tradeDataRetry.setUserId(user1.getName());
                                                                             tradeDataRetry.setTradeDate(currentDateStr);
-                                                                            tradeDataRetry.setStockId(Integer.valueOf(strikeData.getZerodhaId()));
+                                                                            tradeDataRetry.setZerodhaStockId(Integer.valueOf(strikeData.getZerodhaId()));
                                                                             try {
                                                                                 zerodhaWebsocket.addStriketoWebsocket(Long.parseLong(strikeData.getZerodhaId()));
                                                                             } catch (Exception e) {
@@ -492,23 +479,23 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                                                                 //  tradeData.isOrderPlaced = true;
                                                                             }
 
-                                                                            mapTradeDataToSaveOpenTradeDataEntity(tradeDataRetry, true);
-                                                                            List<TradeData> tradeDataList = tradeEngine.openTrade.get(user1.getName());
+                                                                            tradeHelperService.mapTradeDataToSaveOpenTradeDataEntity(tradeDataRetry, true);
+                                                                            List<TradeData> tradeDataList = tradingStrategyAndTradeData.openTrade.get(user1.getName());
                                                                             if (tradeDataList == null) {
                                                                                 tradeDataList = new ArrayList<>();
                                                                             }
                                                                             tradeDataList.add(tradeDataRetry);
-                                                                            tradeEngine.openTrade.put(user.getName(), tradeDataList);
+                                                                            tradingStrategyAndTradeData.openTrade.put(user.getName(), tradeDataList);
                                                                             LOGGER.info("trade data" + new Gson().toJson(tradeDataRetry));
                                                                             tradeSedaQueue.sendTelemgramSeda("Options traded for user:" + user.getName() + " strike: "
                                                                                     + strikeData.getZerodhaSymbol() + ":" + strategy.getTradeStrategyKey(), user.telegramBot.getGroupId());
                                                                         } catch (Exception e) {
-                                                                            List<TradeData> tradeDataList = tradeEngine.openTrade.get(user.getName());
+                                                                            List<TradeData> tradeDataList = tradingStrategyAndTradeData.openTrade.get(user.getName());
                                                                             if (tradeDataList == null) {
                                                                                 tradeDataList = new ArrayList<>();
                                                                             }
                                                                             tradeDataList.add(tradeDataRetry);
-                                                                            tradeEngine.openTrade.put(user.getName(), tradeDataList);
+                                                                            tradingStrategyAndTradeData.openTrade.put(user.getName(), tradeDataList);
                                                                             tradeDataRetry.isErrored = true;
                                                                             LOGGER.info("Error while placing straddle order: " + e);
                                                                             e.printStackTrace();
@@ -548,22 +535,22 @@ public class WebSocketOrderUpdateSedaProcessor implements Processor {
                                                         tradeDataMod.setSlPrice(tradeDataMod.getSellPrice());
                                                     }
                                                     if(tradeDataMod.getTradeStrategy().isWebsocketSlEnabled()) {
-                                                        tradeEngine.openTrade.entrySet().stream().forEach(userTradeData1 -> {
+                                                        tradingStrategyAndTradeData.openTrade.entrySet().stream().forEach(userTradeData1 -> {
                                                             List<TradeData> tradeDataList = userTradeData1.getValue();
                                                             tradeDataList.stream().filter(tradeDataTemp1 -> tradeDataTemp1.getTradeStrategy().getTradeStrategyKey().equals(strategy.getTradeStrategyKey())
-                                                                    && !tradeDataTemp1.isSLHit && !tradeDataTemp1.isExited && tradeDataTemp1.getStockId() == tradeDataMod.getStockId()).forEach(tradeData1 -> {
+                                                                    && !tradeDataTemp1.isSLHit && !tradeDataTemp1.isExited && tradeDataTemp1.getZerodhaStockId() == tradeDataMod.getZerodhaStockId()).forEach(tradeData1 -> {
                                                                 if ("BUY".equals(trendTradeData.getEntryType())) {
                                                                     tradeData1.setSlPrice(tradeData1.getBuyPrice());
                                                                 } else {
                                                                     tradeData1.setSlPrice(tradeData1.getSellPrice());
                                                                 }
                                                                 tradeSedaQueue.sendTelemgramSeda("set trail sl for websocket" + tradeData1.getStockName() + ":" + tradeData1.getUserId() + ":" + strategy.getTradeStrategyKey(), "exp-trade");
-                                                                mapTradeDataToSaveOpenTradeDataEntity(tradeData1, false);
+                                                                tradeHelperService.mapTradeDataToSaveOpenTradeDataEntity(tradeData1, false);
                                                             });
                                                         });
                                                     }else {
                                                         brokerWorker.modifyOrder(tradeDataMod.getSlOrderId(), orderParams, user, tradeDataMod);
-                                                        mapTradeDataToSaveOpenTradeDataEntity(tradeDataMod, false);
+                                                        tradeHelperService.mapTradeDataToSaveOpenTradeDataEntity(tradeDataMod, false);
                                                         tradeSedaQueue.sendTelemgramSeda("executed trail sl " + trendTradeData.getStockName() + ":" + user.getName() + ":" + strategy.getTradeStrategyKey(),"exp-trade");
                                                     }
                                                     } catch (Exception e) {

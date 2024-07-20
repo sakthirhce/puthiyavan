@@ -38,7 +38,7 @@ public class TradeStrategy {
     String exitOrderType ; //market/limit
     boolean simpleMomentum ;
     String simpleMomentumType ; //percent/point
-    BigDecimal simpleMomentumValue ;
+    BigDecimal simpleMomentumValue;
     boolean rangeBreak ;
     boolean strategyEnabled;
     String rangeBreakType ; //percent/point

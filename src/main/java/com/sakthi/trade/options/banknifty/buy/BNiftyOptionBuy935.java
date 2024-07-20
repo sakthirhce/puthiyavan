@@ -181,7 +181,7 @@ public class BNiftyOptionBuy935 {
                                         tradeData.setQty(25 * qty.get());
                                         tradeData.setEntryType("BUY");
                                         tradeData.setUserId(user.getName());
-                                        tradeData.setStockId(Integer.parseInt(atmNiftyStrikeMap.getValue().getZerodhaId()));
+                                        tradeData.setZerodhaStockId(Integer.parseInt(atmNiftyStrikeMap.getValue().getZerodhaId()));
                                         tradeData.setBuyPrice(BigDecimal.valueOf(triggerPriceAtomic.get()));
                                         user.getBniftyBuy935().straddleTradeMap.put(atmNiftyStrikeMap.getKey(), tradeData);
                                         //mapTradeDataToSaveOpenTradeDataEntity(tradeData,true);
@@ -501,7 +501,7 @@ public class BNiftyOptionBuy935 {
                             try {
 
 
-                                String historicURL = "https://api.kite.trade/instruments/historical/" + openTradeDataEntity.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
+                                String historicURL = "https://api.kite.trade/instruments/historical/" + openTradeDataEntity.getZerodhaStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+09:34:00";
                                 String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                                 //System.out.print(openTradeDataEntity.getStockName() + " history api response:" + response);
                                 HistoricalData historicalData = new HistoricalData();
@@ -522,7 +522,7 @@ public class BNiftyOptionBuy935 {
                                                 } else {
                                                     openTradeDataEntity.setBuyPrice(new BigDecimal(orderr.averagePrice));
                                                 }
-                                                LOGGER.info("setting  9:34 exit :" + openTradeDataEntity.getStockId() + ":" + historicalData1.close);
+                                                LOGGER.info("setting  9:34 exit :" + openTradeDataEntity.getZerodhaStockId() + ":" + historicalData1.close);
                                             }
                                         } catch (ParseException e) {
                                             throw new RuntimeException(e);
@@ -568,7 +568,7 @@ public class BNiftyOptionBuy935 {
                 HistoricalData historicalData = new HistoricalData();
                 String status = "error";
                 try {
-                    String historicURL = "https://api.kite.trade/instruments/historical/" + openTradeDataEntity.getStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+11:15:00";
+                    String historicURL = "https://api.kite.trade/instruments/historical/" + openTradeDataEntity.getZerodhaStockId() + "/minute?from=" + currentDate + "+09:00:00&to=" + currentDate + "+11:15:00";
                     String response = transactionService.callAPI(transactionService.createZerodhaGetRequest(historicURL));
                     //System.out.print(openTradeDataEntity.getStockName() + " history api response:" + response);
 
@@ -817,7 +817,7 @@ public class BNiftyOptionBuy935 {
             openTradeDataEntity.setSlPercentage(tradeData.getSlPercentage());
             openTradeDataEntity.setEntryOrderId(tradeData.getEntryOrderId());
             openTradeDataEntity.setSlOrderId(tradeData.getSlOrderId());
-            openTradeDataEntity.setStockId(tradeData.getStockId());
+            openTradeDataEntity.setZerodhaStockId(tradeData.getZerodhaStockId());
             Date date = new Date();
             if(orderPlaced) {
                 String tradeDate = format.format(date);
