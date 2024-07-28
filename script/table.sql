@@ -461,6 +461,7 @@ ALTER TABLE trade_strategy ADD COLUMN websocket_sl_enabled boolean default false
 ALTER TABLE trade_strategy ADD COLUMN temp_sl_type varchar(100);
 ALTER TABLE trade_strategy ADD COLUMN temp_sl_percentage numeric(60,2) null;
 ALTER TABLE trade_strategy ADD COLUMN hedge boolean default false;
+ALTER TABLE trade_strategy ADD COLUMN freak_buy boolean default false;
 
 ALTER TABLE open_trade_data ADD COLUMN websocket_sl_modified boolean default false;
 ALTER TABLE open_trade_data ADD COLUMN websocket_sl_time varchar(100);

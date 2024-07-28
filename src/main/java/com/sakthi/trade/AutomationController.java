@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.opencsv.CSVWriter;
 import com.sakthi.trade.algotest.backtest.data.Algotest;
+import com.sakthi.trade.backtest.TickBacktest;
 import com.sakthi.trade.domain.*;
 import com.sakthi.trade.entity.*;
 import com.sakthi.trade.futures.banknifty.BNFFuturesTrendFollowing;
@@ -48,6 +49,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
@@ -357,8 +359,19 @@ NiftyOptionBuy935 niftyOptionBuy935;
     public void monitorPositionSize() throws Exception, KiteException {
         zerodhaAccount.monitorPositionSize();
     }*/
+@Autowired
+ TickBacktest tickBacktest;
+    @GetMapping("/tickBacktest")
+    public void tickBacktest(@RequestParam int day,@RequestParam int targetValue,@RequestParam int slValue,@RequestParam String entryTime,@RequestParam int closeTimeInMin) throws Exception, KiteException {
 
+       /* List<StockEntity> stockEntityList=stockRepository.findAll();
+        stockEntityList.forEach(stockEntity -> {*/
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+        LocalTime localTime = LocalTime.parse(entryTime, formatter);
+        tickBacktest.tickBackTest(day,targetValue,slValue,localTime,closeTimeInMin);
+        /*  });*/
 
+    }
 
     @GetMapping("/loadTradeEngineData")
     public void loadTradeEngineData() throws Exception, KiteException {

@@ -86,4 +86,5 @@ public class TradeStrategy {
     boolean hedge;
     @Column(name="freak_sl_place")
     boolean freakSlPlace;
+    boolean freakBuy;
 }

@@ -44,7 +44,8 @@ public class TradeSedaQueue {
 
     @Autowired
     PositionDataSedaProcessor positionDataSedaProcessor;
-
+    @Autowired
+    TradePrioritySedaProcessor tradePrioritySedaProcessor;
     @Autowired
     UserList userList;
 
@@ -60,6 +61,7 @@ public class TradeSedaQueue {
         camelContext.addComponent("websocketOrderUpdateQueue", camelContext.getComponent("seda"));
         camelContext.addComponent("websocketTicksQueue", camelContext.getComponent("seda"));
         camelContext.addComponent("positionDataQueue", camelContext.getComponent("seda"));
+        camelContext.addComponent("tradePriorityQueue", camelContext.getComponent("seda"));
         camelContext.addRoutes(new RouteBuilder() {
             public void configure() throws Exception {
                 from("seda:telegramQueue")
@@ -99,6 +101,13 @@ public class TradeSedaQueue {
             public void configure() throws Exception {
                 from("seda:positionDataQueue")
                         .process(positionDataSedaProcessor)
+                        .end();
+            }
+        });
+        camelContext.addRoutes(new RouteBuilder() {
+            public void configure() throws Exception {
+                from("seda:tradePriorityQueue")
+                        .process(tradePrioritySedaProcessor)
                         .end();
             }
         });
@@ -184,6 +193,9 @@ public class TradeSedaQueue {
     }
     public void sendPriorityTelemgramSeda(String message){
         camelContext.createProducerTemplate().sendBody("seda:priorityTelegramQueue", message);
+    }
+    public void sendTradePrioritySeda(String message){
+        camelContext.createProducerTemplate().sendBody("seda:tradePriorityQueue", message);
     }
     public void sendOrderPlaceSeda(OrderSedaData message){
         camelContext.createProducerTemplate().sendBody("seda:placeOrderQueue", message);

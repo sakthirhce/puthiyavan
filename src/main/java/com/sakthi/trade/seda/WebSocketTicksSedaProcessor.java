@@ -258,7 +258,7 @@ public class WebSocketTicksSedaProcessor implements Processor {
             orderParams.price = MathUtils.roundToNearestFivePaiseUP(tradeData.getSlPrice()).doubleValue();
             if (!tradeData.isWebsocketSlModified()) {
                 Order order = brokerWorker.placeOrder(orderParams, user, tradeData);
-                mapTradeDataToSaveOpenTradeDataEntity(tradeData, false);
+               // mapTradeDataToSaveOpenTradeDataEntity(tradeData, false);
                 tradeData.isSlPlaced = true;
                 tradeData.setSlOrderId(order.orderId);
                 tradeData.setWebsocketSlModified(true);
@@ -294,12 +294,13 @@ public class WebSocketTicksSedaProcessor implements Processor {
                 orderParams.price = MathUtils.roundToNearestFivePaiseUP(tradeData.getSlPrice()).doubleValue();
                 if (!tradeData.isWebsocketSlModified()) {
                     Order order = brokerWorker.placeOrder(orderParams, user, tradeData);
-                    mapTradeDataToSaveOpenTradeDataEntity(tradeData, false);
+
                     tradeData.isSlPlaced = true;
                     tradeData.setSlOrderId(order.orderId);
                     tradeData.setWebsocketSlModified(true);
                     tradeData.setWebsocketSlTime(dateTimeFormatter.format(currentDateTime));
                     mapTradeDataToSaveOpenTradeDataEntity(tradeData, false);
+                  //  mapTradeDataToSaveOpenTradeDataEntity(tradeData, false);
                 }
             }}catch (Exception | KiteException e) {
             e.printStackTrace();
@@ -430,6 +431,9 @@ public class WebSocketTicksSedaProcessor implements Processor {
                         if (lastTradedPrice > percentageDiffBWPreviousAndRecentTick) {
                             String tickMessage = "last traded price is more than 10% higher than previous tick. Difference: " + String.format("%,.2f", diff) + ". last trade price: " + lastTradedPrice + ". ";
                             LOGGER.info(tickMessage);
+                            if(strategy.isFreakBuy()){
+                                placeFreakBuy(tradeData,strategy,brokerWorker,user);
+                            }
                             tradeSedaQueue.sendTelemgramSeda(tickMessage, "algo");
                             if ( tradeData.getSlPrice()!=null && (lastTradedPrice + tenPercentOfPreviousTick) >= tradeData.getSlPrice().doubleValue()) {
                                 tickMessage ="Another 10% to touch SL price. SLPrice:" + String.format("%,.2f", tradeData.getSlPrice());
@@ -439,7 +443,7 @@ public class WebSocketTicksSedaProcessor implements Processor {
                                 if(strategy.isFreakSlPlace() && !tradeData.isSlPlaced && !tradeData.isWebsocketSlModified() && tradeData.isSlPriceCalculated ) {
                                     LOGGER.info(freakSlMessage);
                                     tradeSedaQueue.sendTelemgramSeda(freakSlMessage, "algo");
-                                 //   placeDynamicSellSL(tradeData, lastTradedPrice, strategy, brokerWorker, user, dateTimeFormatter, currentDateTime);
+                                    placeDynamicSellSL(tradeData, lastTradedPrice, strategy, brokerWorker, user, dateTimeFormatter, currentDateTime);
                                 }
                                 }
 
@@ -452,6 +456,55 @@ public class WebSocketTicksSedaProcessor implements Processor {
             e.printStackTrace();
         }
     }
+
+    private void placeFreakBuy(TradeData tradeData, TradeStrategy strategy, BrokerWorker brokerWorker,User user) {
+
+        if (!tradeData.isOrderPlaced){
+            try {
+                if ("BUY".equals(tradeData.getEntryType())) {
+                    LOGGER.info("freak move detected, placing buy:{}", tradeData.getStockName());
+                    OrderParams orderParams = new OrderParams();
+                    if (strategy.getTradeStrategyKey().length() <= 20) {
+                        orderParams.tag = strategy.getTradeStrategyKey();
+                    }
+                    orderParams.tradingsymbol = tradeData.getStockName();
+                    orderParams.exchange = "NFO";
+                    orderParams.quantity = tradeData.getQty();
+                    if ("MIS".equals(strategy.getTradeValidity())) {
+                        orderParams.product = "MIS";
+                    } else {
+                        orderParams.product = "NRML";
+                    }
+                    if ("SS".equals(strategy.getIndex()) || "BNX".equals(strategy.getIndex())) {
+                        orderParams.exchange = "BFO";
+                    }
+                    orderParams.validity = "DAY";
+                    orderParams.transactionType = "BUY";
+                    orderParams.orderType = "MARKET";
+                   // orderParams.price = MathUtils.roundToNearestFivePaiseUP(tradeData.getSlPrice()).doubleValue();
+              //      if (!tradeData.isWebsocketSlModified()) {
+                        Order order = brokerWorker.placeOrder(orderParams, user, tradeData);
+                        tradeData.isOrderPlaced = true;
+                        tradeData.setEntryOrderId(order.orderId);
+                        mapTradeDataToSaveOpenTradeDataEntity(tradeData, true);
+                        try {
+                            postTradePrioritySedaQueue(tradeData);
+                        }catch (Exception e){
+                            e.printStackTrace();
+                            LOGGER.error("error while posting to trade priority seda queue: {}", gson.toJson(tradeData));
+                        }
+                        LOGGER.info("freak trade data: {}", gson.toJson(tradeData));
+                        tradeSedaQueue.sendTelemgramSeda("Freak Options traded for user:" + user.getName() + " strike: "
+                                + tradeData.getStockName() + ":" + strategy.getTradeStrategyKey(), "exp-trade");
+
+                  //  }
+                }}catch (Exception | KiteException e) {
+                e.printStackTrace();
+                LOGGER.info("KITE Error while placing freak buy order: {}", e.getMessage());
+            }
+        }
+    }
+
     public void freakMoveInLast30Sec(Tick tick, double lastTradedPrice, TradeData tradeData, GlobalTickCache globalTickCache, Map<Long, Long> alertCount, TradeSedaQueue tradeSedaQueue) {
         try {
             // Set the historic data for the instrument
@@ -526,14 +579,8 @@ public class WebSocketTicksSedaProcessor implements Processor {
 
     }
 
-    public void postOrderModifyDataToSeda(TradeData tradeData, OrderParams orderParams, String orderId) {
-        User userB = userList.getUser().stream().filter(user -> tradeData.getUserId().equals(user.getName())).findFirst().get();
-        OrderSedaData orderSedaData = new OrderSedaData();
-        orderSedaData.setOrderParams(orderParams);
-        orderSedaData.setUser(userB);
-        orderSedaData.setOrderModificationType("modify");
-        orderSedaData.setOrderId(orderId);
-        tradeSedaQueue.sendOrderPlaceSeda(orderSedaData);
+    public void postTradePrioritySedaQueue(TradeData tradeData) {
+        tradeSedaQueue.sendTradePrioritySeda(gson.toJson(tradeData));
         // });
     }
 

@@ -319,9 +319,15 @@ public class ZerodhaAccount {
                             kiteConnectLocal.setAccessToken(user.accessToken);
                             token = user.accessToken;
                             kiteConnectLocal.setPublicToken(user.publicToken);
-                            Margin margins = kiteConnectLocal.getMargins("equity");
-                            logger.info(margins.available.cash);
-                            logger.info(margins.utilised.debits);
+                            try {
+                                Margin margins = kiteConnectLocal.getMargins("equity");
+                                logger.info(margins.available.cash);
+                                logger.info(margins.utilised.debits);
+                                tradeSedaQueue.sendTelemgramSeda("Available Cash :" + +new BigDecimal(margins.available.cash).setScale(0, RoundingMode.HALF_UP).doubleValue(),"exp-trade");
+                            }catch (Exception e){
+                                e.printStackTrace();
+                            }
+
                             String botId = "";
                             TelegramBot telegramBot = user1.getTelegramBot();
                             if (telegramBot != null) {
@@ -345,7 +351,7 @@ public class ZerodhaAccount {
                                 try {
                                //     Double amount = Double.parseDouble(margins.available.cash) - 1000000;
                                  //   sendMessage.sendToTelegram("Available Cash :" + new BigDecimal(amount).setScale(0, RoundingMode.HALF_UP).doubleValue(), telegramToken, botIdFinal);
-                                    tradeSedaQueue.sendTelemgramSeda("Available Cash :" + Double.parseDouble(margins.available.cash),"exp-trade");
+                                   // tradeSedaQueue.sendTelemgramSeda("Available Cash :" + Double.parseDouble(margins.available.cash),"exp-trade");
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
@@ -353,7 +359,7 @@ public class ZerodhaAccount {
                            //     sendMessage.sendToTelegram("Token for user:" + user.userName + ":" + kiteConnect.getAccessToken(), telegramToken, botIdFinal);
                              //   sendMessage.sendToTelegram("Available Cash :" + +new BigDecimal(margins.available.cash).setScale(0, RoundingMode.HALF_UP).doubleValue(), telegramToken, botIdFinal);
                                 tradeSedaQueue.sendTelemgramSeda("Token for user:" + user.userName + ":" + kiteConnectLocal.getAccessToken(),"exp-trade");
-                                tradeSedaQueue.sendTelemgramSeda("Available Cash :" + +new BigDecimal(margins.available.cash).setScale(0, RoundingMode.HALF_UP).doubleValue(),"exp-trade");
+                              //  tradeSedaQueue.sendTelemgramSeda("Available Cash :" + +new BigDecimal(margins.available.cash).setScale(0, RoundingMode.HALF_UP).doubleValue(),"exp-trade");
                             }
                             user1.tokenCount = user1.tokenCount + 1;
                             webDriver.quit();
