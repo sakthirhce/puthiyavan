@@ -1059,10 +1059,10 @@ NiftyOptionBuy935 niftyOptionBuy935;
         System.out.println(payload);
         TradeStrategy tradeStrategies=gson.fromJson(payload, TradeStrategy.class);
         String tradeStrategyKey=tradeStrategies.getIndex()+"-"+tradeStrategies.getOrderType()+"-"+tradeStrategies.getTradeValidity();
-        if(!tradeStrategies.isSimpleMomentum()){
+        if(tradeStrategies.isSimpleMomentum()){
             tradeStrategyKey=tradeStrategyKey+"-WT-"+tradeStrategies.getSimpleMomentumValue();
         }
-        if(!tradeStrategies.isRangeBreak()){
+        if(tradeStrategies.isRangeBreak()){
             tradeStrategyKey=tradeStrategyKey+"-RANGE-"+tradeStrategies.getRangeBreakInstrument()+"-"+tradeStrategies.getRangeStartTime()+"-"+tradeStrategies.getRangeBreakTime();
         }else {
             tradeStrategyKey=tradeStrategyKey+"-"+tradeStrategies.getEntryTime();

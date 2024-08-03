@@ -1734,6 +1734,7 @@ public class TradeEngine {
     private void updateTrendTradeData(TradeData trendTradeData, Order order, double strikePrice, TradeStrategy strategy) {
         if ("BUY".equals(trendTradeData.getEntryType())) {
             trendTradeData.setBuyTradedPrice(MathUtils.roundToNearestFivePaiseUP(new BigDecimal(order.averagePrice)));
+            trendTradeData.setBuyPrice(MathUtils.roundToNearestFivePaiseUP(new BigDecimal(order.averagePrice)));
             trendTradeData.setBuyTime(tradingStrategyAndTradeData.exchangeDateTimeFormat.format(order.exchangeUpdateTimestamp));
         } else {
             trendTradeData.setSellPrice(BigDecimal.valueOf(strikePrice));

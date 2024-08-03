@@ -213,12 +213,12 @@ public class TickBacktest {
                     if (diff > 0 && value > 20) {
                         double percentageDiffBWPreviousAndRecentTick = 1.1 * previousValue;
                         double nextTickValue = (Double) nextTick.get(1);
-                        if (value > percentageDiffBWPreviousAndRecentTick && !tradeData.isOrderPlaced) {
+                        if (value > percentageDiffBWPreviousAndRecentTick && !tradeData.isOrderPlaced && value<300) {
                             tradeData.isOrderPlaced = true;
                             tradeData.setQty(lot);
                             tradeData.setStockName(strikeName);
                             tradeData.setBuyPrice(new BigDecimal(nextTickValue));
-                            tradeData.setSlPrice(new BigDecimal(slPrice));
+                            tradeData.setSlPrice(tradeData.getBuyPrice().subtract(new BigDecimal(slPrice)));
                             tradeData.setBuyTime(timestamp);
                             tradeData.setTargetPrice(tradeData.getBuyPrice().add(new BigDecimal(targetPrice)));
                             String tickMessage = "last traded price is more than 10% higher than previous tick. Difference: " + String.format("%,.2f", diff) + ". last trade price: " + value + ". ";

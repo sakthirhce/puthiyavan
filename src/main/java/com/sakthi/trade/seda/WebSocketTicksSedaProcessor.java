@@ -128,7 +128,7 @@ public class WebSocketTicksSedaProcessor implements Processor {
                                 LOGGER.error("error while placing range order:{}", e.getMessage());
                             }
 
-                            if (tradeData.getEntryOrderId() != null && tradeData.isOrderPlaced && !tradeData.isExited && !tradeData.isSLCancelled) {
+                            if (!tradeData.isExited && !tradeData.isSLCancelled) {
                                 //Injection Freak move alert:Start
                                 try {
                                     freakLastTickAlertData(tick, lastTradedPrice, tradeData, strategy, brokerWorker, currentDateTime, user);
@@ -202,6 +202,9 @@ public class WebSocketTicksSedaProcessor implements Processor {
                     } else {
                         orderParams.product = "NRML";
                     }
+                    if ("MIS".equals(strategy.getTradeValidity()) && "BUY".equals(strategy.getOrderType()) && !strategy.isHedge()) {
+                        orderParams.product = "NRML";
+                    }
                     orderParams.tradingsymbol = tradeData.getStockName();
                     orderParams.transactionType = strategy.getOrderType();
                     orderParams.validity = "DAY";
@@ -252,6 +255,9 @@ public class WebSocketTicksSedaProcessor implements Processor {
             if ("SS".equals(strategy.getIndex()) || "BNX".equals(strategy.getIndex())) {
                 orderParams.exchange = "BFO";
             }
+            if ("MIS".equals(strategy.getTradeValidity()) && "BUY".equals(strategy.getOrderType()) && !strategy.isHedge()) {
+                orderParams.product = "NRML";
+            }
             orderParams.validity = "DAY";
             orderParams.transactionType = "BUY";
             orderParams.orderType = freakSlType;
@@ -288,18 +294,43 @@ public class WebSocketTicksSedaProcessor implements Processor {
                 if ("SS".equals(strategy.getIndex()) || "BNX".equals(strategy.getIndex())) {
                     orderParams.exchange = "BFO";
                 }
+                if ("MIS".equals(strategy.getTradeValidity()) && "BUY".equals(strategy.getOrderType()) && !strategy.isHedge()) {
+                    orderParams.product = "NRML";
+                }
                 orderParams.validity = "DAY";
                 orderParams.transactionType = "SELL";
-                orderParams.orderType = "LIMIT";
+                orderParams.orderType = "MARKET";
                 orderParams.price = MathUtils.roundToNearestFivePaiseUP(tradeData.getSlPrice()).doubleValue();
                 if (!tradeData.isWebsocketSlModified()) {
-                    Order order = brokerWorker.placeOrder(orderParams, user, tradeData);
+                    if(strategy.isTarget() && tradeData.getTargetOrderId()!=null){
+                        try {
+                            LOGGER.info("{}:converting target to sl order market to exit:{}:strike:{}", strategy.getTradeStrategyKey(), tradeData.getUserId(), tradeData.getStockName());
+                            OrderParams orderParams1 = new OrderParams();
+                            orderParams1.triggerPrice = MathUtils.roundToNearestFivePaiseUP(tradeData.getSlPrice()).doubleValue();
+                            orderParams1.price = tradeData.getSlPrice().add(tradeData.getSlPrice().divide(new BigDecimal(100)).multiply(new BigDecimal(5))).setScale(0, RoundingMode.HALF_UP).doubleValue();
+                            orderParams1.orderType = "MARKET";
+                            tradeData.setExitOrderId(tradeData.getTargetOrderId());
+                            tradeData.setSlOrderId(tradeData.getTargetOrderId());
+                            tradeData.isExited=true;
+                            tradeData.isSlPlaced = true;
+                            tradeData.setWebsocketSlModified(true);
+                            tradeData.setWebsocketSlTime(dateTimeFormatter.format(currentDateTime));
+                            postOrderModifyDataToSeda(tradeData, orderParams1, tradeData.getTargetOrderId());
+                            mapTradeDataToSaveOpenTradeDataEntity(tradeData, false);
+                            tradeSedaQueue.sendTelemgramSeda(strategy.getTradeStrategyKey() + ": converting target to sl order market to exit:" + tradeData.getUserId() + ":stike:" + tradeData.getStockName(), "exp-trade");
+                        } catch (Exception e) {
+                            tradeSedaQueue.sendTelemgramSeda(strategy.getTradeStrategyKey() + ":" + "error while target order cancellation:" + tradeData.getUserId() + ":strike:" + tradeData.getStockName(), "error");
+                            LOGGER.info(e.getMessage());
+                        }
+                    }else {
+                        Order order = brokerWorker.placeOrder(orderParams, user, tradeData);
 
-                    tradeData.isSlPlaced = true;
-                    tradeData.setSlOrderId(order.orderId);
-                    tradeData.setWebsocketSlModified(true);
-                    tradeData.setWebsocketSlTime(dateTimeFormatter.format(currentDateTime));
-                    mapTradeDataToSaveOpenTradeDataEntity(tradeData, false);
+                        tradeData.isSlPlaced = true;
+                        tradeData.setSlOrderId(order.orderId);
+                        tradeData.setWebsocketSlModified(true);
+                        tradeData.setWebsocketSlTime(dateTimeFormatter.format(currentDateTime));
+                        mapTradeDataToSaveOpenTradeDataEntity(tradeData, false);
+                    }
                   //  mapTradeDataToSaveOpenTradeDataEntity(tradeData, false);
                 }
             }}catch (Exception | KiteException e) {
@@ -330,6 +361,19 @@ public class WebSocketTicksSedaProcessor implements Processor {
         } catch (Exception e) {
             LOGGER.error("error while calculating expiry ATM:{}", e.getMessage());
         }
+    }
+
+    public void postOrderModifyDataToSeda(TradeData tradeData, OrderParams orderParams, String orderId) {
+        //  tradeData.getTradeStrategy().getUserSubscriptions().getUserSubscriptionList().stream().forEach(userSubscription -> {
+        User userB = userList.getUser().stream().filter(user -> tradeData.getUserId().equals(user.getName())).findFirst().get();
+        OrderSedaData orderSedaData = new OrderSedaData();
+        orderSedaData.setOrderParams(orderParams);
+        orderSedaData.setUser(userB);
+        orderSedaData.setOrderModificationType("modify");
+        orderSedaData.setOrderId(orderId);
+        // tradeData.isExited=true;
+        // tradeData.isSLHit=true;
+        tradeSedaQueue.sendOrderPlaceSeda(orderSedaData);
     }
     public void exportTicksToFile(LocalTime currentTime, boolean dataExport, List<Tick> ticks, CSVWriter csvWriter, SimpleDateFormat candleDateTimeFormat, Map<String, List<TradeData>> openTrade) {
         try {
@@ -435,7 +479,7 @@ public class WebSocketTicksSedaProcessor implements Processor {
                                 placeFreakBuy(tradeData,strategy,brokerWorker,user);
                             }
                             tradeSedaQueue.sendTelemgramSeda(tickMessage, "algo");
-                            if ( tradeData.getSlPrice()!=null && (lastTradedPrice + tenPercentOfPreviousTick) >= tradeData.getSlPrice().doubleValue()) {
+                            if (tradeData.getEntryOrderId() != null && tradeData.isOrderPlaced && tradeData.getSlPrice()!=null && (lastTradedPrice + tenPercentOfPreviousTick) >= tradeData.getSlPrice().doubleValue()) {
                                 tickMessage ="Another 10% to touch SL price. SLPrice:" + String.format("%,.2f", tradeData.getSlPrice());
                                 LOGGER.info(tickMessage);
                                 tradeSedaQueue.sendTelemgramSeda(tickMessage, "algo");
@@ -464,9 +508,6 @@ public class WebSocketTicksSedaProcessor implements Processor {
                 if ("BUY".equals(tradeData.getEntryType())) {
                     LOGGER.info("freak move detected, placing buy:{}", tradeData.getStockName());
                     OrderParams orderParams = new OrderParams();
-                    if (strategy.getTradeStrategyKey().length() <= 20) {
-                        orderParams.tag = strategy.getTradeStrategyKey();
-                    }
                     orderParams.tradingsymbol = tradeData.getStockName();
                     orderParams.exchange = "NFO";
                     orderParams.quantity = tradeData.getQty();
@@ -477,6 +518,9 @@ public class WebSocketTicksSedaProcessor implements Processor {
                     }
                     if ("SS".equals(strategy.getIndex()) || "BNX".equals(strategy.getIndex())) {
                         orderParams.exchange = "BFO";
+                    }
+                    if (("MIS".equals(strategy.getTradeValidity()) && "BUY".equals(strategy.getOrderType())) && !strategy.isHedge()) {
+                        orderParams.product = "NRML";
                     }
                     orderParams.validity = "DAY";
                     orderParams.transactionType = "BUY";

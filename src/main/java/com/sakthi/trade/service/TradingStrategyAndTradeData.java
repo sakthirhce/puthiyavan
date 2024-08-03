@@ -5,6 +5,7 @@ import com.sakthi.trade.entity.TradeStrategy;
 import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -18,6 +19,7 @@ public class TradingStrategyAndTradeData {
     public SimpleDateFormat candleDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
     public SimpleDateFormat exchangeDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     public SimpleDateFormat hourMinFormat = new SimpleDateFormat("HH:mm");
+    public DateTimeFormatter dateFormatHHmm = DateTimeFormatter.ofPattern("HH:mm");
     public Map<String, Map<String, List<TradeStrategy>>> strategyMap = new LinkedHashMap<>();
     public Map<String, List<TradeStrategy>> rangeStrategyMap = new ConcurrentHashMap<>();
 
